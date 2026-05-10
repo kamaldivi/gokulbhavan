@@ -1,0 +1,4 @@
+---
+distFolder: frontend/dist
+buildFolder: frontend
+buildCommand: npm install && npm run build

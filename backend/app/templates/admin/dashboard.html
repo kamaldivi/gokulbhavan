@@ -1,0 +1,82 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-8">Dashboard</h1>
+
+<section class="mb-10">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold">Upcoming Events</h2>
+    <a href="/admin/events/new" class="bg-[#082A4A] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#123C69]">+ New Event</a>
+  </div>
+  {% if events %}
+  <table class="w-full bg-white rounded-xl shadow text-sm">
+    <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+      <tr>
+        <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Title</th>
+        <th class="px-4 py-3 text-left">Site</th>
+        <th class="px-4 py-3 text-left">Location</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for e in events %}
+      <tr>
+        <td class="px-4 py-3 text-gray-500">{{ e.date }}</td>
+        <td class="px-4 py-3 font-medium">{{ e.title }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ e.site }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ e.location }}</td>
+        <td class="px-4 py-3 flex gap-3">
+          <a href="/admin/events/{{ e.id }}/edit" class="text-blue-600 hover:underline">Edit</a>
+          <form method="POST" action="/admin/events/{{ e.id }}/delete" class="inline">
+            <button type="submit" class="text-red-500 hover:underline"
+                    onclick="return confirm('Delete this event?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-gray-500 text-sm">No events yet. <a href="/admin/events/new" class="text-blue-600 hover:underline">Add one.</a></p>
+  {% endif %}
+</section>
+
+<section>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold">Program Schedules</h2>
+    <a href="/admin/programs/new" class="bg-[#082A4A] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#123C69]">+ New Program</a>
+  </div>
+  {% if programs %}
+  <table class="w-full bg-white rounded-xl shadow text-sm">
+    <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+      <tr>
+        <th class="px-4 py-3 text-left">Title</th>
+        <th class="px-4 py-3 text-left">Day</th>
+        <th class="px-4 py-3 text-left">IST</th>
+        <th class="px-4 py-3 text-left">Language</th>
+        <th class="px-4 py-3 text-left">Active</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for p in programs %}
+      <tr>
+        <td class="px-4 py-3 font-medium">{{ p.title }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ p.day_of_week }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ p.time_ist }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ p.language }}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ 'bg-green-100 text-green-700' if p.active else 'bg-gray-100 text-gray-500' }}">
+            {{ 'Active' if p.active else 'Inactive' }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-gray-500 text-sm">No programs yet. <a href="/admin/programs/new" class="text-blue-600 hover:underline">Add one.</a></p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,50 @@
+---
+/**
+ * Base layout — wraps every page.
+ * Imports Header and Footer as shared components.
+ */
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title:       string;
+  description?: string;
+  /** Highlight this nav item as active */
+  activePath?: string;
+  /** Nav items — override per sub-site if needed */
+  navItems?: { label: string; href: string }[];
+}
+
+const {
+  title,
+  description = "Gokul Bhavan Gaudiya Matha — a registered 501(c) non-profit organization.",
+  activePath  = Astro.url.pathname,
+  navItems,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} | Gokul Bhavan Gaudiya Matha</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <Header activePath={activePath} navItems={navItems} />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

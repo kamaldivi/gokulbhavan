@@ -1,0 +1,36 @@
+---
+/**
+ * PageHero — shared warm-parchment hero banner used on all content pages.
+ * Replaces the per-page dark navy header rows for visual consistency.
+ *
+ * Props:
+ *   title       — main heading (required)
+ *   eyebrow     — small label above the title (optional)
+ *   description — sub-text below the title (optional)
+ */
+interface Props {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+}
+
+const { title, eyebrow, description } = Astro.props;
+---
+
+<div class="bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center">
+    {eyebrow && (
+      <p class="text-brand-lotus text-[11px] font-bold uppercase tracking-widest mb-3">
+        {eyebrow}
+      </p>
+    )}
+    <h1 class="font-display font-bold text-3xl md:text-4xl text-brand-navy leading-tight mb-3">
+      {title}
+    </h1>
+    {description && (
+      <p class="text-brand-slate text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
+        {description}
+      </p>
+    )}
+  </div>
+</div>

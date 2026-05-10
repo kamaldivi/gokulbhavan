@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modern Web Page Sample — Inter + Manrope</title>
+
+  <!-- Google Fonts: Inter + Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --surface: #ffffff;
+      --surface-soft: #eef4ff;
+      --text: #162033;
+      --muted: #5d6b82;
+      --primary: #174ea6;
+      --primary-dark: #0f3574;
+      --accent: #2bb673;
+      --border: #dbe4f0;
+      --shadow: 0 18px 45px rgba(22, 32, 51, 0.08);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: "Manrope", "Inter", sans-serif;
+      margin: 0 0 14px;
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+      color: var(--text);
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: "Manrope", sans-serif;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-logo {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-text {
+      display: grid;
+      gap: 2px;
+      line-height: 1.1;
+    }
+
+    .brand-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .brand-subtitle {
+      font-family: "Inter", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      color: var(--muted);
+      font-size: 0.94rem;
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 20px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 12px 28px rgba(23, 78, 166, 0.22);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      padding: 92px 0 74px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px;
+      margin-bottom: 22px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: white;
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      max-width: 720px;
+      font-size: clamp(2.55rem, 6vw, 5rem);
+    }
+
+    .hero p {
+      max-width: 620px;
+      font-size: 1.13rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+
+    .button.secondary {
+      background: white;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    .hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .metric {
+      padding: 20px;
+      background: var(--surface-soft);
+      border-radius: 18px;
+    }
+
+    .metric strong {
+      display: block;
+      font-family: "Manrope", sans-serif;
+      font-size: 1.9rem;
+      line-height: 1;
+      color: var(--primary);
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .section {
+      padding: 76px 0;
+    }
+
+    .section-header {
+      max-width: 760px;
+      margin-bottom: 38px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 12px 32px rgba(22, 32, 51, 0.05);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--surface-soft);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    .card h3 {
+      font-size: 1.35rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 44px;
+      align-items: start;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .feature-item {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 14px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+    }
+
+    .check {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(43, 182, 115, 0.13);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .feature-item h4 {
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .feature-item p {
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .cta {
+      margin: 48px 0 0;
+      padding: 42px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #102a56, #174ea6);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .cta h2,
+    .cta p {
+      color: white;
+    }
+
+    .cta p {
+      opacity: 0.82;
+      max-width: 620px;
+      margin-bottom: 0;
+    }
+
+    .cta .button {
+      background: white;
+      color: var(--primary);
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+
+    .site-footer {
+      margin-top: 76px;
+      padding: 46px 0;
+      background: #101827;
+      color: white;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.2fr repeat(3, 1fr);
+      gap: 36px;
+    }
+
+    .site-footer h4 {
+      color: white;
+    }
+
+    .site-footer .brand-title {
+      color: white;
+    }
+
+    .site-footer .brand-subtitle {
+      color: rgba(255, 255, 255, 0.68);
+    }
+
+    .site-footer p,
+    .site-footer a {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.94rem;
+    }
+
+    .footer-links {
+      display: grid;
+      gap: 10px;
+    }
+
+    .footer-bottom {
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 860px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero-grid,
+      .split,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .cta {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: min(100% - 28px, 1120px);
+      }
+
+      .hero {
+        padding-top: 56px;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .hero-card,
+      .cta {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#" aria-label="Gokul Bhavan Gaudiya Matha Tamil Sangha home">
+        <img class="brand-logo" src="data:image/webp;base64,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" alt="Gokul Bhavan Gaudiya Matha lotus and flute logo" />
+        <span class="brand-text">
+          <span class="brand-title">Gokul Bhavan Gaudiya Matha</span>
+          <span class="brand-subtitle">Tamil Sangha</span>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#services">Services</a>
+        <a href="#approach">Approach</a>
+        <a href="#insights">Insights</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <a class="button" href="#contact">Start a Conversation</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">Modern Web Experience</div>
+          <h1>Build elegant digital experiences with clarity, speed, and confidence.</h1>
+          <p>
+            This sample page uses Manrope for strong, refined headings and Inter for highly readable body text. The combination creates a clean, modern visual system suitable for consulting, technology, SaaS, and professional services websites.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="#services">Explore Services</a>
+            <a class="button secondary" href="#approach">View Approach</a>
+          </div>
+        </div>
+
+        <aside class="hero-card" aria-label="Performance highlights">
+          <h2>Designed for business content and modern delivery.</h2>
+          <p>
+            Use structured sections, clear typography, and generous spacing to help visitors quickly understand your mission, offerings, and differentiators.
+          </p>
+
+          <div class="metric-grid">
+            <div class="metric">
+              <strong>2</strong>
+              <span>Complementary font families</span>
+            </div>
+            <div class="metric">
+              <strong>4</strong>
+              <span>Reusable page sections</span>
+            </div>
+            <div class="metric">
+              <strong>100%</strong>
+              <span>Responsive layout structure</span>
+            </div>
+            <div class="metric">
+              <strong>Clean</strong>
+              <span>Enterprise-ready visual style</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="services" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Services that turn strategy into measurable execution.</h2>
+          <p>
+            The body text remains calm and readable, while headings create a premium, confident tone. This helps the site feel polished without becoming visually heavy.
+          </p>
+        </div>
+
+        <div class="cards">
+          <article class="card">
+            <div class="card-icon">01</div>
+            <h3>Digital Strategy</h3>
+            <p>
+              Align mission goals, customer needs, business priorities, and technology investments into a practical roadmap that teams can execute.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">02</div>
+            <h3>Modern Web Platforms</h3>
+            <p>
+              Build flexible websites and portals using modern frontend frameworks, structured content, reusable components, and scalable hosting patterns.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">03</div>
+            <h3>Content Operations</h3>
+            <p>
+              Enable non-technical users to create, edit, approve, and publish content through an intuitive CMS-driven workflow.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="approach" class="section">
+      <div class="container split">
+        <div class="section-header">
+          <h2>A calm, structured approach to modern website delivery.</h2>
+          <p>
+            Strong typography is only one part of a successful website. The page should also support content governance, accessibility, search visibility, and maintainable development practices.
+          </p>
+          <p>
+            This layout can be adapted for WordPress, Next.js, React, a headless CMS, or a Python-backed web application depending on the level of customization required.
+          </p>
+        </div>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="check">✓</div>
+            <div>
+              <h4>Readable content hierarchy</h4>
+              <p>Large Manrope headings guide the eye, while Inter keeps paragraphs comfortable across desktop and mobile screens.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="check">✓</div>
+            <div>
+              <h4>Reusable visual components</h4>
+              <p>Cards, feature rows, metrics, and call-to-action blocks make it easier to scale the site without creating inconsistent pages.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="check">✓</div>
+            <div>
+              <h4>CMS-friendly structure</h4>
+              <p>Each section can map cleanly to CMS fields, allowing non-technical users to manage text, links, images, and page sections.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="check">✓</div>
+            <div>
+              <h4>Responsive by default</h4>
+              <p>The layout collapses cleanly on smaller screens, preserving spacing, readability, and clear navigation.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="insights" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Typography guidance for a premium but practical design system.</h2>
+          <p>
+            Use Manrope for page titles, section headings, card titles, and large marketing statements. Use Inter for paragraphs, navigation, labels, forms, tables, and longer explanations.
+          </p>
+        </div>
+
+        <div class="cta">
+          <div>
+            <h2>Ready to turn this into a real website?</h2>
+            <p>
+              Replace the placeholder content with your services, case studies, leadership messages, and calls to action. Connect the content sections to a CMS when non-technical publishing is required.
+            </p>
+          </div>
+          <a class="button" href="#contact">Plan the Build</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="contact" class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="#">
+            <span class="brand-mark"></span>
+            <span>Northstar Digital</span>
+          </a>
+          <p style="margin-top: 18px;">
+            A sample modern website layout using Inter and Manrope for a clean, professional, and scalable visual identity.
+          </p>
+        </div>
+
+        <div>
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Leadership</a>
+            <a href="#">Careers</a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Services</h4>
+          <div class="footer-links">
+            <a href="#">Strategy</a>
+            <a href="#">Web Platforms</a>
+            <a href="#">Content Operations</a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Contact</h4>
+          <div class="footer-links">
+            <a href="mailto:hello@example.com">hello@example.com</a>
+            <a href="#">LinkedIn</a>
+            <a href="#">Privacy Policy</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © 2026 Northstar Digital. All rights reserved.
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

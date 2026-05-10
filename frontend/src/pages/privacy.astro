@@ -1,0 +1,181 @@
+---
+/**
+ * Privacy Policy — gokulbhavan.com/privacy
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+const EFFECTIVE = "May 8, 2026";
+---
+
+<Base title="Privacy Policy" activePath="/privacy"
+     description="Privacy Policy for Gokul Bhavan Gauḍīya Maṭha — how we collect, use, and protect your personal information.">
+
+  <PageHero
+    title="Privacy Policy"
+    description={`Effective ${EFFECTIVE}`}
+  />
+
+  <!-- Content -->
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-12 divide-y divide-brand-tan">
+
+    <!-- Intro -->
+    <section>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        Gokul Bhavan Gauḍīya Maṭha (<strong class="text-brand-navy">"Gokul Bhavan," "we," "us"</strong>) is a registered
+        501(c)(3) non-profit religious organization. We are committed to protecting your privacy.
+        This policy explains what information we collect, why we collect it, and how it is used.
+      </p>
+    </section>
+
+    <!-- 1 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">1. Information We Collect</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed mb-3">
+        When you register with us, we collect:
+      </p>
+      <ul class="space-y-2">
+        {[
+          "Name, email address, and age",
+          "Mailing address and country",
+          "Phone number and WhatsApp contact number",
+          "Gender (for appropriate program groupings)",
+        ].map((item) => (
+          <li class="flex items-start gap-2.5 text-sm text-brand-slate leading-relaxed">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+            {item}
+          </li>
+        ))}
+      </ul>
+      <p class="text-sm text-brand-slate leading-relaxed mt-3">
+        We may also collect information you voluntarily provide through contact forms or
+        email correspondence.
+      </p>
+    </section>
+
+    <!-- 2 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">2. How We Use Your Information</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed mb-3">
+        Your information is used solely to support our spiritual and community mission:
+      </p>
+      <ul class="space-y-2">
+        {[
+          "Sending program schedules, event announcements, and class updates",
+          "Communicating via WhatsApp or phone for community coordination",
+          "Organizing devotional programs, saṅgas, and festival events",
+          "Providing spiritual guidance and correspondence",
+          "Maintaining records for our non-profit activities",
+        ].map((item) => (
+          <li class="flex items-start gap-2.5 text-sm text-brand-slate leading-relaxed">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">3. We Do Not Sell or Share Your Data</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        Your personal information is <strong class="text-brand-navy">never sold, rented, or shared</strong> with
+        any third party for commercial purposes. We do not use your data for advertising, marketing,
+        or any activity outside of our non-profit spiritual mission. Information is shared internally
+        only among designated coordinators and volunteers who need it to serve the community.
+      </p>
+    </section>
+
+    <!-- 4 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">4. Free Programs and No Commercial Activity</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        All classes, teachings, satsaṅgas, and events offered by Gokul Bhavan Gauḍīya Maṭha are
+        provided <strong class="text-brand-navy">free of charge</strong>. We do not use registration
+        data to solicit purchases, subscriptions, or paid services of any kind. Donations to support
+        our mission are voluntary and separate from any program participation.
+      </p>
+    </section>
+
+    <!-- 5 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">5. Data Security</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        We take reasonable steps to protect your information from unauthorized access, disclosure, or
+        loss. Our systems are maintained on secure servers. However, no method of transmission over
+        the internet is completely secure, and we cannot guarantee absolute security.
+      </p>
+    </section>
+
+    <!-- 6 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">6. Your Rights</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed mb-3">
+        You may at any time:
+      </p>
+      <ul class="space-y-2 mb-3">
+        {[
+          "Request a copy of the information we hold about you",
+          "Ask us to correct or update your information",
+          "Request that we delete your information from our records",
+          "Unsubscribe from communications",
+        ].map((item) => (
+          <li class="flex items-start gap-2.5 text-sm text-brand-slate leading-relaxed">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+            {item}
+          </li>
+        ))}
+      </ul>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        To exercise any of these rights, email us at{" "}
+        <a href="mailto:bkdasa@gmail.com" class="text-brand-lotus font-semibold hover:underline">bkdasa@gmail.com</a>.
+      </p>
+    </section>
+
+    <!-- 7 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">7. Cookies and Website Analytics</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        Our website does not use advertising cookies or tracking pixels. We may use basic,
+        privacy-respecting analytics to understand how pages are visited. No personally
+        identifiable information is collected through website browsing.
+      </p>
+    </section>
+
+    <!-- 8 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">8. Changes to This Policy</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        We may update this policy from time to time. Any changes will be posted on this page with a
+        revised effective date. Continued use of our site or programs after changes are posted
+        constitutes acceptance of the updated policy.
+      </p>
+    </section>
+
+    <!-- 9 -->
+    <section class="py-5">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">9. Contact</h2>
+      <div class="w-8 h-0.5 bg-brand-lotus mb-4"></div>
+      <p class="text-sm text-brand-slate leading-relaxed">
+        If you have any questions about this Privacy Policy, please contact us:
+      </p>
+      <div class="mt-4 bg-brand-linen border border-brand-tan rounded-xl px-5 py-4 text-sm text-brand-slate space-y-1">
+        <p class="font-semibold text-brand-navy">Gokul Bhavan Gauḍīya Maṭha</p>
+        <p>41901 White Mountain Ct, Aldie, VA 20105, USA</p>
+        <p>
+          Email:{" "}
+          <a href="mailto:bkdasa@gmail.com" class="text-brand-lotus font-semibold hover:underline">bkdasa@gmail.com</a>
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+</Base>

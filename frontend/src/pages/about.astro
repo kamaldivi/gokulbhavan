@@ -1,0 +1,212 @@
+---
+/**
+ * About page — gokulbhavan.com/about
+ * Sections: Who We Are, Our Mission, Our Founder, Our Teacher, Our Sangas.
+ * No prose/typography plugin — explicit utility classes throughout.
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+
+const MISSION_ITEMS = [
+  "Sharing the teachings of Śrī Caitanya Mahāprabhu, Śrīla Gurudeva, and the Gauḍīya guru-paramparā with sincerity and compassion",
+  "Helping devotees cultivate rāgānugā-bhakti through hearing, chanting, remembrance, sevā, and satsaṅga",
+  "Supporting children, youth, adults, elders, families, and seekers in building lives centered on devotion to Śrī Śrī Rādhā-Kṛṣṇa",
+  "Creating regular opportunities for hari-kathā, kīrtana, nāma-japa, scripture study, festivals, and devotional service",
+  "Encouraging strong Vaiṣṇava character, humility, discipline, compassion, responsibility, and spiritual purpose",
+  "Preparing devotees to advance in sādhana and move steadily toward the ultimate goal of life: pure loving service to the Divine Couple",
+  "Providing moral, devotional, and community support to devotees, families, inmates, and sincere seekers",
+  "Extending bhakti through prison sevā, children and youth programs, devotional media, translations, book distribution, technology, and global outreach",
+];
+---
+
+<Base title="About" activePath="/about"
+     description="Learn about Gokul Bhavan Gauḍīya Maṭha — our mission, founder, teacher, and global sangas.">
+
+  <PageHero
+    title="About Us"
+    description="We are an independent registered 501(c) non-profit religious organization, formerly Gokul Bhajan & Vedic Studies, dedicated to cultivating rāgānugā-bhakti and loving service to Śrīmatī Rādhārāṇī and Lord Śrī Kṛṣṇa."
+  />
+
+  <!-- ── Content ───────────────────────────────────────────────── -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+
+    <!-- ── Who We Are ─────────────────────────────────────────── -->
+    <section class="mb-12">
+      <h2 class="font-display font-bold text-xl text-brand-navy mb-1">Who We Are</h2>
+      <div class="w-10 h-0.5 bg-brand-lotus mb-5"></div>
+
+      <div class="space-y-4 text-sm text-brand-slate leading-relaxed">
+        <p>
+          Gokul Bhavan Gauḍīya Maṭha follows the teachings of <strong class="text-brand-navy font-semibold">Śrī Caitanya Mahāprabhu</strong> in
+          the line of the <strong class="text-brand-navy font-semibold">Six Gosvāmīs of Vṛndāvana</strong>, under the
+          <strong class="text-brand-navy font-semibold">Śrī Brahma-Madhva-Gauḍīya Sampradāya</strong>. We are an
+          independent organization and are not affiliated with or controlled by any other institution.
+        </p>
+        <p>
+          Our purpose is to help sincere seekers, devotees, families, and communities cultivate
+          rāgānugā-bhakti centered on loving service to Śrī Śrī Rādhā-Kṛṣṇa, under the guidance
+          of Śrī Guru and the Gauḍīya guru-paramparā. Through our programs, devotees of all ages
+          and stages of life are supported in deepening their sādhana, Vaiṣṇava character, and
+          spiritual understanding. The seven foundational pillars of this path are presented in our{" "}
+          <a href="/krishna-bhakti" class="text-brand-lotus font-semibold hover:underline">Kṛṣṇa-bhakti</a> page.
+        </p>
+        <p>
+          Through regular classes, weekly global programs, satsaṅgas, children and youth enrichment,
+          devotional media, book distribution, spiritual counseling, and service opportunities, we seek
+          to create an environment where devotees can deepen faith, strengthen sādhana, develop
+          Vaiṣṇava character, and progress toward the ultimate goal of life: pure loving service to
+          Śrī Śrī Rādhā-Kṛṣṇa.
+        </p>
+        <p>
+          A major part of our service is reaching those who need spiritual encouragement, guidance,
+          and hope. Our prison ministry serves hundreds of prisons and many participating inmates,
+          bringing transformation through books, correspondence, devotional programs, and personal
+          care. Gokul Bhavan also supports devotional arts, translations, multimedia teachings,
+          software and mobile app development for devotional education, and outreach programs across
+          India, the United States, Nigeria, and beyond.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Our Mission ────────────────────────────────────────── -->
+    <section class="mb-12">
+      <h2 class="font-display font-bold text-xl text-brand-navy mb-1">Our Mission</h2>
+      <div class="w-10 h-0.5 bg-brand-lotus mb-5"></div>
+
+      <p class="text-sm text-brand-slate leading-relaxed mb-5">
+        Our mission is to nurture sincere devotional life for all ages by:
+      </p>
+
+      <ul class="space-y-3">
+        {MISSION_ITEMS.map((item) => (
+          <li class="flex items-start gap-3">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+            <span class="text-sm text-brand-slate leading-relaxed">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- ── Our Founder ────────────────────────────────────────── -->
+    <section class="mb-12">
+      <h2 class="font-display font-bold text-xl text-brand-navy mb-1">Our Founder</h2>
+      <div class="w-10 h-0.5 bg-brand-lotus mb-6"></div>
+
+      <div class="bg-brand-linen border border-brand-tan rounded-2xl p-6">
+        <div class="flex flex-col sm:flex-row gap-6 items-start">
+
+          <!-- Portrait -->
+          <div class="flex flex-col items-center text-center shrink-0 sm:w-32">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-brand-tan shadow mb-3">
+              <img src="/assets/gurudeva.jpeg"
+                   alt="Yugācārya Śrīla Śrīmad Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja"
+                   class="w-full h-full object-cover object-top" />
+            </div>
+            <p class="text-[9px] font-bold uppercase tracking-widest text-brand-slate mb-1">Founder</p>
+            <p class="font-display font-semibold text-brand-navy text-[11px] leading-snug">
+              Yugācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja
+            </p>
+          </div>
+
+          <!-- Bio -->
+          <div class="flex-1 space-y-3 text-sm text-brand-slate leading-relaxed">
+            <p>
+              <strong class="text-brand-navy font-semibold">Yugācārya Śrīla Śrīmad Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja</strong> is
+              the revered founder and guiding inspiration of Gokul Bhavan Gauḍīya Maṭha. A renowned ācārya in
+              the Śrī Gauḍīya Vaiṣṇava tradition, he dedicated his life to sharing the teachings of
+              Śrī Caitanya Mahāprabhu and the path of pure devotion to Śrī Śrī Rādhā-Kṛṣṇa.
+            </p>
+            <p>
+              Through his profound hari-kathā, extensive writings, and compassionate guidance, he inspired
+              devotees around the world to cultivate bhakti rooted in humility, service, and loving
+              remembrance of the Divine Couple. Gokul Bhavan Gauḍīya Maṭha continues to serve under his
+              divine guidance, preserving and sharing his teachings for the spiritual benefit of all.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Our Teacher ────────────────────────────────────────── -->
+    <section class="mb-12">
+      <h2 class="font-display font-bold text-xl text-brand-navy mb-1">Our Teacher</h2>
+      <div class="w-10 h-0.5 bg-brand-lotus mb-6"></div>
+
+      <div class="bg-brand-linen border border-brand-tan rounded-2xl p-6">
+        <div class="flex flex-col sm:flex-row gap-6 items-start">
+
+          <!-- Portrait -->
+          <div class="flex flex-col items-center text-center shrink-0 sm:w-32">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-brand-tan shadow mb-3">
+              <img src="/assets/guruji.png"
+                   alt="Bhagavati Kanti Dasa, Ph.D."
+                   class="w-full h-full object-cover object-top" />
+            </div>
+            <p class="text-[9px] font-bold uppercase tracking-widest text-brand-slate mb-1">Teacher</p>
+            <p class="font-display font-semibold text-brand-navy text-[11px] leading-snug">
+              Bhagavati Kanti Dasa
+            </p>
+            <p class="text-[10px] text-brand-slate mt-0.5">M.Tech (IIT) · Ph.D</p>
+          </div>
+
+          <!-- Bio -->
+          <div class="flex-1 space-y-3 text-sm text-brand-slate leading-relaxed">
+            <p>
+              <strong class="text-brand-navy font-semibold">Bhagavati Kanti Dasa, Ph.D.</strong> is an initiated disciple
+              of Yugācārya Śrīla Śrīmad Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja and the founder of
+              Gokul Bhajan Gauḍīya Maṭha. Fully dedicated to serving Śrīla Gurudeva's mission, he has
+              established and nurtured temples and saṅgas in India, Nigeria, USA, and other communities,
+              creating spiritual homes where devotees can gather, learn, and practice bhakti.
+            </p>
+            <p>
+              As the main preacher for ongoing weekly programs, he regularly teaches Śrīla Gurudeva's
+              books to a global audience, helping devotees understand and apply the teachings of
+              Gauḍīya Vaiṣṇavism and the path of <strong class="text-brand-navy font-semibold">rāgānugā-bhakti</strong> in
+              their daily lives. His service extends beyond traditional classroom learning into highly
+              transformative programs, including prison sevā, youth camps, children's enrichment,
+              devotional media, Tamil translations of Śrīla Gurudeva's books, and bhajans. He pioneered
+              the adoption of latest information technology via development of devotional software,
+              mobile apps, and multimedia solutions for the outreach.
+            </p>
+            <p>
+              Through his tireless service and outreach to remote and underserved communities, including
+              Nigeria and prison communities, he continues to inspire children, families, inmates,
+              devotees, and sincere seekers to grow in loving devotion to Śrī Śrī Rādhā-Kṛṣṇa.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Our Sangas ─────────────────────────────────────────── -->
+    <section class="mb-4">
+      <h2 class="font-display font-bold text-xl text-brand-navy mb-1">Our Saṅgas</h2>
+      <div class="w-10 h-0.5 bg-brand-lotus mb-5"></div>
+
+      <p class="text-sm text-brand-slate leading-relaxed mb-5">
+        Gokul Bhavan Gauḍīya Maṭha supports saṅgas and devotional communities in
+        <strong class="text-brand-navy font-semibold">India, the United States, Nigeria, and other regions</strong>.
+        These saṅgas provide opportunities for devotees and families to gather for hari-kathā,
+        kīrtana, devotional study, children's programs, festivals, and service.
+      </p>
+
+      <div class="flex flex-wrap gap-2 mb-5">
+        {["India", "United States", "Nigeria"].map((region) => (
+          <span class="inline-flex items-center gap-2 border border-brand-tan rounded-full px-4 py-1.5 text-sm font-semibold text-brand-navy bg-brand-linen">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+            {region}
+          </span>
+        ))}
+      </div>
+
+      <p class="text-sm text-brand-slate">
+        For local program details, addresses, and contact information, please visit our{" "}
+        <a href="/contact" class="text-brand-lotus font-semibold hover:underline">Contact page</a>.
+      </p>
+    </section>
+
+  </div>
+
+</Base>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home | Gokul Bhavan Gaudiya Matha</title>
+
+  <!-- Compiled Tailwind CSS -->
+  <link rel="stylesheet" href="/tokens/output.css" />
+
+  <!-- Google Fonts: Inter (body) + Manrope (headings) + script fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body class="bg-brand-parchment text-brand-cobalt font-sans min-h-screen flex flex-col">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER (three-tier — shared across all pages)
+       Tier 1: Brand strip — logo left, banner fills remaining width
+       Tier 2: Site-specific subtitle band (omit on main site)
+       Tier 3: Navigation bar
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-50 shadow-md">
+
+    <!-- ── Tier 1: Brand strip ─────────────────────────────────── -->
+    <div class="bg-brand-parchment border-b border-brand-tan">
+      <div class="flex items-center justify-between px-6 py-4">
+
+        <!-- Left: Logo + English org name -->
+        <div class="flex items-center gap-4">
+          <a href="/" aria-label="Gokul Bhavan home">
+            <img
+              src="/assets/brand/logo.png"
+              alt="Gokul Bhavan Gaudiya Matha seal"
+              class="h-16 w-auto object-contain"
+            />
+          </a>
+          <div class="leading-snug">
+            <div class="font-display font-bold text-xl text-brand-navy tracking-tight">
+              Gokul Bhavan Gaudiya Matha
+            </div>
+            <div class="font-sans text-xs text-brand-slate mt-1">
+              A registered 501(c) non-profit organization
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Social links + lineage caption -->
+        <div class="hidden sm:flex flex-col items-end gap-2">
+          <div class="flex items-center gap-2">
+            <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer"
+               title="Facebook" aria-label="Facebook"
+               class="w-7 h-7 rounded-full flex items-center justify-center bg-[#1877F2] hover:opacity-85 transition-opacity">
+              <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+            </a>
+            <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+               title="YouTube" aria-label="YouTube"
+               class="w-7 h-7 rounded-full flex items-center justify-center bg-[#FF0000] hover:opacity-85 transition-opacity">
+              <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+            </a>
+            <a href="https://zoom.us/j/2294369627" target="_blank" rel="noopener noreferrer"
+               title="Weekly Online Program (Zoom)" aria-label="Zoom"
+               class="w-7 h-7 rounded-full flex items-center justify-center bg-[#2D8CFF] hover:opacity-85 transition-opacity">
+              <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/></svg>
+            </a>
+            <a href="mailto:bkdasa@gmail.com"
+               title="Email us" aria-label="Email"
+               class="w-7 h-7 rounded-full flex items-center justify-center bg-brand-slate/50 hover:bg-brand-slate/70 transition-colors">
+              <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+          </div>
+          <p class="text-[11px] text-brand-slate text-right leading-snug max-w-xs">
+            Under the divine guidance of Yuga-ācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Tier 2: Navigation bar ─────────────────────────────── -->
+    <nav class="bg-brand-slate" aria-label="Primary navigation">
+      <div class="px-6 flex items-center justify-between">
+
+        <!-- Nav links -->
+        <ul class="flex items-center gap-1 h-11 text-sm font-semibold font-sans">
+          <li>
+            <a href="/" class="px-4 py-2 rounded bg-brand-navy text-white">
+              Home
+            </a>
+          </li>
+          <li><a href="/sites/gokulbhavan/register.html" class="px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors">Register</a></li>
+          <li><a href="/sites/gokulbhavan/programs.html"  class="px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors">Programs</a></li>
+          <li><a href="/archive.html"   class="px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors">Archive</a></li>
+          <li><a href="/news.html"      class="px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors">News</a></li>
+          <li><a href="/contact.html"   class="px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors">Contact</a></li>
+          <!-- Mobile toggle -->
+          <li class="ml-4 md:hidden">
+            <button
+              onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+              class="px-3 py-2 text-brand-linen hover:text-white"
+              aria-label="Toggle menu">☰</button>
+          </li>
+        </ul>
+
+        <!-- Right: reserved for future authentication -->
+        <div class="hidden md:flex items-center gap-1"></div>
+
+      </div>
+
+      <!-- Mobile dropdown -->
+      <div id="mobile-menu" class="hidden md:hidden bg-brand-navy px-6 pb-3">
+        <ul class="flex flex-col gap-1 text-sm font-semibold">
+          <li><a href="/"               class="block py-2 text-brand-linen hover:text-white">Home</a></li>
+          <li><a href="/sites/gokulbhavan/register.html" class="block py-2 text-brand-linen hover:text-white">Register</a></li>
+          <li><a href="/sites/gokulbhavan/programs.html" class="block py-2 text-brand-linen hover:text-white">Programs</a></li>
+          <li><a href="/archive.html"   class="block py-2 text-brand-linen hover:text-white">Archive</a></li>
+          <li><a href="/news.html"      class="block py-2 text-brand-linen hover:text-white">News</a></li>
+          <li><a href="/contact.html"   class="block py-2 text-brand-linen hover:text-white">Contact</a></li>
+          <!-- Social links in mobile menu as text -->
+          <li class="pt-2 border-t border-white/20 mt-1 flex gap-4">
+            <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">Facebook</a>
+            <a href="https://www.youtube.com/@bkdasa"      target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">YouTube</a>
+            <a href="https://zoom.us/j/2294369627"          target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">Zoom</a>
+            <a href="mailto:bkdasa@gmail.com"                                                         class="text-brand-linen hover:text-white text-xs">Email</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+  </header>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO BANNER — rotating image background with text overlay
+       Component source: components/hero/hero-banner.html
+       Add more banners by extending the BANNERS array in the <script>.
+       ═══════════════════════════════════════════════════════════════ -->
+  <section
+    id="hero-banner"
+    class="relative w-full bg-brand-navy"
+    style="min-height: 420px;"
+    aria-label="Welcome banner">
+
+    <!-- Background image (set by JS) -->
+    <div
+      id="hero-bg"
+      class="absolute inset-0 bg-cover bg-center"
+      style="background-image: url('/assets/brand/gb_banner.png');"
+      aria-hidden="true">
+    </div>
+
+    <!-- Gradient overlay — clear at top, solid dark band at bottom for text -->
+    <div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.82) 100%);" aria-hidden="true"></div>
+
+    <!-- Content layer — pinned to bottom -->
+    <div class="relative z-10 flex flex-col items-center justify-end text-center px-6 pb-10"
+         style="min-height: 420px;">
+
+      <!-- Optional site-level label (set by JS, hidden until needed) -->
+      <p id="hero-label" class="hidden text-xs font-semibold uppercase tracking-widest text-brand-tan/90 mb-3 font-sans"></p>
+
+      <!-- Title -->
+      <h1 id="hero-title"
+          class="font-display font-bold text-3xl md:text-4xl lg:text-5xl text-white leading-tight mb-3 drop-shadow-md">
+        Welcome to Gokul Bhavan
+      </h1>
+
+      <!-- Subtitle -->
+      <p id="hero-subtitle"
+         class="text-white/90 text-base md:text-lg leading-relaxed mb-6 max-w-2xl font-sans drop-shadow">
+        Your path to Rāgānugā Bhakti — Seek the truth, Nurture under Guru, Immerse in sādhana
+        per the Gauḍīya Sampradāya, and strive to attain Goloka.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div id="hero-buttons" class="flex flex-col sm:flex-row gap-3 justify-center flex-wrap"></div>
+
+      <!-- Indicator dots (visible when >1 banner) -->
+      <div id="hero-dots" class="flex gap-2 mt-6" role="tablist" aria-label="Banner navigation"></div>
+
+    </div>
+  </section>
+
+  <script>
+    // ── Banner configuration ───────────────────────────────────────
+    // Each banner: image, label (optional), title, subtitle, buttons[]
+    // To add a new banner: append a new object to this array.
+    const BANNERS = [
+      {
+        image:    "/assets/brand/gb_banner.png",
+        label:    "",
+        title:    "Welcome to Gokul Bhavan",
+        subtitle: "Your path to Rāgānugā Bhakti — Seek the truth, Nurture under Guru, Immerse in sādhana per the Gauḍīya Sampradāya, and strive to attain Goloka.",
+        buttons:  [
+          { text: "Explore Programs", href: "/sites/gokulbhavan/programs.html", style: "primary"   },
+          { text: "Upcoming Events",  href: "/events.html",   style: "secondary" },
+        ],
+      },
+
+      // ── Future banners — uncomment and fill in when ready ─────
+      // {
+      //   image:    "/assets/brand/gita_banner.png",
+      //   label:    "Tamil Sangha",
+      //   title:    "Bhagavad Gita — கீதா அமிர்தம்",
+      //   subtitle: "Weekly study in Tamil and English, guided by Dr. Bhagavati Kanti.",
+      //   buttons:  [
+      //     { text: "Join the Study", href: "/schedules.html", style: "primary"   },
+      //     { text: "Register Now",   href: "/register.html",  style: "secondary" },
+      //   ],
+      // },
+    ];
+
+    // "random" — new pick each page load
+    // "sequential" — cycles in order (remembers position via sessionStorage)
+    const BANNER_MODE = "random";
+
+    // ── Button styles ──────────────────────────────────────────────
+    const BTN = {
+      primary:   "inline-flex items-center justify-center bg-brand-lotus hover:bg-pink-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow-lg",
+      secondary: "inline-flex items-center justify-center border-2 border-white/80 text-white hover:bg-white/15 font-semibold px-7 py-3 rounded-full transition-colors",
+    };
+
+    // ── Pick banner index ──────────────────────────────────────────
+    function pickIndex() {
+      if (BANNERS.length === 1) return 0;
+      if (BANNER_MODE === "sequential") {
+        const k = "gb_hero_idx";
+        const n = (parseInt(sessionStorage.getItem(k) ?? "-1", 10) + 1) % BANNERS.length;
+        sessionStorage.setItem(k, n);
+        return n;
+      }
+      return Math.floor(Math.random() * BANNERS.length);
+    }
+
+    // ── Apply banner ───────────────────────────────────────────────
+    function applyBanner(idx) {
+      const b = BANNERS[idx];
+
+      document.getElementById("hero-bg").style.backgroundImage = `url('${b.image}')`;
+
+      const labelEl = document.getElementById("hero-label");
+      if (b.label) { labelEl.textContent = b.label; labelEl.classList.remove("hidden"); }
+      else          { labelEl.classList.add("hidden"); }
+
+      document.getElementById("hero-title").innerHTML    = b.title;
+      document.getElementById("hero-subtitle").innerHTML = b.subtitle;
+
+      document.getElementById("hero-buttons").innerHTML = b.buttons.map(btn =>
+        `<a href="${btn.href}" class="${BTN[btn.style] || BTN.primary}">${btn.text}</a>`
+      ).join("");
+
+      const dots = document.getElementById("hero-dots");
+      if (BANNERS.length > 1) {
+        dots.innerHTML = BANNERS.map((_, i) =>
+          `<button role="tab" aria-selected="${i === idx}" onclick="applyBanner(${i})"
+            class="w-2.5 h-2.5 rounded-full transition-colors ${i === idx ? 'bg-white' : 'bg-white/35 hover:bg-white/60'}"
+            aria-label="Banner ${i + 1}"></button>`
+        ).join("");
+      }
+    }
+
+    applyBanner(pickIndex());
+  </script>
+
+
+  <!-- FEATURE CARDS -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+    <h2 class="font-display font-bold text-3xl text-brand-navy text-center mb-10">Our Community</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <div class="bg-brand-linen rounded-xl shadow-sm border border-brand-tan p-6 hover:shadow-md transition-shadow">
+        <div class="w-10 h-10 rounded-lg bg-brand-parchment border border-brand-tan flex items-center justify-center mb-4">
+          <span class="text-brand-lotus text-lg">🪷</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-brand-navy mb-2">Daily Programs</h3>
+        <p class="text-sm text-brand-slate leading-relaxed">
+          Join us for morning and evening arati, Srimad Bhagavatam class, and kirtan
+          programs held throughout the week.
+        </p>
+        <a href="/programs.html" class="inline-block mt-4 text-brand-lotus text-sm font-semibold hover:underline">
+          View schedule &rarr;
+        </a>
+      </div>
+
+      <div class="bg-brand-linen rounded-xl shadow-sm border border-brand-tan p-6 hover:shadow-md transition-shadow">
+        <div class="w-10 h-10 rounded-lg bg-brand-parchment border border-brand-tan flex items-center justify-center mb-4">
+          <span class="text-brand-gold text-lg">🎶</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-brand-navy mb-2">Gokul Bhajans</h3>
+        <p class="text-sm text-brand-slate leading-relaxed">
+          A growing collection of bhajans, kirtans, and devotional music resources
+          for the community.
+        </p>
+        <a href="https://gokulbhajans.com" class="inline-block mt-4 text-brand-lotus text-sm font-semibold hover:underline">
+          Visit site &rarr;
+        </a>
+      </div>
+
+      <div class="bg-brand-linen rounded-xl shadow-sm border border-brand-tan p-6 hover:shadow-md transition-shadow">
+        <div class="w-10 h-10 rounded-lg bg-brand-parchment border border-brand-tan flex items-center justify-center mb-4">
+          <span class="text-brand-navy text-lg">📚</span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-brand-navy mb-2">Pure Bhakti Base</h3>
+        <p class="text-sm text-brand-slate leading-relaxed">
+          An archive of classes, lectures, and study materials in the tradition of
+          pure devotional service.
+        </p>
+        <a href="https://purebhaktibase.com" class="inline-block mt-4 text-brand-lotus text-sm font-semibold hover:underline">
+          Visit site &rarr;
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ANNOUNCEMENTS -->
+  <section class="bg-brand-linen border-y border-brand-tan py-14 px-4">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="font-display font-bold text-2xl text-brand-navy mb-8 text-center">
+        Announcements
+      </h2>
+      <div class="space-y-4">
+        <div class="flex gap-4 bg-brand-parchment rounded-lg border border-brand-tan p-4">
+          <div class="shrink-0 w-1 rounded-full bg-brand-lotus"></div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-brand-slate mb-1">May 2025</p>
+            <p class="text-brand-navy font-medium text-sm">
+              Placeholder — class schedules and special event announcements will appear here,
+              managed by administrators through the CMS.
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-brand-parchment rounded-lg border border-brand-tan p-4">
+          <div class="shrink-0 w-1 rounded-full bg-brand-gold"></div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-brand-slate mb-1">April 2025</p>
+            <p class="text-brand-navy font-medium text-sm">
+              Placeholder — news, festival dates, and community updates listed here.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- FOOTER — paste contents of components/footer/footer.html -->
+
+  <!-- Donate Modal -->
+  <div id="donate-modal"
+       class="fixed inset-0 z-[100] items-center justify-center bg-black/60 hidden"
+       role="dialog" aria-modal="true" aria-labelledby="donate-title">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+      <div class="bg-brand-navy px-6 py-4 flex items-center justify-between">
+        <h2 id="donate-title" class="font-display font-bold text-white text-lg">Support Gokul Bhavan</h2>
+        <button onclick="closeDonateModal()" class="text-brand-tan hover:text-white transition-colors text-2xl leading-none" aria-label="Close">&times;</button>
+      </div>
+      <div class="px-6 py-6 space-y-5 text-brand-cobalt">
+        <p class="text-sm text-brand-slate leading-relaxed">
+          Gokul Bhavan is a 501(c)(3) non-profit. All donations are
+          <strong class="text-brand-navy">tax-deductible</strong> to the extent permitted by law.
+        </p>
+        <div class="border border-brand-tan rounded-xl p-4 bg-brand-parchment">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-3 h-3 rounded-full bg-purple-600 shrink-0"></span>
+            <span class="font-display font-bold text-brand-navy text-sm">Zelle Transfer</span>
+          </div>
+          <p class="text-xs text-brand-slate mb-1">Send to:</p>
+          <p class="font-mono text-sm font-semibold text-brand-cobalt select-all">bmraj@yahoo.com</p>
+        </div>
+        <div class="border border-brand-tan rounded-xl p-4 bg-brand-parchment">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
+            <span class="font-display font-bold text-brand-navy text-sm">PayPal</span>
+          </div>
+          <p class="text-xs text-brand-slate mb-1">Send to:</p>
+          <p class="font-mono text-sm font-semibold text-brand-cobalt select-all">bmraj@yahoo.com</p>
+          <p class="text-xs text-brand-slate mt-2">Use "Friends &amp; Family" to avoid transaction fees.</p>
+        </div>
+        <p class="text-xs text-center text-brand-slate">
+          Questions? Email <a href="mailto:bkdasa@gmail.com" class="text-brand-lotus hover:underline">bkdasa@gmail.com</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-brand-charcoal text-gray-400 font-sans">
+
+    <!-- Personality strip -->
+    <div class="bg-[#252525] border-b border-white/10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-20">
+
+          <div class="flex flex-col items-center text-center max-w-[180px]">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-brand-tan/60 shadow-lg mb-3">
+              <img src="/assets/brand/gurudeva.jpeg" alt="Yugācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja" class="w-full h-full object-cover object-top" />
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-tan mb-1">Founder</p>
+            <p class="font-display font-semibold text-white text-sm leading-snug">Yugācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja</p>
+          </div>
+
+          <div class="hidden sm:block w-px h-24 bg-white/10"></div>
+
+          <div class="flex flex-col items-center text-center max-w-[180px]">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-brand-tan/60 shadow-lg mb-3">
+              <img src="/assets/brand/guruji.jpg" alt="Dr. Bhagavati Kanti" class="w-full h-full object-cover object-top" />
+            </div>
+            <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-tan mb-1">The Teacher</p>
+            <p class="font-display font-semibold text-white text-sm leading-snug">Dr. Bhagavati Kanti</p>
+            <p class="text-xs text-gray-500 mt-0.5">M.Tech (IIT) · Ph.D</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        <div>
+          <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">About Us</h3>
+          <p class="text-xs leading-relaxed mb-5">
+            A 501(c)(3) non-profit community dedicated to sharing the timeless teachings
+            of the Gaudiya Sampradaya through programs, music, and study.
+          </p>
+          <button onclick="openDonateModal()"
+                  class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white text-xs font-bold uppercase tracking-wide px-4 py-2.5 rounded-full transition-colors shadow mb-3">
+            🪷 Donate
+          </button>
+          <p class="text-[11px] text-gray-600 leading-relaxed">Donations are tax-deductible to the extent permitted by law.</p>
+        </div>
+
+        <div>
+          <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Our Sites</h3>
+          <ul class="space-y-2.5 text-sm">
+            <li><a href="https://gokulbhavan.com"    class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Gokul Bhavan</a></li>
+            <li><a href="https://gokulbhajans.com"   class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Gokul Bhajans</a></li>
+            <li><a href="https://purebhaktibase.com" class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Pure Bhakti Base</a></li>
+            <li><a href="#"                           class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Tamil Sangha</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Quick Links</h3>
+          <ul class="space-y-2.5 text-sm">
+            <li><a href="/about.html"      class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> About</a></li>
+            <li><a href="/programs.html"   class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Programs</a></li>
+            <li><a href="/events.html"     class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Events</a></li>
+            <li><a href="/gallery.html"    class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Gallery</a></li>
+            <li><a href="/newsletter.html" class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Newsletter</a></li>
+            <li><a href="/contact.html"    class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Contact</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Connect</h3>
+          <ul class="space-y-3 text-sm">
+            <li>
+              <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer"
+                 class="flex items-center gap-3 hover:text-white transition-colors group">
+                <span class="w-7 h-7 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+                </span>
+                Facebook
+              </a>
+            </li>
+            <li>
+              <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+                 class="flex items-center gap-3 hover:text-white transition-colors group">
+                <span class="w-7 h-7 rounded-full bg-[#FF0000] flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+                </span>
+                YouTube
+              </a>
+            </li>
+            <li>
+              <a href="https://zoom.us/j/2294369627" target="_blank" rel="noopener noreferrer"
+                 class="flex items-center gap-3 hover:text-white transition-colors group">
+                <span class="w-7 h-7 rounded-full bg-[#2D8CFF] flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/></svg>
+                </span>
+                Weekly Online Program
+              </a>
+            </li>
+            <li>
+              <a href="mailto:bkdasa@gmail.com"
+                 class="flex items-center gap-3 hover:text-white transition-colors group">
+                <span class="w-7 h-7 rounded-full bg-brand-slate/60 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                </span>
+                bkdasa@gmail.com
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="border-t border-white/10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+        <p>&copy; <span id="footer-year"></span> Gokul Bhavan Gaudiya Matha. All rights reserved.</p>
+        <div class="flex items-center gap-4">
+          <a href="/privacy.html" class="hover:text-gray-300 transition-colors">Privacy Policy</a>
+          <span class="text-gray-700">|</span>
+          <a href="/terms.html"   class="hover:text-gray-300 transition-colors">Terms of Use</a>
+        </div>
+      </div>
+    </div>
+
+  </footer>
+
+  <script>
+    document.getElementById("footer-year").textContent = new Date().getFullYear();
+
+    function openDonateModal() {
+      const modal = document.getElementById("donate-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeDonateModal() {
+      const modal = document.getElementById("donate-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.style.overflow = "";
+    }
+
+    document.getElementById("donate-modal").addEventListener("click", function(e) {
+      if (e.target === this) closeDonateModal();
+    });
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") closeDonateModal();
+    });
+  </script>
+
+</body>
+</html>

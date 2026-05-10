@@ -1,0 +1,32 @@
+# ── macOS ──────────────────────────────────────────
+.DS_Store
+
+# ── Frontend (Astro / Node) ─────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+
+# Design prototype
+design/node_modules/
+design/tokens/output.css
+
+# ── Backend (Python / Flask) ────────────────────────
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.venv/
+backend/venv/
+backend/.env           # real secrets — never commit
+backend/instance/
+
+# Flask-Migrate generated (keep migrations/ folder, ignore SQLite dev db)
+*.db
+*.sqlite3
+
+# ── Editor ──────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+
+# ── Claude Code ─────────────────────────────────────
+.claude/

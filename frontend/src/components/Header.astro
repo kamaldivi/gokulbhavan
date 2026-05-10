@@ -1,0 +1,161 @@
+---
+/**
+ * Shared header — Tier 1 (brand strip) + Tier 2 (nav bar).
+ * Pass navItems from the layout to customise per page/sub-site.
+ */
+
+interface NavItem { label: string; href: string; }
+
+interface Props {
+  activePath?: string;
+  navItems?: NavItem[];
+}
+
+const DEFAULT_NAV: NavItem[] = [
+  { label: "Programs",   href: "/programs" },
+  { label: "Bhajans",    href: "/bhajans" },
+  { label: "Slokas",     href: "/slokas" },
+  { label: "Harikathas", href: "/harikathas" },
+  { label: "Sankirtans", href: "/sankirtans" },
+  { label: "Books",      href: "https://purebhaktibase.com/?tab=gurudev" },
+  { label: "Blogs",      href: "https://gokulbhajans.com/" },
+];
+
+const { activePath = "/", navItems = DEFAULT_NAV } = Astro.props;
+
+function isActive(href: string): boolean {
+  return href === "/"
+    ? activePath === "/"
+    : activePath.startsWith(href);
+}
+---
+
+<header class="sticky top-0 z-50 shadow-md">
+
+  <!-- ── Tier 1: Brand strip ─────────────────────────────────── -->
+  <div class="bg-brand-parchment border-b border-brand-tan">
+    <div class="flex items-center justify-between px-6 py-4">
+
+      <!-- Left: Logo + org name -->
+      <div class="flex items-center gap-4">
+        <a href="/" aria-label="Gokul Bhavan home">
+          <img src="/assets/logo.png" alt="Gokul Bhavan Gaudiya Matha seal"
+               class="h-16 w-auto object-contain" />
+        </a>
+        <div class="leading-snug">
+          <div class="font-display font-bold text-xl text-brand-navy tracking-tight">
+            Gokul Bhavan Gaudiya Matha
+          </div>
+          <div class="font-sans text-xs text-brand-slate mt-1">
+            A registered 501(c) non-profit organization
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Social icons + cross-site links -->
+      <div class="hidden sm:flex flex-col items-end gap-2.5">
+
+        <!-- Row 1: Social icons — all slate-toned for visual unity -->
+        <div class="flex items-center gap-1.5">
+          <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer"
+             title="Facebook" aria-label="Facebook"
+             class="w-7 h-7 rounded-full flex items-center justify-center bg-brand-slate hover:bg-brand-navy transition-colors">
+            <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+          </a>
+          <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+             title="YouTube" aria-label="YouTube"
+             class="w-7 h-7 rounded-full flex items-center justify-center bg-brand-slate hover:bg-brand-navy transition-colors">
+            <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+          </a>
+          <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09" target="_blank" rel="noopener noreferrer"
+             title="Weekly Online Program (Zoom)" aria-label="Zoom"
+             class="w-7 h-7 rounded-full flex items-center justify-center bg-brand-slate hover:bg-brand-navy transition-colors">
+            <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/></svg>
+          </a>
+          <a href="/contact" title="Contact us" aria-label="Contact"
+             class="w-7 h-7 rounded-full flex items-center justify-center bg-brand-slate hover:bg-brand-navy transition-colors">
+            <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          </a>
+        </div>
+
+        <!-- Row 2: Cross-site links — common across all GBGM sites -->
+        <nav aria-label="Cross-site links" class="flex items-center gap-3">
+          <a href="/"          class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors">Home</a>
+          <span class="text-brand-tan">·</span>
+          <a href="/about"     class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors">About</a>
+          <span class="text-brand-tan">·</span>
+          <a href="/krishna-bhakti"   class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors">Kṛṣṇa-bhakti</a>
+          <span class="text-brand-tan">·</span>
+          <a href="/holy-days" class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors">Holy Days</a>
+          <span class="text-brand-tan">·</span>
+          <a href="/admin"     class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors">Admin</a>
+        </nav>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tier 2: Navigation bar ───────────────────────────────── -->
+  <nav class="bg-brand-slate" aria-label="Primary navigation">
+    <div class="px-6 flex items-center justify-between">
+
+      <ul class="flex items-center gap-1 h-11 text-sm font-semibold font-sans">
+        {navItems.map((item) => (
+          <li>
+            <a href={item.href}
+               class={isActive(item.href)
+                 ? "px-4 py-2 rounded bg-brand-navy text-white"
+                 : "px-4 py-2 rounded text-brand-linen hover:bg-brand-navy hover:text-white transition-colors"}>
+              {item.label}
+            </a>
+          </li>
+        ))}
+        <li class="ml-4 md:hidden">
+          <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+                  class="px-3 py-2 text-brand-linen hover:text-white" aria-label="Toggle menu">
+            ☰
+          </button>
+        </li>
+      </ul>
+
+      <!-- Right: Register CTA -->
+      <div class="hidden md:flex items-center gap-2">
+        <a href="/register"
+           class="inline-flex items-center gap-1.5 bg-brand-lotus hover:bg-pink-700 text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors shadow">
+          Register
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Mobile dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden bg-brand-navy px-6 pb-3">
+      <ul class="flex flex-col gap-1 text-sm font-semibold">
+        {navItems.map((item) => (
+          <li>
+            <a href={item.href}
+               class={isActive(item.href)
+                 ? "block py-2 text-white font-bold"
+                 : "block py-2 text-brand-linen hover:text-white"}>
+              {item.label}
+            </a>
+          </li>
+        ))}
+        <li class="pt-2 border-t border-white/20 mt-1">
+          <a href="/register"
+             class="inline-flex items-center justify-center w-full bg-brand-lotus hover:bg-pink-700 text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+            Register
+          </a>
+        </li>
+        <li class="pt-2 border-t border-white/20 mt-1 flex gap-4">
+          <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">Facebook</a>
+          <a href="https://www.youtube.com/@bkdasa"      target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">YouTube</a>
+          <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09" target="_blank" rel="noopener noreferrer" class="text-brand-linen hover:text-white text-xs">Zoom</a>
+          <a href="/contact"                                                                     class="text-brand-linen hover:text-white text-xs">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+</header>

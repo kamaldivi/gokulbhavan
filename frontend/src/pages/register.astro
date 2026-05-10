@@ -1,0 +1,368 @@
+---
+/**
+ * Registration page — gokulbhavan.com/register
+ * Four sections: Personal Details, Address, Phone, WhatsApp.
+ * Uses div-based section cards (not fieldset/legend) to avoid Tailwind Preflight conflicts.
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+
+const COUNTRY_CODES = [
+  "+1 (US/CA)", "+7 (RU/KZ)", "+20 (EG)", "+27 (ZA)", "+30 (GR)",
+  "+31 (NL)", "+32 (BE)", "+33 (FR)", "+34 (ES)", "+36 (HU)",
+  "+39 (IT)", "+40 (RO)", "+41 (CH)", "+43 (AT)", "+44 (GB)",
+  "+45 (DK)", "+46 (SE)", "+47 (NO)", "+48 (PL)", "+49 (DE)",
+  "+51 (PE)", "+52 (MX)", "+54 (AR)", "+55 (BR)", "+56 (CL)",
+  "+57 (CO)", "+58 (VE)", "+60 (MY)", "+61 (AU)", "+62 (ID)",
+  "+63 (PH)", "+64 (NZ)", "+65 (SG)", "+66 (TH)", "+81 (JP)",
+  "+82 (KR)", "+84 (VN)", "+86 (CN)", "+90 (TR)", "+91 (IN)",
+  "+92 (PK)", "+93 (AF)", "+94 (LK)", "+95 (MM)", "+98 (IR)",
+  "+212 (MA)", "+213 (DZ)", "+216 (TN)", "+218 (LY)", "+234 (NG)",
+  "+249 (SD)", "+251 (ET)", "+254 (KE)", "+255 (TZ)", "+256 (UG)",
+  "+260 (ZM)", "+263 (ZW)", "+351 (PT)", "+352 (LU)", "+353 (IE)",
+  "+357 (CY)", "+358 (FI)", "+359 (BG)", "+370 (LT)", "+380 (UA)",
+  "+381 (RS)", "+385 (HR)", "+386 (SI)", "+420 (CZ)", "+421 (SK)",
+  "+966 (SA)", "+971 (AE)", "+972 (IL)", "+974 (QA)", "+998 (UZ)",
+];
+
+const COUNTRIES = [
+  ["US", "United States"], ["CA", "Canada"], ["GB", "United Kingdom"],
+  ["AU", "Australia"], ["IN", "India"], ["SG", "Singapore"],
+  ["MY", "Malaysia"], ["NZ", "New Zealand"], ["ZA", "South Africa"],
+  ["DE", "Germany"], ["FR", "France"], ["NL", "Netherlands"],
+  ["SE", "Sweden"], ["NO", "Norway"], ["DK", "Denmark"],
+  ["FI", "Finland"], ["CH", "Switzerland"], ["AT", "Austria"],
+  ["BE", "Belgium"], ["IE", "Ireland"], ["PT", "Portugal"],
+  ["ES", "Spain"], ["IT", "Italy"], ["PL", "Poland"],
+  ["CZ", "Czech Republic"], ["JP", "Japan"], ["KR", "South Korea"],
+  ["CN", "China"], ["ID", "Indonesia"], ["PH", "Philippines"],
+  ["TH", "Thailand"], ["VN", "Vietnam"], ["LK", "Sri Lanka"],
+  ["PK", "Pakistan"], ["BD", "Bangladesh"], ["NP", "Nepal"],
+  ["AE", "UAE"], ["SA", "Saudi Arabia"], ["QA", "Qatar"],
+  ["KW", "Kuwait"], ["BH", "Bahrain"], ["OM", "Oman"],
+  ["MX", "Mexico"], ["BR", "Brazil"], ["AR", "Argentina"],
+  ["CO", "Colombia"], ["NG", "Nigeria"], ["KE", "Kenya"],
+  ["ZW", "Zimbabwe"], ["OTHER", "Other"],
+];
+---
+
+<Base title="Register" activePath="/register"
+     description="Join the Gokul Bhavan community. Register to receive updates on programs and events.">
+
+  <PageHero
+    title="Register"
+    description="Join the Gokul Bhavan community. Fill in the details below to create your profile."
+  />
+
+  <!-- Form card -->
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+    <div class="bg-white rounded-2xl shadow-md border border-brand-tan overflow-hidden">
+
+      <!-- Card header strip -->
+      <div class="bg-brand-parchment border-b border-brand-tan px-8 py-5">
+        <h2 class="font-display font-bold text-lg text-brand-navy">User Registration</h2>
+        <p class="text-brand-slate text-sm mt-0.5">Please fill in all required fields.</p>
+      </div>
+
+      <!-- Form body -->
+      <div class="px-6 sm:px-8 py-8">
+        <form id="reg-form" novalidate>
+
+          <!-- ── Section label helper ──────────────────────────────
+               Pattern: labelled div card — avoids fieldset/legend
+               Tailwind Preflight issues (legend overlaps border).
+          ──────────────────────────────────────────────────────── -->
+
+          <!-- ── 1. Personal Details ─────────────────────────────── -->
+          <div class="mb-8">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-brand-slate mb-3">
+              Personal Details
+            </p>
+            <div class="border border-brand-tan rounded-xl bg-brand-parchment/40 p-6 space-y-4">
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label for="first_name" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    First Name <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="text" id="first_name" name="first_name"
+                         placeholder="Jane" maxlength="100" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="last_name" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Last Name <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="text" id="last_name" name="last_name"
+                         placeholder="Smith" maxlength="100" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="email" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                  Email Address <span class="text-brand-lotus">*</span>
+                </label>
+                <input type="email" id="email" name="email"
+                       placeholder="jane@example.com" maxlength="255" required
+                       class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label for="age" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Age <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="number" id="age" name="age"
+                         placeholder="25" min="1" max="120" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Gender <span class="text-brand-lotus">*</span>
+                  </span>
+                  <div class="flex gap-3 pt-1">
+                    <label class="flex items-center gap-2 text-sm text-brand-navy cursor-pointer border border-brand-tan rounded-lg px-4 py-2 hover:border-brand-navy transition has-[:checked]:border-brand-navy has-[:checked]:bg-brand-navy/8 bg-white">
+                      <input type="radio" name="gender" value="Male" class="accent-brand-navy" /> Male
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-brand-navy cursor-pointer border border-brand-tan rounded-lg px-4 py-2 hover:border-brand-navy transition has-[:checked]:border-brand-navy has-[:checked]:bg-brand-navy/8 bg-white">
+                      <input type="radio" name="gender" value="Female" class="accent-brand-navy" /> Female
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── 2. Address ───────────────────────────────────────── -->
+          <div class="mb-8">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-brand-slate mb-3">
+              Address
+            </p>
+            <div class="border border-brand-tan rounded-xl bg-brand-parchment/40 p-6 space-y-4">
+
+              <div class="flex flex-col gap-1.5">
+                <label for="address_line1" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                  Address Line 1 <span class="text-brand-lotus">*</span>
+                </label>
+                <input type="text" id="address_line1" name="address_line1"
+                       placeholder="House / Flat No., Street Name" maxlength="255" required
+                       class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="address_line2" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                  Address Line 2
+                  <span class="font-normal normal-case tracking-normal text-brand-slate/60">(optional)</span>
+                </label>
+                <input type="text" id="address_line2" name="address_line2"
+                       placeholder="Apartment, Suite, Building, Landmark…" maxlength="255"
+                       class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label for="city" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    City / Town <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="text" id="city" name="city"
+                         placeholder="New York" maxlength="100" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="state_province" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    State / Province
+                    <span class="font-normal normal-case tracking-normal text-brand-slate/60">(optional)</span>
+                  </label>
+                  <input type="text" id="state_province" name="state_province"
+                         placeholder="California" maxlength="100"
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label for="postal_code" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Postal / ZIP Code <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="text" id="postal_code" name="postal_code"
+                         placeholder="10001" maxlength="20" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="country" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Country <span class="text-brand-lotus">*</span>
+                  </label>
+                  <select id="country" name="country" required
+                          class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition">
+                    <option value="">— Select Country —</option>
+                    {COUNTRIES.map(([code, name]) => (
+                      <option value={code}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── 3. Phone Number ──────────────────────────────────── -->
+          <div class="mb-8">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-brand-slate mb-3">
+              Phone Number
+            </p>
+            <div class="border border-brand-tan rounded-xl bg-brand-parchment/40 p-6">
+              <div class="flex gap-3">
+                <div class="flex flex-col gap-1.5 w-44 shrink-0">
+                  <label for="country_code" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Country Code <span class="text-brand-lotus">*</span>
+                  </label>
+                  <select id="country_code" name="country_code" required
+                          class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition">
+                    <option value="">— Code —</option>
+                    {COUNTRY_CODES.map((code) => (
+                      <option value={code}>{code}</option>
+                    ))}
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1.5 flex-1">
+                  <label for="phone_number" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+                    Phone Number <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="tel" id="phone_number" name="phone_number"
+                         placeholder="5551234567" maxlength="15" required
+                         class="rounded-lg border border-brand-tan bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 4. WhatsApp Number ───────────────────────────────── -->
+          <div class="mb-8">
+            <div class="flex items-center gap-2 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#25D366">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-800">WhatsApp Number</p>
+            </div>
+            <div class="border border-emerald-200 rounded-xl bg-emerald-50/60 p-6">
+              <div class="flex gap-3">
+                <div class="flex flex-col gap-1.5 w-44 shrink-0">
+                  <label for="wa_country_code" class="text-xs font-semibold text-emerald-800 uppercase tracking-wide">
+                    Country Code <span class="text-brand-lotus">*</span>
+                  </label>
+                  <select id="wa_country_code" name="wa_country_code" required
+                          class="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm text-brand-navy focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition">
+                    <option value="">— Code —</option>
+                    {COUNTRY_CODES.map((code) => (
+                      <option value={code}>{code}</option>
+                    ))}
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1.5 flex-1">
+                  <label for="wa_phone_number" class="text-xs font-semibold text-emerald-800 uppercase tracking-wide">
+                    WhatsApp Number <span class="text-brand-lotus">*</span>
+                  </label>
+                  <input type="tel" id="wa_phone_number" name="wa_phone_number"
+                         placeholder="5551234567" maxlength="15" required
+                         class="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm text-brand-navy placeholder-brand-slate/40 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error / Success banners -->
+          <div id="form-error"
+               class="hidden mb-5 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          </div>
+          <div id="form-success"
+               class="hidden mb-5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            Thank you for registering! We will be in touch shortly.
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="submit-btn"
+                  class="w-full bg-brand-navy hover:bg-brand-slate text-white font-display font-bold text-sm uppercase tracking-widest py-3.5 rounded-xl transition-colors shadow-sm">
+            Register →
+          </button>
+
+          <p class="text-center text-xs text-brand-slate mt-4">
+            Fields marked <span class="text-brand-lotus font-semibold">*</span> are required.
+          </p>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+</Base>
+
+<script>
+  const form       = document.getElementById("reg-form") as HTMLFormElement;
+  const errorBox   = document.getElementById("form-error")!;
+  const successBox = document.getElementById("form-success")!;
+  const submitBtn  = document.getElementById("submit-btn") as HTMLButtonElement;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.add("hidden");
+    successBox.classList.add("hidden");
+
+    const required = form.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[required]");
+    let firstInvalid: HTMLElement | null = null;
+    required.forEach((el) => {
+      if (!el.value.trim()) {
+        el.classList.add("border-red-400", "ring-2", "ring-red-300");
+        firstInvalid ??= el;
+      } else {
+        el.classList.remove("border-red-400", "ring-2", "ring-red-300");
+      }
+    });
+
+    const genderChecked = form.querySelector<HTMLInputElement>("input[name=gender]:checked");
+    if (!genderChecked) firstInvalid ??= form.querySelector<HTMLElement>("input[name=gender]");
+
+    if (firstInvalid) {
+      errorBox.textContent = "Please fill in all required fields.";
+      errorBox.classList.remove("hidden");
+      firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Registering…";
+
+    try {
+      const data = Object.fromEntries(new FormData(form));
+      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+      const res = await fetch(`${apiBase}/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        form.reset();
+        successBox.classList.remove("hidden");
+        successBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        const body = await res.json().catch(() => ({}));
+        errorBox.textContent = body.message ?? "Registration failed. Please try again.";
+        errorBox.classList.remove("hidden");
+      }
+    } catch {
+      errorBox.textContent = "Could not connect to the server. Please try again later.";
+      errorBox.classList.remove("hidden");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Register →";
+    }
+  });
+
+  form.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select").forEach((el) => {
+    el.addEventListener("input", () =>
+      el.classList.remove("border-red-400", "ring-2", "ring-red-300")
+    );
+  });
+</script>

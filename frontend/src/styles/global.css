@@ -1,0 +1,19 @@
+/* Entry point — Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: theme("fontFamily.sans");
+    background-color: theme("colors.brand.parchment");
+    color: theme("colors.brand.navy");
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme("fontFamily.display");
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: theme("colors.brand.navy");
+  }
+}

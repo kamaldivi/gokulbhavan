@@ -1,0 +1,189 @@
+---
+/**
+ * Shared footer — 4-col grid + donate modal.
+ * Background matches the nav bar (brand-slate).
+ */
+---
+
+<!-- Donate Modal -->
+<div id="donate-modal"
+     class="fixed inset-0 z-[100] items-center justify-center bg-black/60 hidden"
+     role="dialog" aria-modal="true" aria-labelledby="donate-title">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+    <div class="bg-brand-navy px-6 py-4 flex items-center justify-between">
+      <h2 id="donate-title" class="font-display font-bold text-white text-lg">Support Gokul Bhavan</h2>
+      <button id="donate-close" class="text-brand-tan hover:text-white text-2xl leading-none">&times;</button>
+    </div>
+    <div class="px-6 py-6 space-y-5 text-brand-navy">
+      <p class="text-sm text-brand-slate">Gokul Bhavan is a 501(c)(3) non-profit. All donations are <strong class="text-brand-navy">tax-deductible</strong>.</p>
+      <div class="border border-brand-tan rounded-xl p-4 bg-brand-parchment">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-3 h-3 rounded-full bg-purple-600 shrink-0"></span>
+          <span class="font-display font-bold text-brand-navy text-sm">Zelle Transfer</span>
+        </div>
+        <p class="text-xs text-brand-slate mb-1">Send to:</p>
+        <p class="font-mono text-sm font-semibold text-brand-navy select-all">bmraj@yahoo.com</p>
+      </div>
+      <div class="border border-brand-tan rounded-xl p-4 bg-brand-parchment">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500 shrink-0"></span>
+          <span class="font-display font-bold text-brand-navy text-sm">PayPal</span>
+        </div>
+        <p class="text-xs text-brand-slate mb-1">Send to:</p>
+        <p class="font-mono text-sm font-semibold text-brand-navy select-all">bmraj@yahoo.com</p>
+      </div>
+      <p class="text-xs text-center text-brand-slate">
+        Questions? <a href="mailto:bkdasa@gmail.com" class="text-brand-lotus hover:underline">bkdasa@gmail.com</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer class="bg-brand-cobalt text-white/80 font-sans">
+
+  <!-- 4-col grid -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
+
+      <!-- Col 1: Founder & Teacher -->
+      <div class="flex flex-col items-center text-center sm:items-start sm:text-left">
+        <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-1">Founder · Teacher</h3>
+        <p class="text-[11px] text-white/50 leading-relaxed mb-4">
+          Under the divine guidance of Yuga-ācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja
+        </p>
+        <img src="/assets/gurudev_guruji.png"
+             alt="Yugācārya Śrīla Bhaktivedānta Nārāyaṇa Gosvāmī Mahārāja and Dr. Bhagavati Kanti"
+             class="w-full max-w-[180px] rounded-xl object-cover mb-3 border border-white/10 shadow" />
+        <p class="font-display font-semibold text-white text-sm leading-snug mb-0.5">Dr. Bhagavati Kanti</p>
+        <p class="text-xs text-white/60">M.Tech (IIT) · Ph.D</p>
+      </div>
+
+      <!-- Col 2: Donate -->
+      <div>
+        <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Support Our Mission</h3>
+        <p class="text-xs leading-relaxed text-white/60 mb-5">
+          Gokul Bhavan is a 501(c)(3) non-profit dedicated to sharing the timeless teachings of the Gaudiya Sampradaya. All donations are tax-deductible.
+        </p>
+        <button id="donate-open"
+                class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white text-xs font-bold uppercase tracking-wide px-5 py-2.5 rounded-full transition-colors shadow">
+          🪷 Donate
+        </button>
+      </div>
+
+      <!-- Col 3: Explore — mirrors header cross-site links -->
+      <div>
+        <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Explore</h3>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="/about"        class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> About</a></li>
+          <li><a href="/krishna-bhakti"     class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Kṛṣṇa-bhakti</a></li>
+          <li><a href="/holy-days"   class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Holy Days</a></li>
+          <li>
+            <a href="https://purebhaktibase.com/?tab=gurudev" target="_blank" rel="noopener noreferrer"
+               class="hover:text-white transition-colors flex items-center gap-2">
+              <span class="text-brand-tan">›</span> Books
+            </a>
+          </li>
+          <li>
+            <a href="https://gokulbhajans.com/" target="_blank" rel="noopener noreferrer"
+               class="hover:text-white transition-colors flex items-center gap-2">
+              <span class="text-brand-tan">›</span> Blogs
+            </a>
+          </li>
+          <li><a href="/contact"   class="hover:text-white transition-colors flex items-center gap-2"><span class="text-brand-tan">›</span> Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Connect -->
+      <div>
+        <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Connect</h3>
+        <ul class="space-y-3 text-sm">
+          <li>
+            <a href="https://www.facebook.com/gokulbhajan" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 hover:text-white transition-colors">
+              <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+              </span>
+              Facebook
+            </a>
+          </li>
+          <li>
+            <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 hover:text-white transition-colors">
+              <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+              </span>
+              YouTube
+            </a>
+          </li>
+          <li>
+            <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 hover:text-white transition-colors">
+              <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/></svg>
+              </span>
+              Weekly Online Program
+            </a>
+          </li>
+          <li>
+            <a href="/contact"
+               class="flex items-center gap-3 hover:text-white transition-colors">
+              <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              </span>
+              Contact Us
+            </a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+      <p>&copy; <span id="footer-year"></span> Gokul Bhavan Gaudiya Matha · gokulbhavan.org · All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="/privacy" class="hover:text-white/70 transition-colors">Privacy Policy</a>
+        <span class="text-white/20">|</span>
+        <a href="/terms"   class="hover:text-white/70 transition-colors">Terms of Use</a>
+      </div>
+    </div>
+  </div>
+
+</footer>
+
+<script>
+  // Footer year
+  document.getElementById("footer-year")!.textContent = String(new Date().getFullYear());
+
+  // Donate modal — all wiring via addEventListener (Astro scripts are ES modules;
+  // functions defined here are not accessible from onclick="" attributes)
+  const modal     = document.getElementById("donate-modal")!;
+  const openBtn   = document.getElementById("donate-open")!;
+  const closeBtn  = document.getElementById("donate-close")!;
+
+  function openModal() {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal() {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    document.body.style.overflow = "";
+  }
+
+  openBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+
+  // Click outside to close
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Escape key to close
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+</script>

@@ -1,0 +1,24 @@
+# Web framework
+Flask==3.1.0
+Flask-CORS==5.0.0
+
+# ORM + MariaDB driver
+Flask-SQLAlchemy==3.1.1
+PyMySQL==1.1.1        # MariaDB/MySQL driver (pure Python, no C libs needed)
+
+# Auth for admin
+Flask-Login==0.6.3
+Werkzeug==3.1.3        # password hashing (included with Flask, pinned for compat)
+
+# Forms (admin UI)
+WTForms==3.2.1
+Flask-WTF==1.2.2
+
+# DB migrations
+Flask-Migrate==4.1.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# WSGI server for IONOS (prod) — not needed locally
+# gunicorn is not available on IONOS mod_wsgi; wsgi.py is the entry point

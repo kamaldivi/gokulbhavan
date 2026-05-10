@@ -1,0 +1,43 @@
+/* Entry point for Tailwind — import this file for tw:watch/build */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens as CSS custom properties — shared across all sites */
+@layer base {
+  :root {
+    /* Colors — devotional palette (golden cream / deep navy / magenta / gold) */
+    --color-parchment: #FFF7DF;
+    --color-linen:     #FFFDF6;
+    --color-tan:       #EADDB7;
+    --color-slate:     #4B6981;
+    --color-navy:      #082A4A;
+    --color-cobalt:    #123C69;
+    --color-lotus:     #C94277;
+    --color-gold:      #E8A207;
+
+    /* Typography */
+    --font-sans:        "Inter", system-ui, sans-serif;
+    --font-display:     "Manrope", "Inter", system-ui, sans-serif;
+    --font-devanagari:  "Noto Sans Devanagari", sans-serif;
+    --font-tamil:       "Noto Sans Tamil", sans-serif;
+
+    /* Layout */
+    --header-top-height: auto;   /* grows with banner image */
+    --nav-height: 3rem;
+  }
+
+  /* Default body styles */
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-parchment);
+    color: var(--color-navy);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--color-navy);
+  }
+}

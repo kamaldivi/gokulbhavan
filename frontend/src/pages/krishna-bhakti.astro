@@ -1,0 +1,253 @@
+---
+/**
+ * Kṛṣṇa-bhakti page — gokulbhavan.org/krishna-bhakti
+ * Seven foundational elements of Gauḍīya devotee life.
+ * Card layout with image + content, alternating background, sticky step nav.
+ */
+import Base from "@layouts/Base.astro";
+
+const STEPS = [
+  {
+    id: "parampara",
+    number: 1,
+    title: "Paramparā",
+    subtitle: "Receiving Divine Knowledge Through Disciplic Succession",
+    image: "/assets/foundations/parampara.png",
+    imageAlt: "Guru-paramparā disciplic succession",
+    body: [
+      "In the Vedic tradition, spiritual knowledge descends through paramparā, the disciplic succession of realized gurus. This sacred current begins from the Supreme Lord and is carried by pure devotees who preserve and share divine truth without distortion.",
+      "Gokul Bhavan Gauḍīya Maṭha follows the Śrī Brahma-Madhva-Gauḍīya Sampradāya, the line of Śrī Caitanya Mahāprabhu and the Six Gosvāmīs of Vṛndāvana.",
+    ],
+    practice: "Honor the guru-paramparā and receive spiritual understanding through authorized Vaiṣṇava teachings.",
+  },
+  {
+    id: "guru",
+    number: 2,
+    title: "Śrī Guru",
+    subtitle: "The Gateway to Divine Service",
+    image: "/assets/foundations/sriguru.png",
+    imageAlt: "Śrī Guru — spiritual master",
+    body: [
+      "Without the mercy of śrī guru, it is not possible to properly understand Bhagavān or enter deeply into devotional life. Even when Śrī Kṛṣṇa appears in this world, He accepts a guru and worships the guru — to set an example for us to follow.",
+      "When a sincere seeker deeply desires to surrender to Bhagavān and perform devotion, Śrī Kṛṣṇa mercifully sends a spiritual master who connects that soul to Śrī Kṛṣṇa.",
+    ],
+    sanskrit: {
+      verse: "Prathamaṁ tu guruṁ pūjyaṁ\nTataś caiva mamārcanam\nKurvan siddhim avāpnoti\nHy anyathā niṣphalaṁ bhavet",
+      meaning: "Lord Kṛṣṇa says, \"One should worship his guru first and then only worship Me. By following this process, one attains perfection; otherwise, one's worship becomes fruitless.\"",
+    },
+    practice: "Seek shelter, instruction, and service under śrī guru with sincerity and humility.",
+  },
+  {
+    id: "gauranga",
+    number: 3,
+    title: "Śrī Gaurāṅga",
+    subtitle: "The Golden Avatāra of Divine Mercy",
+    image: "/assets/foundations/gauranga.png",
+    imageAlt: "Śrī Caitanya Mahāprabhu and saṅkīrtana",
+    body: [
+      "Śrī Caitanya Mahāprabhu, also known as Śrī Gaurāṅga because of His golden complexion, is Śrī Kṛṣṇa appearing in the mood and complexion of Śrīmatī Rādhārāṇī.",
+      "He inaugurated the Hari nāma-saṅkīrtana movement, the yuga-dharma for this age of Kali. He freely distributed the path for prema-bhakti.",
+    ],
+    practice: "Take shelter of Śrī Caitanya Mahāprabhu's mercy through nāma-saṅkīrtana, hari-kathā, humility, and service to Vaiṣṇavas.",
+  },
+  {
+    id: "bhakti",
+    number: 4,
+    title: "Bhakti",
+    subtitle: "Hearing, Chanting, and Remembering the Lord",
+    image: "/assets/foundations/bhakti.png",
+    imageAlt: "Hearing hari-kathā in satsaṅga",
+    body: [
+      "The Śrīmad-Bhāgavatam describes nine processes of bhakti, beginning with śravaṇam, hearing. Through hearing hari-kathā about Śrī Kṛṣṇa's names, forms, qualities, pastimes, devotees, and associates, devotion awakens.",
+    ],
+    sanskrit: {
+      verse: "Śravaṇaṁ kīrtanaṁ viṣṇoḥ\nSmaraṇaṁ pāda-sevanam\nArcanaṁ vandanaṁ dāsyaṁ\nSakhyam ātma-nivedanam",
+      meaning: "The nine processes of bhakti are hearing, chanting, remembering, serving the Lord's lotus feet, worshiping, offering prayers, becoming a servant, developing friendship, and fully offering oneself to the Lord.",
+    },
+    practice: "Regularly hear hari-kathā, chant the holy names, and remember Śrī Kṛṣṇa with devotion.",
+  },
+  {
+    id: "nama",
+    number: 5,
+    title: "Kṛṣṇa-Nāma",
+    subtitle: "The Supreme Practice for This Age",
+    image: "/assets/foundations/chanting.png",
+    imageAlt: "Japa beads and chanting the holy names",
+    body: [
+      "Nothing is comparable to the holy name of Śrī Kṛṣṇa. Nāma-japa and nāma-saṅkīrtana purify the heart, awaken remembrance, and gradually lead the devotee toward loving service.",
+    ],
+    table: {
+      headers: ["Level", "Rounds", "Practice Note"],
+      rows: [
+        ["Guru Āśraya", "1", "Beginner level"],
+        ["Nitāi Āśraya", "4", "Advancing in practice"],
+        ["Gaura Āśraya", "8", "Enthusiastic and receiving mercy"],
+        ["Hari-Nāma", "16", "Steady chanting and preparation for deeper commitment"],
+        ["Lakṣeśvara", "64+", "Advanced dedication to nāma-bhajana"],
+      ],
+    },
+    practice: "Chant daily with sincerity, attention, humility, and dependence on mercy.",
+  },
+  {
+    id: "temple",
+    number: 6,
+    title: "Home Temple",
+    subtitle: "Making the Home a Place of Devotion",
+    image: "/assets/foundations/temple.png",
+    imageAlt: "Home temple altar with deities",
+    body: [
+      "The heart of every home should be a sacred place for worship. A home temple reminds the family that Śrī Śrī Rādhā-Kṛṣṇa are the true center and masters of the home, and that all family members are Their servants.",
+      "The altar should be maintained with cleanliness, reverence, simplicity, and a mood of exclusive devotion. Daily worship, chanting, and remembrance help transform ordinary family life into devotional life.",
+    ],
+    practice: "Establish a clean, peaceful, and devotional home altar that supports worship, chanting, and remembrance.",
+  },
+  {
+    id: "initiation",
+    number: 7,
+    title: "Initiation",
+    subtitle: "Entering a Life of Commitment and Service",
+    image: "/assets/foundations/initiation.png",
+    imageAlt: "Disciple receiving instruction from guru",
+    body: [
+      "Initiation marks a sacred commitment between śrī guru and the disciple. Through initiation, the disciple accepts spiritual shelter, receives mantras according to qualification, and commits to a regulated devotional life.",
+      "The initiated devotee should regularly practice sādhana, attend satsaṅga, serve guru and Vaiṣṇavas, chant the holy names, and live a life of humility, purity, and devotion.",
+    ],
+    practice: "Accept initiation as a sacred responsibility and live daily in service to śrī guru, Vaiṣṇavas, and Śrī Śrī Rādhā-Kṛṣṇa.",
+  },
+];
+---
+
+<Base title="Kṛṣṇa-bhakti" activePath="/krishna-bhakti"
+     description="Seven foundations of Gauḍīya devotee life — paramparā, śrī guru, Śrī Gaurāṅga, bhakti, Kṛṣṇa-nāma, home temple, and initiation.">
+
+  <!-- ── Hero ──────────────────────────────────────────────────── -->
+  <div class="bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-14 text-center">
+
+      <h1 class="font-display font-bold text-3xl md:text-4xl text-brand-navy mb-4 leading-tight">
+        The Path to Kṛṣṇa-bhakti
+      </h1>
+      <p class="text-brand-slate text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
+        The 7 pillars guide the devotee toward a life of sincere practice, spiritual discipline, family devotion, guru-sevā, Vaiṣṇava-sevā, and loving remembrance of  <b>Śrī Śrī Rādhā-Kṛṣṇa</b>.
+      </p>
+      <a href="/register"
+         class="mt-6 inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white font-display font-bold text-sm uppercase tracking-widest px-7 py-3.5 rounded-full transition-colors shadow">
+        Begin Your Journey
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Sticky step nav ────────────────────────────────────────── -->
+  <div class="sticky top-[88px] z-40 bg-brand-linen/95 backdrop-blur border-b border-brand-tan">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-2.5 overflow-x-auto">
+      <div class="flex items-center gap-2 min-w-max">
+        {STEPS.map((s) => (
+          <a href={`#${s.id}`}
+             class="inline-flex items-center gap-1.5 border border-brand-tan rounded-full px-3 py-1.5 text-sm font-semibold text-brand-navy bg-white hover:bg-brand-navy hover:text-white hover:border-brand-navy transition-colors whitespace-nowrap">
+            <span class="w-5 h-5 rounded-full bg-white border border-brand-tan flex items-center justify-center text-xs font-bold text-brand-navy shrink-0">{s.number}</span>
+            {s.title}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step cards ─────────────────────────────────────────────── -->
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    {STEPS.map((s, i) => (
+      <section id={s.id}
+               class={`rounded-2xl border border-brand-tan shadow-sm overflow-hidden scroll-mt-36 ${i % 2 === 0 ? "bg-white" : "bg-brand-parchment/60"}`}>
+        <div class="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-0">
+
+          <!-- Image column -->
+          <div class="p-5 md:p-6 flex">
+            <div class="w-full rounded-xl overflow-hidden border-2 border-brand-gold shadow-md">
+              <img src={s.image} alt={s.imageAlt}
+                   class="w-full h-64 object-cover object-center" />
+            </div>
+          </div>
+
+          <!-- Content column -->
+          <div class="px-6 py-6 md:pl-2 md:pr-8 md:py-8 space-y-4">
+
+            <!-- Step badge + heading -->
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {s.number}
+              </span>
+              <div>
+                <h2 class="font-display font-bold text-xl text-brand-navy leading-tight mb-0.5">
+                  {s.title}
+                </h2>
+                <p class="text-brand-slate text-sm font-semibold">{s.subtitle}</p>
+              </div>
+            </div>
+
+            <!-- Body paragraphs -->
+            <div class="space-y-3">
+              {s.body.map((para) => (
+                <p class="text-sm text-brand-slate leading-relaxed">{para}</p>
+              ))}
+            </div>
+
+            <!-- Sanskrit verse + meaning -->
+            {"sanskrit" in s && s.sanskrit && (
+              <div class="space-y-3">
+                <div class="border-l-4 border-brand-gold bg-brand-gold/10 rounded-r-xl px-4 py-3">
+                  <p class="text-sm text-brand-navy italic leading-relaxed whitespace-pre-line font-serif">
+                    {s.sanskrit.verse}
+                  </p>
+                </div>
+                <div class="border border-brand-lotus/25 bg-brand-lotus/5 rounded-xl px-4 py-3">
+                  <p class="text-sm text-brand-slate leading-relaxed">{s.sanskrit.meaning}</p>
+                </div>
+              </div>
+            )}
+
+            <!-- Japa rounds table -->
+            {"table" in s && s.table && (
+              <div class="rounded-xl overflow-hidden border border-brand-tan">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-brand-navy text-white">
+                      {s.table.headers.map((h) => (
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.table.rows.map((row, ri) => (
+                      <tr class={ri % 2 === 0 ? "bg-white" : "bg-brand-parchment/50"}>
+                        {row.map((cell, ci) => (
+                          <td class={`px-4 py-2.5 border-t border-brand-tan text-brand-slate ${ci === 1 ? "font-bold text-brand-navy text-center" : ""}`}>
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <!-- Practice focus -->
+            <div class="bg-brand-navy rounded-xl px-4 py-3 flex items-start gap-2">
+              <span class="mt-0.5 text-brand-gold shrink-0">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+                </svg>
+              </span>
+              <p class="text-sm text-white/90 leading-relaxed">
+                <strong class="text-brand-gold font-semibold">Practice focus: </strong>
+                {s.practice}
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    ))}
+  </div>
+
+
+</Base>

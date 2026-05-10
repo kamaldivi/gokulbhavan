@@ -1,0 +1,183 @@
+<!--
+  Component: Hero Banner (rotating, image-background with text overlay)
+  ─────────────────────────────────────────────────────────────────────
+  How it works:
+    • A JS array `BANNERS` defines each banner: image, title, subtitle, buttons.
+    • On page load, one banner is chosen at random (or sequentially — see mode).
+    • The image becomes the CSS background of the section; an overlay div sits
+      on top for readability; then title, subtitle, and buttons render over that.
+
+  Adding a new banner:
+    Simply add a new object to the BANNERS array below.
+    No other changes needed.
+
+  Rotation modes (set BANNER_MODE):
+    "random"     — pick a random banner each page load
+    "sequential" — cycle in order, remembers position via sessionStorage
+
+  Usage:
+    Copy this file into each site's home page.
+    Customize BANNERS per site (different images, titles, button hrefs).
+    The overlay opacity (bg-black/XX) controls text legibility vs image visibility —
+    adjust per banner if images vary in brightness.
+-->
+
+<!-- ── Hero Banner Section ─────────────────────────────────────────── -->
+<section
+  id="hero-banner"
+  class="relative w-full bg-brand-navy"
+  style="min-height: 420px;"
+  aria-label="Welcome banner">
+
+  <!-- Background image layer (set by JS) -->
+  <div
+    id="hero-bg"
+    class="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+    style="background-image: url('/assets/brand/gb_banner.png');"
+    aria-hidden="true">
+  </div>
+
+  <!-- Dark overlay for text contrast -->
+  <div class="absolute inset-0 bg-black/45" aria-hidden="true"></div>
+
+  <!-- Content layer -->
+  <div class="relative z-10 flex flex-col items-center justify-center text-center px-4 py-24"
+       style="min-height: 420px;">
+
+    <!-- Site-level label (optional — shown when banner has one) -->
+    <p id="hero-label"
+       class="hidden text-xs font-semibold uppercase tracking-widest text-brand-tan/90 mb-3 font-sans">
+    </p>
+
+    <!-- Title -->
+    <h1 id="hero-title"
+        class="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-5 drop-shadow-md">
+      Welcome to Gokul Bhavan
+    </h1>
+
+    <!-- Subtitle -->
+    <p id="hero-subtitle"
+       class="text-white/85 text-lg md:text-xl leading-relaxed mb-10 max-w-2xl font-sans drop-shadow">
+      A 501(c)(3) non-profit community dedicated to sharing the timeless teachings
+      of the Gaudiya Sampradaya — rooted in devotion, guided by scripture.
+    </p>
+
+    <!-- CTA Buttons (rendered by JS from banner config) -->
+    <div id="hero-buttons" class="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Banner indicator dots (shown only when more than 1 banner) -->
+    <div id="hero-dots" class="flex gap-2 mt-10" aria-label="Banner navigation" role="tablist">
+      <!-- Injected by JS -->
+    </div>
+
+  </div>
+</section>
+
+
+<script>
+  // ─────────────────────────────────────────────────────────────────
+  // BANNER CONFIGURATION
+  // Add new banners here. Each banner needs:
+  //   image    — path to the background image
+  //   label    — (optional) small text above the title, e.g. site section
+  //   title    — main heading
+  //   subtitle — paragraph under the heading
+  //   buttons  — array of { text, href, style: "primary"|"secondary" }
+  // ─────────────────────────────────────────────────────────────────
+  const BANNERS = [
+    {
+      image: "/assets/brand/gb_banner.png",
+      label: "",
+      title: "Welcome to Gokul Bhavan",
+      subtitle: "A 501(c)(3) non-profit community dedicated to sharing the timeless teachings of the Gaudiya Sampradaya — rooted in devotion, guided by scripture.",
+      buttons: [
+        { text: "Explore Programs", href: "/programs.html", style: "primary" },
+        { text: "Upcoming Events",  href: "/events.html",   style: "secondary" },
+      ],
+    },
+
+    // ── Add future banners below ─────────────────────────────────
+    // {
+    //   image: "/assets/brand/gita_banner.png",
+    //   label: "Tamil Sangha",
+    //   title: "Bhagavad Gita — கீதா அமிர்தம்",
+    //   subtitle: "Weekly study of the Bhagavad Gita in Tamil and English, guided by Dr. Bhagavati Kanti.",
+    //   buttons: [
+    //     { text: "Join the Study",  href: "/schedules.html", style: "primary" },
+    //     { text: "Register Now",    href: "/register.html",  style: "secondary" },
+    //   ],
+    // },
+  ];
+
+  // Rotation mode: "random" | "sequential"
+  const BANNER_MODE = "random";
+
+  // ─────────────────────────────────────────────────────────────────
+  // BUTTON STYLES
+  // ─────────────────────────────────────────────────────────────────
+  const BTN_STYLES = {
+    primary:   "inline-flex items-center justify-center bg-brand-lotus hover:bg-pink-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow-lg",
+    secondary: "inline-flex items-center justify-center border-2 border-white/80 text-white hover:bg-white/15 font-semibold px-7 py-3 rounded-full transition-colors",
+  };
+
+  // ─────────────────────────────────────────────────────────────────
+  // BANNER SELECTION
+  // ─────────────────────────────────────────────────────────────────
+  function pickBannerIndex() {
+    if (BANNERS.length === 1) return 0;
+    if (BANNER_MODE === "sequential") {
+      const key = "gb_banner_index";
+      const last = parseInt(sessionStorage.getItem(key) ?? "-1", 10);
+      const next = (last + 1) % BANNERS.length;
+      sessionStorage.setItem(key, next);
+      return next;
+    }
+    return Math.floor(Math.random() * BANNERS.length);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────
+  function applyBanner(index) {
+    const b = BANNERS[index];
+
+    // Background image
+    document.getElementById("hero-bg").style.backgroundImage = `url('${b.image}')`;
+
+    // Label
+    const labelEl = document.getElementById("hero-label");
+    if (b.label) {
+      labelEl.textContent = b.label;
+      labelEl.classList.remove("hidden");
+    }
+
+    // Title & subtitle
+    document.getElementById("hero-title").innerHTML    = b.title;
+    document.getElementById("hero-subtitle").innerHTML = b.subtitle;
+
+    // Buttons
+    const btnContainer = document.getElementById("hero-buttons");
+    btnContainer.innerHTML = b.buttons.map(btn =>
+      `<a href="${btn.href}" class="${BTN_STYLES[btn.style] || BTN_STYLES.primary}">${btn.text}</a>`
+    ).join("");
+
+    // Indicator dots (only if multiple banners)
+    const dotsContainer = document.getElementById("hero-dots");
+    if (BANNERS.length > 1) {
+      dotsContainer.innerHTML = BANNERS.map((_, i) =>
+        `<button
+           role="tab"
+           aria-selected="${i === index}"
+           onclick="applyBanner(${i})"
+           class="w-2.5 h-2.5 rounded-full transition-colors ${i === index ? 'bg-white' : 'bg-white/35 hover:bg-white/60'}"
+           aria-label="Banner ${i + 1}">
+         </button>`
+      ).join("");
+    }
+  }
+
+  // Run on load
+  applyBanner(pickBannerIndex());
+</script>
