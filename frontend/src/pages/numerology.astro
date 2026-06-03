@@ -1,0 +1,301 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base title="Karmi Numerology" activePath="/numerology"
+     description="Karmi Numerology calculator -enter a name or house number to discover its numerological significance.">
+
+  <PageHero
+    title="Karmi Numerology"
+    description="Discover the numerological value of a name or house number using the Chaldean system."
+  />
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+
+    <!-- ── Input card ─────────────────────────────────────────── -->
+    <div class="rounded-2xl border border-brand-tan bg-white shadow-sm p-6 sm:p-8 mb-6">
+
+      <label for="num-input" class="block text-sm font-bold text-brand-navy mb-2">
+        Enter Name or House Number
+      </label>
+      <div class="flex gap-3">
+        <input id="num-input" type="text"
+               placeholder="e.g. Krishna Das or 108"
+               autocomplete="off" spellcheck="false"
+               class="flex-1 rounded-xl border border-brand-tan bg-brand-parchment/60 px-4 py-3 text-brand-navy text-sm placeholder-brand-slate/40 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+        <button id="num-compute"
+                class="bg-brand-lotus hover:bg-pink-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition-colors shadow shrink-0">
+          Calculate
+        </button>
+        <button id="num-clear" title="Clear"
+                class="bg-brand-parchment hover:bg-brand-tan border border-brand-tan text-brand-slate hover:text-brand-navy font-bold text-sm px-4 py-3 rounded-xl transition-colors shrink-0">
+          ✕
+        </button>
+      </div>
+
+      <!-- Live letter breakdown -->
+      <div id="num-breakdown" class="mt-4 min-h-[28px] flex flex-wrap gap-1.5"></div>
+
+    </div>
+
+    <!-- ── Result card ────────────────────────────────────────── -->
+    <div id="num-result" class="hidden rounded-2xl border-2 bg-white shadow-md p-6 sm:p-8 mb-6 transition-all">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-1">Result</p>
+          <p id="num-result-name" class="font-display font-bold text-2xl text-brand-navy leading-tight"></p>
+        </div>
+        <div class="text-right shrink-0">
+          <div id="num-result-badge"
+               class="inline-flex items-center justify-center w-16 h-16 rounded-full text-2xl font-black shadow-inner">
+          </div>
+        </div>
+      </div>
+      <p id="num-result-text" class="text-sm text-brand-slate leading-relaxed mb-4"></p>
+      <button id="num-copy"
+              class="inline-flex items-center gap-2 text-xs font-semibold text-brand-navy hover:text-brand-lotus transition-colors">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+        Copy result
+      </button>
+    </div>
+
+    <!-- ── History ────────────────────────────────────────────── -->
+    <div id="num-history-wrap" class="hidden mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-brand-slate">History</p>
+        <button id="num-clear-history"
+                class="text-xs text-brand-slate hover:text-brand-lotus transition-colors font-semibold">
+          Clear history
+        </button>
+      </div>
+      <div id="num-history" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- ── Chaldean reference ─────────────────────────────────── -->
+    <div class="rounded-2xl border border-brand-tan bg-brand-parchment/60 overflow-hidden">
+      <button id="num-ref-toggle"
+              class="w-full flex items-center justify-between px-6 py-4 text-sm font-bold text-brand-navy hover:bg-brand-tan/30 transition-colors">
+        <span>Chaldean Letter-Number Reference</span>
+        <svg id="num-ref-arrow" class="w-4 h-4 fill-current transition-transform duration-200" viewBox="0 0 24 24">
+          <path d="M7 10l5 5 5-5z"/>
+        </svg>
+      </button>
+      <div id="num-ref-panel" class="hidden px-6 pb-6">
+        <p class="text-xs text-brand-slate mb-4">Each letter maps to a numeric value in the Chaldean system:</p>
+        <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 text-center text-xs font-mono" id="num-ref-grid"></div>
+        <p class="text-xs text-brand-slate mt-4 italic">
+          Note: This tool is provided for educational and outreach purposes only.
+          Please use at your own risk -no liability of any kind is assumed.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+</Base>
+
+<script>
+// ── Chaldean mapping ─────────────────────────────────────────
+const CHAR_MAP: Record<string, number> = {
+  A:1, B:2, C:3, D:4, E:5, F:8, G:3, H:5, I:1, J:1,
+  K:2, L:3, M:4, N:5, O:7, P:8, Q:1, R:2, S:3, T:4,
+  U:6, V:6, W:6, X:5, Y:1, Z:7,
+  '0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,
+};
+
+const INTERPRETATIONS: Record<number, string> = {
+  10: "Name fame and honor. Good executive ability and self confidence and success in the execution of plans, but fortune fluctuates.",
+  11: "Warns against treachery and secret enmity. Great difficulties and handicaps in the path of success.",
+  12: "Suffering and sacrificing for others. The native may be victimized for no fault of his, but due to the intrigues or for the sake of others.",
+  13: "Great changes, upheavals and unexpected happenings. Involves change of work, occupation, residence and plans.",
+  14: "Indicates activity, expression, business communication, publishing and dealing in money. But there is some risk involved such as loss in business or speculation or due to acts of God such as earthquakes, floods, tempests etc.",
+  15: "Connected with eloquence, music, art, magic and occult practices. Also the sensuous side is more developed, but is good for matters financial and obtaining favors of others.",
+  16: "This number is associated with sudden and unforeseen events mostly unfortunate to the native. There may be an accident or a sudden catastrophe ruining all plans and prospects.",
+  17: "A spiritual number. The native overcomes the trials and tribulations. The native's works and his deeds bring him enduring fame.",
+  18: "Very materialistic and pushing. Makes money by aggressiveness. This is also a number of strife, wounds, treachery and deception by others.",
+  19: "A lucky number indicating fulfillment of hopes and aspirations, honor and success. The plans are fulfilled and bring success.",
+  20: "This number is more spiritualistic than materialistic. All activity is motivated by a call of duty or for fulfillment of some high objective. This number also indicates delays and procrastination.",
+  21: "Indicates progress and success. The native has to climb his way uphill but is ultimately elevated. It indicates good promise and advancement.",
+  22: "A number of illusion and inactivity. The native makes many plans, which are not reinforced by action and consequently no tangible results are achieved.",
+  23: "It promises success due to help and patronage by others. The native strives for execution of his schemes and they are executed due to assistance by superiors in high places.",
+  24: "This is a good number promising success due to help and patronage by others in high position or by members of the opposite sex.",
+  25: "The native gains by strength and struggle and experience gained by trial and error method. The first part of life is an uphill path but experience gained in that part brings dividends in the latter half.",
+  26: "A number of warning -likelihood of loss of wealth or position due to association of undesirable people. Business partnerships do not prosper.",
+  27: "It gives initiative and authority. The native would be intelligent and have good creative powers and should execute plans as envisaged by himself. He will be successful in his endeavors.",
+  28: "Indicates great promise but after initial success there is danger of unsuccessful outcomes and frustration. There may be financial losses and legal troubles.",
+  29: "There is not a steady trend. Great changes often unfavorable take place due to unexpected happenings and bad associates. The life is full of trials and set-backs.",
+  30: "This is more a mental number and the native may rise to intellectual heights, but progress in the financial sphere may not be satisfactory.",
+  31: "A number of isolation and self-containment. The native is more introvert than extrovert and is apathetic to worldly progress, and consequently poor financial results.",
+  32: "Indicates progress and expansion. Success comes by associations, societies, joint-stock companies and large organizations.",
+  33: "Promises well due to help and patronage of others in high position; may also gain from the love of members of the opposite sex.",
+  34: "Denotes strength and benefit from experience. There is much trial and tribulation but the same act as stepping stones for future success.",
+  35: "A number denoting danger and disasters. The native must take care of the people he associates with. Business partnerships are not advised.",
+  36: "Gives active energy, command and authority. The native has good powers of initiative and executive ability.",
+  37: "A very potent number for the good. Indicates good luck, helpful friends and good fortune from loved ones. Favorable for conjugal life and business partnerships.",
+  38: "Related to loss due to employees, friends or business associates; difficulties in career, unexpected reverses, grief, deception by others.",
+  39: "The mind is thoughtful and has intellectual faculties. The natives excel in mental faculties but do not apply themselves to practical affairs.",
+  40: "The native is quiet, intellectual and retrospective. May shine in the intellectual sphere, but is not fortunate in respect of name, fame and riches.",
+  41: "A good number for worldly success, but particularly when working with large groups of people or concerns. The person has good judgment.",
+  42: "A good number. Success will be achieved with the help of persons holding high position.",
+  43: "This is not a fortunate number. It indicates many handicaps, upsetting the even tenor of life, disturbances and upheavals.",
+  44: "A number showing losses by speculation, betting etc. Due care should be taken in choosing associates and partnership business is to be avoided.",
+  45: "This number symbolizes much energy and activity. The native would reach a high position by implementing his own ideas and creative abilities.",
+  46: "A powerful number. The native meets success in life due to good friends and loving conjugal partners.",
+  47: "Indicates loss in money and prestige by uncertainties, unreliable partners and business associates.",
+  48: "This is more a mental number than a practical one. The native makes many schemes but his plans are not executed in practical form.",
+  49: "The native has little ambition and is not progressive in the worldly sphere. He lacks in social warmth and remains isolated.",
+  50: "A very good number indicating success by contact with or being a member of a large organization or administration.",
+  51: "A very powerful number. The native is bold, daring and pushing and rises to the top, particularly in the military where chivalry and valour are chief requirements.",
+  52: "Not a fortunate number; shows revolution and topsy-turvy change of conditions. Struggles and strife in life are the marked features.",
+  53: "Indicates saturnine nature of over vigilance and suspicion. In persons of good qualities, this may add to investigating powers and research.",
+  54: "The native is well endowed with the mercurial powers of eloquence and expression. He has a long life, good health and a successful career.",
+  55: "A number of leadership; has great energy and push. Success is achieved due to discriminating intelligence and a pioneering spirit.",
+  56: "This number indicates weak lunar qualities of restlessness, changeability and a nervous disposition. The native is often a victim of fraud.",
+  57: "Indicates a pleasant disposition and sociable qualities, brings material success by persistent application and hard work.",
+  58: "A good number indicating success in work connected with health, hygiene and diet. The nature is free and frank.",
+  59: "Indicates much traveling and communications; success in financial undertakings, banking and commercial spheres.",
+  60: "In highly developed natives, it shows success in the legal and medical professions. It also confers executive abilities.",
+  61: "Indicates love of good society and comfortable living. But there is a spirit of day dreaming and many plans remain un-executed.",
+  62: "Represents a hard and rigid life of discipline; of saving disposition; success late in life by hard work.",
+  63: "Indicates much real and pioneering spirit; may gain success in financial and religious spheres.",
+  64: "A number which does not meet much success in the commercial line and is more suited to the career of service or profession.",
+  65: "Indicates success due to others in high rank and position, also good conjugal happiness, but there is a danger of bodily hurts.",
+  66: "Indicates a pleasant disposition and sociable qualities, brings material success by persistent application and hard work.",
+  67: "A good number indicating success in work connected with health, hygiene and diet. The nature is free and frank.",
+  68: "Indicates much traveling and communications; success in financial undertakings, banking and commercial spheres.",
+  69: "A number of success and good fortune. The native has some help and assistance from a person of the opposite sex, but largely achieves due to his own active energy.",
+  70: "Indicates saturnine nature of over vigilance and suspicion. In persons of good qualities, this may add to investigating powers.",
+  71: "Indicates saturnine nature of over vigilance and suspicion. Investigating powers and serious research may be developed.",
+  72: "A potential number indicating pioneering zeal but success after hard labor and endurance. Many failures do not hold up the native in his efforts.",
+};
+
+// Favorable / cautionary coloring
+const FAVORABLE = new Set([17,19,21,23,24,27,32,33,36,37,41,42,45,46,50,51,54,55,57,58,60,63,65,66,67,68,69,72]);
+
+function getNumber(ch: string): number {
+  return CHAR_MAP[ch.toUpperCase()] ?? 0;
+}
+
+function computeValue(name: string): { raw: number; display: number } {
+  let raw = 0;
+  for (const c of name) raw += getNumber(c);
+  let display = raw;
+  if (display < 10) display = display + 9;
+  else if (display > 72) display = display % 72;
+  return { raw, display };
+}
+
+// ── DOM refs ─────────────────────────────────────────────────
+const input        = document.getElementById('num-input')        as HTMLInputElement;
+const computeBtn   = document.getElementById('num-compute')!;
+const clearBtn     = document.getElementById('num-clear')!;
+const breakdown    = document.getElementById('num-breakdown')!;
+const resultCard   = document.getElementById('num-result')!;
+const resultName   = document.getElementById('num-result-name')!;
+const resultBadge  = document.getElementById('num-result-badge')!;
+const resultText   = document.getElementById('num-result-text')!;
+const copyBtn      = document.getElementById('num-copy')!;
+const historyWrap  = document.getElementById('num-history-wrap')!;
+const historyEl    = document.getElementById('num-history')!;
+const clearHistBtn = document.getElementById('num-clear-history')!;
+const refToggle    = document.getElementById('num-ref-toggle')!;
+const refPanel     = document.getElementById('num-ref-panel')!;
+const refArrow     = document.getElementById('num-ref-arrow')!;
+const refGrid      = document.getElementById('num-ref-grid')!;
+
+// ── Live breakdown as user types ─────────────────────────────
+input.addEventListener('input', () => {
+  const val = input.value;
+  if (!val.trim()) { breakdown.innerHTML = ''; return; }
+
+  breakdown.innerHTML = val.split('').map(c => {
+    if (c === ' ') return `<span class="text-brand-slate/30 text-xs px-1">·</span>`;
+    const n = getNumber(c);
+    const colored = n > 0 ? 'bg-brand-navy/10 text-brand-navy' : 'bg-brand-tan text-brand-slate';
+    return `<span class="inline-flex items-center gap-0.5 ${colored} text-[11px] font-mono font-bold px-2 py-0.5 rounded-full">
+      ${c.toUpperCase()}<span class="opacity-60">=</span>${n}
+    </span>`;
+  }).join('');
+});
+
+// ── Compute ──────────────────────────────────────────────────
+function doCalculate() {
+  const name = input.value.trim();
+  if (!name) return;
+
+  const { raw, display } = computeValue(name);
+  const interp = INTERPRETATIONS[display] ?? 'No interpretation available for this value.';
+  const good = FAVORABLE.has(display);
+
+  // Result card
+  resultName.textContent = name;
+  resultBadge.textContent = String(display);
+  resultBadge.className = `inline-flex items-center justify-center w-16 h-16 rounded-full text-2xl font-black shadow-inner ${
+    good
+      ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-300'
+      : 'bg-brand-slate/10 text-brand-slate ring-2 ring-brand-tan'
+  }`;
+  resultCard.className = resultCard.className
+    .replace('border-brand-tan', good ? 'border-amber-300' : 'border-brand-tan')
+    .replace('border-amber-300', good ? 'border-amber-300' : 'border-brand-tan');
+  resultText.textContent = interp;
+  resultCard.classList.remove('hidden');
+
+  // History entry
+  const entry = document.createElement('div');
+  entry.className = 'flex items-start gap-3 rounded-xl border border-brand-tan bg-brand-parchment/60 px-4 py-3';
+  entry.innerHTML = `
+    <span class="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black ${
+      good ? 'bg-amber-100 text-amber-700' : 'bg-brand-slate/10 text-brand-slate'
+    }">${display}</span>
+    <div class="min-w-0">
+      <p class="font-bold text-brand-navy text-sm">${name} <span class="text-brand-slate font-normal text-xs">(raw: ${raw})</span></p>
+      <p class="text-xs text-brand-slate leading-relaxed line-clamp-2 mt-0.5">${interp}</p>
+    </div>`;
+  historyEl.prepend(entry);
+  historyWrap.classList.remove('hidden');
+}
+
+computeBtn.addEventListener('click', doCalculate);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doCalculate(); });
+
+// ── Clear ────────────────────────────────────────────────────
+clearBtn.addEventListener('click', () => {
+  input.value = '';
+  breakdown.innerHTML = '';
+  resultCard.classList.add('hidden');
+});
+
+clearHistBtn.addEventListener('click', () => {
+  historyEl.innerHTML = '';
+  historyWrap.classList.add('hidden');
+});
+
+// ── Copy result ───────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  const text = `${resultName.textContent} → ${resultBadge.textContent}\n${resultText.textContent}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    copyBtn.textContent = '✔ Copied!';
+    setTimeout(() => { copyBtn.innerHTML = `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy result`; }, 2000);
+  } catch {}
+});
+
+// ── Chaldean reference table ──────────────────────────────────
+refToggle.addEventListener('click', () => {
+  refPanel.classList.toggle('hidden');
+  refArrow.style.transform = refPanel.classList.contains('hidden') ? '' : 'rotate(180deg)';
+});
+
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+refGrid.innerHTML = letters.map(l => {
+  const n = CHAR_MAP[l];
+  return `<div class="rounded-lg bg-white border border-brand-tan py-2">
+    <div class="font-bold text-brand-navy text-sm">${l}</div>
+    <div class="text-brand-lotus font-black text-base">${n}</div>
+  </div>`;
+}).join('');
+</script>

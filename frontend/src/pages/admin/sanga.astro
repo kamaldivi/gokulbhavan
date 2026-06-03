@@ -1,0 +1,363 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Sanga Info" activePath="/admin/sanga">
+
+  <div class="flex items-center justify-between mb-6">
+    <p class="text-sm text-brand-slate">Manage saṅga locations displayed on the public Contact page.</p>
+    <button id="sg-new-btn"
+            class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white
+                   text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Add Saṅga
+    </button>
+  </div>
+
+  <div id="sg-banner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+  <div id="sg-loading" class="text-center py-16 text-brand-slate text-sm">Loading…</div>
+  <div id="sg-list"   class="hidden space-y-3"></div>
+  <div id="sg-empty"  class="hidden text-center py-16 text-brand-slate text-sm">No saṅgas yet.</div>
+
+  <!-- ── Slide-in form panel ───────────────────────────────── -->
+  <div id="sg-panel"
+       class="hidden fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl flex flex-col">
+
+    <div class="flex items-center justify-between px-6 py-4 border-b border-brand-tan">
+      <h3 id="sg-panel-title" class="font-display font-bold text-brand-navy text-lg">Add Saṅga</h3>
+      <button id="sg-panel-close" class="text-brand-slate hover:text-brand-navy transition-colors">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <form id="sg-form" class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+      <input type="hidden" id="sg-edit-id" value="" />
+
+      <!-- Sanga name + flag -->
+      <div class="grid grid-cols-[1fr_80px] gap-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-name">
+            Saṅga Name <span class="text-brand-lotus">*</span>
+          </label>
+          <input id="sg-name" type="text" required
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus"
+                 placeholder="Cary Saṅga" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-flag">Flag</label>
+          <input id="sg-flag" type="text" maxlength="4"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus text-center text-xl"
+                 placeholder="🇺🇸" />
+        </div>
+      </div>
+
+      <!-- Region -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-region">
+          Region <span class="text-brand-slate/50 normal-case font-normal">(e.g. North Carolina, USA)</span>
+        </label>
+        <input id="sg-region" type="text"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-desc">
+          Description <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+        </label>
+        <textarea id="sg-desc" rows="2"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"
+                  placeholder="Brief description of this saṅga location…"></textarea>
+      </div>
+
+      <!-- Primary contact person -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-contact-person">
+          Primary Contact Person
+        </label>
+        <input id="sg-contact-person" type="text"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus"
+               placeholder="Dr. Bhagavati Kanti Dasa" />
+      </div>
+
+      <!-- Additional contacts -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-contacts-list">
+          Additional Contacts <span class="text-brand-slate/50 normal-case font-normal">(one per line)</span>
+        </label>
+        <textarea id="sg-contacts-list" rows="3"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"
+                  placeholder="Dr. Prema Devi Dasi&#10;Sushant Krishna Dasa"></textarea>
+      </div>
+
+      <!-- Address -->
+      <div class="border-t border-brand-tan/60 pt-4">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-slate mb-3">Address</p>
+        <div class="space-y-3">
+          <input id="sg-addr1" type="text" placeholder="Address line 1"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          <input id="sg-addr2" type="text" placeholder="Address line 2 (optional)"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          <div class="grid grid-cols-2 gap-3">
+            <input id="sg-city" type="text" placeholder="City"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+            <input id="sg-state" type="text" placeholder="State / Province"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <input id="sg-postal" type="text" placeholder="Postal code"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+            <input id="sg-country" type="text" placeholder="Country"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact details -->
+      <div class="border-t border-brand-tan/60 pt-4 grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-phone">Phone</label>
+          <input id="sg-phone" type="tel"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-email">Email</label>
+          <input id="sg-email" type="email"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+      </div>
+
+      <!-- Map URL -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-map">
+          Google Maps URL <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+        </label>
+        <input id="sg-map" type="url" placeholder="https://maps.google.com/…"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <!-- Service times -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-times">
+          Service Times <span class="text-brand-slate/50 normal-case font-normal">(one per line)</span>
+        </label>
+        <textarea id="sg-times" rows="3"
+                  placeholder="Sunday Bhajan: 10:00 AM&#10;Online Program: Fridays 7:30 PM ET"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"></textarea>
+      </div>
+
+      <!-- Sort order + active -->
+      <div class="border-t border-brand-tan/60 pt-4 flex items-center gap-6">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="sg-sort">Display Order</label>
+          <input id="sg-sort" type="number" min="0" value="0"
+                 class="w-20 px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer mt-5">
+          <input id="sg-active" type="checkbox" checked
+                 class="w-4 h-4 rounded accent-brand-lotus cursor-pointer" />
+          <span class="text-sm font-semibold text-brand-navy">Active</span>
+        </label>
+      </div>
+
+    </form>
+
+    <div class="px-6 py-4 border-t border-brand-tan flex items-center gap-3">
+      <button id="sg-save-btn"
+              class="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white
+                     text-sm font-bold px-6 py-2.5 rounded-full transition-colors">
+        Save
+      </button>
+      <span id="sg-saving" class="hidden text-xs text-brand-slate">Saving…</span>
+    </div>
+  </div>
+
+  <div id="sg-backdrop" class="hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"></div>
+
+</AdminShell>
+
+<script>
+  type Sanga = {
+    id: number; sanga_name: string; contact_person: string|null;
+    description: string|null; region: string|null; flag: string|null;
+    address_line1: string|null; address_line2: string|null;
+    city: string|null; state: string|null; postal_code: string|null; country: string|null;
+    contacts_list: string|null; phone: string|null; email: string|null;
+    map_url: string|null; service_times: string|null;
+    sort_order: number; active: number;
+  };
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  let sangas: Sanga[] = [];
+
+  const loadingEl  = document.getElementById('sg-loading')!;
+  const listEl     = document.getElementById('sg-list')!;
+  const emptyEl    = document.getElementById('sg-empty')!;
+  const bannerEl   = document.getElementById('sg-banner')!;
+  const panel      = document.getElementById('sg-panel')!;
+  const backdrop   = document.getElementById('sg-backdrop')!;
+  const panelTitle = document.getElementById('sg-panel-title')!;
+
+  const f = (id: string) => document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
+
+  async function load() {
+    const res = await fetch(`${apiBase}/api/admin/sanga.php`);
+    if (!res.ok) { loadingEl.textContent = 'Failed to load.'; return; }
+    sangas = await res.json();
+    loadingEl.classList.add('hidden');
+    render();
+  }
+
+  function render() {
+    listEl.innerHTML = '';
+    if (sangas.length === 0) {
+      emptyEl.classList.remove('hidden');
+      listEl.classList.add('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    listEl.classList.remove('hidden');
+
+    sangas.forEach(s => {
+      const addr = [s.address_line1, s.city, s.state, s.country].filter(Boolean).join(', ');
+      const card = document.createElement('div');
+      card.className = `rounded-xl border ${s.active ? 'border-brand-tan bg-white' : 'border-brand-tan/50 bg-brand-tan/10'} px-5 py-4`;
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              ${s.flag ? `<span class="text-lg leading-none">${s.flag}</span>` : ''}
+              <h3 class="font-semibold text-brand-navy">${esc(s.sanga_name)}</h3>
+              <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+                           ${s.active ? 'bg-green-100 text-green-700' : 'bg-brand-tan text-brand-slate/60'}">
+                ${s.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            ${s.region ? `<p class="text-xs text-brand-slate/60 mb-1">${esc(s.region)}</p>` : ''}
+            ${s.contact_person ? `<p class="text-sm text-brand-slate">${esc(s.contact_person)}</p>` : ''}
+            ${addr ? `<p class="text-xs text-brand-slate/60 mt-0.5">${esc(addr)}</p>` : ''}
+            ${s.description ? `<p class="text-xs text-brand-slate mt-1 italic">${esc(s.description)}</p>` : ''}
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="sg-edit-btn text-xs font-semibold text-brand-navy border border-brand-tan hover:border-brand-navy px-3 py-1 rounded-full transition-colors"
+                    data-id="${s.id}">Edit</button>
+            <button class="sg-delete-btn text-xs font-semibold text-red-500 border border-red-200 hover:border-red-400 px-3 py-1 rounded-full transition-colors"
+                    data-id="${s.id}">Delete</button>
+          </div>
+        </div>`;
+
+      card.querySelector<HTMLButtonElement>('.sg-edit-btn')!.addEventListener('click', () => openEdit(s));
+      card.querySelector<HTMLButtonElement>('.sg-delete-btn')!.addEventListener('click', () => deleteSanga(s.id));
+      listEl.appendChild(card);
+    });
+  }
+
+  function fillForm(s: Partial<Sanga>) {
+    (f('sg-edit-id')          as HTMLInputElement).value = String(s.id ?? '');
+    (f('sg-name')             as HTMLInputElement).value = s.sanga_name       ?? '';
+    (f('sg-flag')             as HTMLInputElement).value = s.flag             ?? '';
+    (f('sg-region')           as HTMLInputElement).value = s.region           ?? '';
+    (f('sg-desc')             as HTMLTextAreaElement).value = s.description   ?? '';
+    (f('sg-contact-person')   as HTMLInputElement).value = s.contact_person   ?? '';
+    (f('sg-contacts-list')    as HTMLTextAreaElement).value = s.contacts_list ?? '';
+    (f('sg-addr1')            as HTMLInputElement).value = s.address_line1    ?? '';
+    (f('sg-addr2')            as HTMLInputElement).value = s.address_line2    ?? '';
+    (f('sg-city')             as HTMLInputElement).value = s.city             ?? '';
+    (f('sg-state')            as HTMLInputElement).value = s.state            ?? '';
+    (f('sg-postal')           as HTMLInputElement).value = s.postal_code      ?? '';
+    (f('sg-country')          as HTMLInputElement).value = s.country          ?? '';
+    (f('sg-phone')            as HTMLInputElement).value = s.phone            ?? '';
+    (f('sg-email')            as HTMLInputElement).value = s.email            ?? '';
+    (f('sg-map')              as HTMLInputElement).value = s.map_url          ?? '';
+    (f('sg-times')            as HTMLTextAreaElement).value = s.service_times ?? '';
+    (f('sg-sort')             as HTMLInputElement).value = String(s.sort_order ?? 0);
+    (f('sg-active')           as HTMLInputElement).checked = (s.active ?? 1) === 1;
+  }
+
+  function openNew() {
+    panelTitle.textContent = 'Add Saṅga';
+    fillForm({});
+    openPanel();
+  }
+  function openEdit(s: Sanga) {
+    panelTitle.textContent = 'Edit Saṅga';
+    fillForm(s);
+    openPanel();
+  }
+  function openPanel() {
+    panel.classList.remove('hidden');
+    backdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePanel() {
+    panel.classList.add('hidden');
+    backdrop.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function readForm() {
+    return {
+      sanga_name:     (f('sg-name')           as HTMLInputElement).value.trim(),
+      flag:           (f('sg-flag')           as HTMLInputElement).value.trim(),
+      region:         (f('sg-region')         as HTMLInputElement).value.trim(),
+      description:    (f('sg-desc')           as HTMLTextAreaElement).value.trim(),
+      contact_person: (f('sg-contact-person') as HTMLInputElement).value.trim(),
+      contacts_list:  (f('sg-contacts-list')  as HTMLTextAreaElement).value.trim(),
+      address_line1:  (f('sg-addr1')          as HTMLInputElement).value.trim(),
+      address_line2:  (f('sg-addr2')          as HTMLInputElement).value.trim(),
+      city:           (f('sg-city')           as HTMLInputElement).value.trim(),
+      state:          (f('sg-state')          as HTMLInputElement).value.trim(),
+      postal_code:    (f('sg-postal')         as HTMLInputElement).value.trim(),
+      country:        (f('sg-country')        as HTMLInputElement).value.trim(),
+      phone:          (f('sg-phone')          as HTMLInputElement).value.trim(),
+      email:          (f('sg-email')          as HTMLInputElement).value.trim(),
+      map_url:        (f('sg-map')            as HTMLInputElement).value.trim(),
+      service_times:  (f('sg-times')          as HTMLTextAreaElement).value.trim(),
+      sort_order:     parseInt((f('sg-sort')  as HTMLInputElement).value) || 0,
+      active:         (f('sg-active')         as HTMLInputElement).checked ? 1 : 0,
+    };
+  }
+
+  document.getElementById('sg-save-btn')!.addEventListener('click', async () => {
+    const id      = (f('sg-edit-id') as HTMLInputElement).value;
+    const payload = readForm();
+    if (!payload.sanga_name) { (f('sg-name') as HTMLInputElement).focus(); return; }
+
+    const saving = document.getElementById('sg-saving')!;
+    saving.classList.remove('hidden');
+    const url    = id ? `${apiBase}/api/admin/sanga.php?id=${id}` : `${apiBase}/api/admin/sanga.php`;
+    const method = id ? 'PUT' : 'POST';
+    const res    = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    saving.classList.add('hidden');
+
+    if (res.ok) { closePanel(); showBanner('Saṅga saved.', 'green'); await load(); }
+    else        { showBanner('Save failed.', 'red'); }
+  });
+
+  async function deleteSanga(id: number) {
+    if (!confirm('Delete this saṅga?')) return;
+    const res = await fetch(`${apiBase}/api/admin/sanga.php?id=${id}`, { method: 'DELETE' });
+    if (res.ok) { showBanner('Saṅga deleted.', 'green'); await load(); }
+    else        { showBanner('Delete failed.', 'red'); }
+  }
+
+  function showBanner(msg: string, color: 'green'|'red') {
+    bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-4
+      ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
+    bannerEl.textContent = msg;
+    bannerEl.classList.remove('hidden');
+    setTimeout(() => bannerEl.classList.add('hidden'), 4000);
+  }
+
+  function esc(s: string) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('sg-new-btn')!.addEventListener('click', openNew);
+  document.getElementById('sg-panel-close')!.addEventListener('click', closePanel);
+  backdrop.addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+  document.getElementById('sg-form')!.addEventListener('submit', e => e.preventDefault());
+
+  load();
+</script>

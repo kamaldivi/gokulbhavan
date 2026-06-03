@@ -1,0 +1,297 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Announcements" activePath="/admin/announcements">
+
+  <!-- Top bar -->
+  <div class="flex items-center justify-between mb-6">
+    <p class="text-sm text-brand-slate">Announcements can be displayed on the homepage or other pages.</p>
+    <button id="ann-new-btn"
+            class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white
+                   text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      New Announcement
+    </button>
+  </div>
+
+  <!-- Banner -->
+  <div id="ann-banner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+
+  <!-- Loading -->
+  <div id="ann-loading" class="text-center py-16 text-brand-slate text-sm">Loading…</div>
+
+  <!-- List -->
+  <div id="ann-list" class="hidden space-y-3"></div>
+
+  <!-- Empty -->
+  <div id="ann-empty" class="hidden text-center py-16 text-brand-slate text-sm">
+    No announcements yet. Create one to get started.
+  </div>
+
+  <!-- ── Form panel (slide-in) ──────────────────────────────── -->
+  <div id="ann-panel"
+       class="hidden fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
+
+    <div class="flex items-center justify-between px-6 py-4 border-b border-brand-tan">
+      <h3 id="ann-panel-title" class="font-display font-bold text-brand-navy text-lg">New Announcement</h3>
+      <button id="ann-panel-close" class="text-brand-slate hover:text-brand-navy transition-colors" aria-label="Close">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <form id="ann-form" class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+      <input type="hidden" id="ann-edit-id" value="" />
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="ann-title">
+          Title <span class="text-brand-lotus">*</span>
+        </label>
+        <input id="ann-title" type="text" required
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="ann-body">
+          Body <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+        </label>
+        <textarea id="ann-body" rows="5"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="ann-start">
+            Start Date
+          </label>
+          <input id="ann-start" type="date"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="ann-end">
+            End Date
+          </label>
+          <input id="ann-end" type="date"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="ann-url">
+          Link URL <span class="text-brand-slate/50 normal-case font-normal">(optional — used on announcement cards)</span>
+        </label>
+        <input id="ann-url" type="url" placeholder="https://…"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input id="ann-active" type="checkbox" checked
+               class="w-4 h-4 rounded accent-brand-lotus cursor-pointer" />
+        <span class="text-sm font-semibold text-brand-navy">Active (visible on site)</span>
+      </label>
+    </form>
+
+    <div class="px-6 py-4 border-t border-brand-tan flex items-center gap-3">
+      <button id="ann-save-btn"
+              class="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white
+                     text-sm font-bold px-6 py-2.5 rounded-full transition-colors">
+        Save
+      </button>
+      <span id="ann-saving" class="hidden text-xs text-brand-slate">Saving…</span>
+    </div>
+  </div>
+
+  <!-- Backdrop -->
+  <div id="ann-backdrop" class="hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"></div>
+
+</AdminShell>
+
+<script>
+  type Ann = {
+    id: number; title: string; body: string|null; url: string|null;
+    start_date: string|null; end_date: string|null;
+    active: number; created_at: string;
+  };
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  let anns: Ann[] = [];
+
+  const loadingEl  = document.getElementById('ann-loading')!;
+  const listEl     = document.getElementById('ann-list')!;
+  const emptyEl    = document.getElementById('ann-empty')!;
+  const bannerEl   = document.getElementById('ann-banner')!;
+  const panel      = document.getElementById('ann-panel')!;
+  const backdrop   = document.getElementById('ann-backdrop')!;
+  const panelTitle = document.getElementById('ann-panel-title')!;
+  const editIdEl   = document.getElementById('ann-edit-id') as HTMLInputElement;
+  const titleEl    = document.getElementById('ann-title')   as HTMLInputElement;
+  const bodyEl     = document.getElementById('ann-body')    as HTMLTextAreaElement;
+  const startEl    = document.getElementById('ann-start')   as HTMLInputElement;
+  const endEl      = document.getElementById('ann-end')     as HTMLInputElement;
+  const activeEl   = document.getElementById('ann-active')  as HTMLInputElement;
+
+  // ── Load ─────────────────────────────────────────────────────
+  async function load() {
+    const res = await fetch(`${apiBase}/api/admin/announcements.php`);
+    if (!res.ok) { loadingEl.textContent = 'Failed to load.'; return; }
+    anns = await res.json();
+    loadingEl.classList.add('hidden');
+    render();
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+  function render() {
+    listEl.innerHTML = '';
+    if (anns.length === 0) {
+      emptyEl.classList.remove('hidden');
+      listEl.classList.add('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    listEl.classList.remove('hidden');
+
+    anns.forEach(a => {
+      const dateRange = [a.start_date, a.end_date].filter(Boolean).join(' → ') || 'No date range';
+      const card = document.createElement('div');
+      card.className = `rounded-xl border ${a.active ? 'border-brand-tan bg-white' : 'border-brand-tan/50 bg-brand-tan/10'} px-5 py-4`;
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h3 class="font-semibold text-brand-navy">${esc(a.title)}</h3>
+              <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+                           ${a.active ? 'bg-green-100 text-green-700' : 'bg-brand-tan text-brand-slate/60'}">
+                ${a.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            ${a.body ? `<p class="text-sm text-brand-slate leading-relaxed mb-1">${esc(a.body)}</p>` : ''}
+            <p class="text-xs text-brand-slate/60">${dateRange}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="ann-edit-btn text-xs font-semibold text-brand-navy border border-brand-tan hover:border-brand-navy px-3 py-1 rounded-full transition-colors"
+                    data-id="${a.id}">Edit</button>
+            <button class="ann-delete-btn text-xs font-semibold text-red-500 border border-red-200 hover:border-red-400 px-3 py-1 rounded-full transition-colors"
+                    data-id="${a.id}">Delete</button>
+          </div>
+        </div>`;
+
+      card.querySelector<HTMLButtonElement>('.ann-edit-btn')!
+        .addEventListener('click', () => openEdit(a));
+      card.querySelector<HTMLButtonElement>('.ann-delete-btn')!
+        .addEventListener('click', () => deleteAnn(a.id));
+
+      listEl.appendChild(card);
+    });
+  }
+
+  // ── Panel open/close ─────────────────────────────────────────
+  function openPanel() {
+    panel.classList.remove('hidden');
+    backdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePanel() {
+    panel.classList.add('hidden');
+    backdrop.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  const urlEl = document.getElementById('ann-url') as HTMLInputElement;
+
+  function openNew() {
+    panelTitle.textContent = 'New Announcement';
+    editIdEl.value = '';
+    titleEl.value  = '';
+    bodyEl.value   = '';
+    urlEl.value    = '';
+    startEl.value  = '';
+    endEl.value    = '';
+    activeEl.checked = true;
+    openPanel();
+  }
+
+  function openEdit(a: Ann) {
+    panelTitle.textContent = 'Edit Announcement';
+    editIdEl.value = String(a.id);
+    titleEl.value  = a.title;
+    bodyEl.value   = a.body  ?? '';
+    urlEl.value    = a.url   ?? '';
+    startEl.value  = a.start_date ?? '';
+    endEl.value    = a.end_date   ?? '';
+    activeEl.checked = a.active === 1;
+    openPanel();
+  }
+
+  // ── Save ─────────────────────────────────────────────────────
+  document.getElementById('ann-save-btn')!.addEventListener('click', async () => {
+    const id     = editIdEl.value;
+    const saving = document.getElementById('ann-saving')!;
+    saving.classList.remove('hidden');
+
+    const payload = {
+      title:      titleEl.value.trim(),
+      body:       bodyEl.value.trim()  || null,
+      url:        urlEl.value.trim()   || null,
+      start_date: startEl.value        || null,
+      end_date:   endEl.value          || null,
+      active:     activeEl.checked ? 1 : 0,
+    };
+
+    if (!payload.title) {
+      saving.classList.add('hidden');
+      titleEl.focus();
+      return;
+    }
+
+    const url    = id ? `${apiBase}/api/admin/announcements.php?id=${id}` : `${apiBase}/api/admin/announcements.php`;
+    const method = id ? 'PUT' : 'POST';
+    const res    = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    saving.classList.add('hidden');
+
+    if (res.ok) {
+      closePanel();
+      showBanner('Announcement saved.', 'green');
+      await load();
+    } else {
+      showBanner('Save failed. Please try again.', 'red');
+    }
+  });
+
+  // ── Delete ───────────────────────────────────────────────────
+  async function deleteAnn(id: number) {
+    if (!confirm('Delete this announcement?')) return;
+    const res = await fetch(`${apiBase}/api/admin/announcements.php?id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showBanner('Announcement deleted.', 'green');
+      await load();
+    } else {
+      showBanner('Delete failed.', 'red');
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function showBanner(msg: string, color: 'green'|'red') {
+    bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-4
+      ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
+    bannerEl.textContent = msg;
+    bannerEl.classList.remove('hidden');
+    setTimeout(() => bannerEl.classList.add('hidden'), 4000);
+  }
+
+  function esc(s: string) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Wire ─────────────────────────────────────────────────────
+  document.getElementById('ann-new-btn')!.addEventListener('click', openNew);
+  document.getElementById('ann-panel-close')!.addEventListener('click', closePanel);
+  document.getElementById('ann-form')!.addEventListener('submit', e => e.preventDefault());
+  backdrop.addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+  load();
+</script>

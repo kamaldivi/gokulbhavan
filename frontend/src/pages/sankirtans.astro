@@ -1,0 +1,325 @@
+---
+import Base from "@layouts/Base.astro";
+import FeaturedVideos from "@components/FeaturedVideos.astro";
+---
+
+<Base title="Saṅkīrtans" activePath="/sankirtans"
+     description="Nāma-saṅkīrtana recordings - congregational chanting of the holy names of Śrī Kṛṣṇa from Gokul Bhavan Gauḍīya Maṭha.">
+
+  <!-- ── Page Hero ─────────────────────────────────────────────── -->
+  <div class="hidden sm:block bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-center">
+      <h1 class="font-display font-bold text-2xl md:text-3xl text-brand-navy leading-tight mb-2">
+        Saṅkīrtans
+      </h1>
+      <p class="text-brand-slate text-sm leading-relaxed max-w-2xl mx-auto mb-4">
+        The divine sound of the Hare Kṛṣṇa Mahāmantra, sung in diverse devotional tunes.
+      </p>
+      <div class="inline-block font-display text-brand-navy text-sm md:text-base leading-loose
+                  border border-brand-tan bg-white/70 rounded-xl px-6 py-3">
+        <p>Hare Kṛṣṇa Hare Kṛṣṇa Kṛṣṇa Kṛṣṇa Hare Hare</p>
+        <p>Hare Rāma Hare Rāma Rāma Rāma Hare Hare</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+    <!-- ── Tabs ─────────────────────────────────────────────────── -->
+    <div class="flex items-center gap-1 bg-brand-parchment border border-brand-tan rounded-full p-1 mb-8 w-fit">
+      <button id="tab-n"
+              class="sk-tab px-5 py-1.5 rounded-full text-sm font-semibold transition-colors bg-brand-navy text-white">
+        Gokul Bhavan Saṅkīrtans
+      </button>
+      <button id="tab-m"
+              class="sk-tab px-5 py-1.5 rounded-full text-sm font-semibold transition-colors text-brand-slate hover:bg-white/70">
+        Other Saṅkīrtans
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANEL N — Gokul Bhavan (N-series)
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-n" class="space-y-14">
+
+      <section>
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Nāma-Saṅkīrtana</p>
+            <h2 class="font-display font-bold text-xl text-brand-navy">Gokul Bhavan Saṅkīrtans</h2>
+          </div>
+          <button id="sk-n-play-all"
+                  class="hidden inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700
+                         text-white text-xs font-bold uppercase tracking-wide px-4 py-2
+                         rounded-full transition-colors shadow">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Play All
+          </button>
+        </div>
+
+        <div id="sk-n-loading"
+             class="flex flex-wrap gap-1 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+          {Array.from({length: 16}).map(() => (
+            <div class="h-9 w-14 rounded-xl bg-brand-tan/60 animate-pulse"></div>
+          ))}
+        </div>
+        <div id="sk-n-grid"
+             class="hidden flex-wrap gap-1 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+        </div>
+        <p id="sk-n-empty" class="hidden text-sm text-brand-slate text-center py-8">
+          No audio tracks found.
+        </p>
+      </section>
+
+      <!-- Videos — N series only -->
+      <section class="border-t border-brand-tan pt-10">
+        <FeaturedVideos
+          id="sankirtans-all"
+          title="Nāma-Saṅkīrtana Videos"
+          apiParams="playlist_ids=PLA7jDWp35w8__ny6tr8MlP7uzZRvBdLns,PLA7jDWp35w88TLyKrxwLP_SowTS4w8Lyt&sort=title&sort_order=asc"
+          moreLink="/videos"
+          moreLinkLabel="Browse full video library →"
+          mode="grid"
+        />
+      </section>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANEL M — Maha Mantra (M-series)
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-m" class="hidden">
+
+      <section>
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Maha Mantra</p>
+            <h2 class="font-display font-bold text-xl text-brand-navy">Other Saṅkīrtans</h2>
+          </div>
+          <button id="sk-m-play-all"
+                  class="hidden inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700
+                         text-white text-xs font-bold uppercase tracking-wide px-4 py-2
+                         rounded-full transition-colors shadow">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Play All
+          </button>
+        </div>
+
+        <div id="sk-m-loading"
+             class="flex flex-wrap gap-1 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+          {Array.from({length: 16}).map(() => (
+            <div class="h-9 w-14 rounded-xl bg-brand-tan/60 animate-pulse"></div>
+          ))}
+        </div>
+        <div id="sk-m-grid"
+             class="hidden flex-wrap gap-1 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+        </div>
+        <p id="sk-m-empty" class="hidden text-sm text-brand-slate text-center py-8">
+          No audio tracks found.
+        </p>
+      </section>
+
+    </div>
+
+  </div>
+
+</Base>
+
+<script>
+import { isInAnyPlaylist } from '@lib/playlist-store';
+
+(function () {
+
+  type Track = {
+    track_id: string;
+    track_name: string;
+    display_name: string;
+    audio_file_path: string;
+    lyrics_file_path: string | null;
+    download_allowed: number;
+  };
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+  // ── Per-tab state ────────────────────────────────────────────
+  type TabState = {
+    tracks: Track[];
+    activeIdx: number;
+    loaded: boolean;
+  };
+  const state: Record<'N' | 'M', TabState> = {
+    N: { tracks: [], activeIdx: -1, loaded: false },
+    M: { tracks: [], activeIdx: -1, loaded: false },
+  };
+
+  // ── DOM ──────────────────────────────────────────────────────
+  const tabN     = document.getElementById('tab-n') as HTMLButtonElement;
+  const tabM     = document.getElementById('tab-m') as HTMLButtonElement;
+  const panelN   = document.getElementById('panel-n')!;
+  const panelM   = document.getElementById('panel-m')!;
+
+  const els = {
+    N: {
+      loading:  document.getElementById('sk-n-loading')!,
+      grid:     document.getElementById('sk-n-grid')!,
+      empty:    document.getElementById('sk-n-empty')!,
+      playAll:  document.getElementById('sk-n-play-all') as HTMLButtonElement,
+    },
+    M: {
+      loading:  document.getElementById('sk-m-loading')!,
+      grid:     document.getElementById('sk-m-grid')!,
+      empty:    document.getElementById('sk-m-empty')!,
+      playAll:  document.getElementById('sk-m-play-all') as HTMLButtonElement,
+    },
+  };
+
+  // ── Tab switching ────────────────────────────────────────────
+  function activateTab(tab: 'N' | 'M') {
+    const isN = tab === 'N';
+    panelN.classList.toggle('hidden', !isN);
+    panelM.classList.toggle('hidden',  isN);
+
+    [tabN, tabM].forEach((btn, i) => {
+      const active = (i === 0) === isN;
+      btn.classList.toggle('bg-brand-navy', active);
+      btn.classList.toggle('text-white',    active);
+      btn.classList.toggle('text-brand-slate', !active);
+      btn.classList.toggle('hover:bg-white/70', !active);
+    });
+
+    if (!state[tab].loaded) loadTracks(tab);
+  }
+
+  tabN.addEventListener('click', () => activateTab('N'));
+  tabM.addEventListener('click', () => activateTab('M'));
+
+  // ── Load tracks ──────────────────────────────────────────────
+  async function loadTracks(tab: 'N' | 'M') {
+    state[tab].loaded = true;
+    const e = els[tab];
+    try {
+      const res = await fetch(`${apiBase}/api/audio.php?type=N&category=${tab}`);
+      if (!res.ok) throw new Error();
+      const raw: Track[] = await res.json();
+      state[tab].tracks = raw.sort((a, b) =>
+        a.track_id.localeCompare(b.track_id, undefined, { numeric: true })
+      );
+    } catch {
+      e.loading.classList.add('hidden');
+      e.empty.classList.remove('hidden');
+      return;
+    }
+
+    e.loading.classList.add('hidden');
+
+    if (!state[tab].tracks.length) {
+      e.empty.classList.remove('hidden');
+      return;
+    }
+
+    renderPills(tab);
+    e.playAll.classList.remove('hidden');
+  }
+
+  // ── Render pills ─────────────────────────────────────────────
+  function renderPills(tab: 'N' | 'M') {
+    const e = els[tab];
+    const tracks = state[tab].tracks;
+
+    e.grid.innerHTML = tracks.map((t, idx) => {
+      const saved = isInAnyPlaylist(t.track_id);
+      return `
+        <div class="sk-track-wrap flex items-center gap-0.5">
+          <button class="sk-pill px-3 py-2 rounded-xl text-sm font-semibold transition-colors
+                         text-brand-slate hover:bg-white/70"
+                  data-tab="${tab}" data-idx="${idx}"
+                  title="${escHtml(t.track_name)}">
+            ${escHtml(t.track_name)}
+          </button>
+          <button class="sk-save-btn p-1 rounded-lg transition-colors
+                         ${saved ? 'text-brand-lotus' : 'text-brand-slate/30 hover:text-brand-slate'}"
+                  data-mid="${escHtml(t.track_id)}" data-idx="${idx}"
+                  aria-label="Save to playlist">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              ${saved
+                ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+                : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+            </svg>
+          </button>
+        </div>`;
+    }).join('');
+
+    e.grid.querySelectorAll<HTMLButtonElement>('.sk-pill').forEach(btn => {
+      btn.addEventListener('click', () =>
+        playTrack(tab, parseInt(btn.dataset.idx!))
+      );
+    });
+
+    e.grid.querySelectorAll<HTMLButtonElement>('.sk-save-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx!);
+        const track = state[tab].tracks[idx];
+        (window as any).__playlistPicker?.open({
+          track_id:         track.track_id,
+          track_name:       track.track_name,
+          display_name:     track.display_name,
+          audio_file_path:  track.audio_file_path,
+          lyrics_file_path: track.lyrics_file_path ?? undefined,
+          download_allowed: track.download_allowed,
+          type:             'N' as const,
+        });
+      });
+    });
+
+    e.grid.classList.remove('hidden');
+    e.grid.classList.add('flex');
+  }
+
+  // ── Bookmark state refresh ────────────────────────────────────
+  function refreshBookmarkStates() {
+    document.querySelectorAll<HTMLButtonElement>('.sk-save-btn').forEach(btn => {
+      const saved = isInAnyPlaylist(btn.dataset.mid!);
+      btn.classList.toggle('text-brand-lotus',      saved);
+      btn.classList.toggle('text-brand-slate/30',   !saved);
+      btn.classList.toggle('hover:text-brand-slate', !saved);
+      btn.querySelector('svg')!.innerHTML = saved
+        ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    });
+  }
+  window.addEventListener('playlist-changed', refreshBookmarkStates);
+
+  // ── Play ─────────────────────────────────────────────────────
+  function playTrack(tab: 'N' | 'M', idx: number) {
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    state[tab].activeIdx = idx;
+    updateActive(tab);
+    const queue = state[tab].tracks.map(t => ({ ...t, type: 'N' as const }));
+    player.setQueue(queue, idx);
+  }
+
+  function updateActive(tab: 'N' | 'M') {
+    els[tab].grid.querySelectorAll<HTMLButtonElement>('.sk-pill').forEach((btn, i) => {
+      const on = i === state[tab].activeIdx;
+      btn.classList.toggle('bg-brand-navy',     on);
+      btn.classList.toggle('text-white',        on);
+      btn.classList.toggle('text-brand-slate',  !on);
+      btn.classList.toggle('hover:bg-white/70', !on);
+    });
+  }
+
+  // ── Play-all buttons ─────────────────────────────────────────
+  els.N.playAll.addEventListener('click', () => playTrack('N', 0));
+  els.M.playAll.addEventListener('click', () => playTrack('M', 0));
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function escHtml(s: string): string {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init: load Gokul Bhavan tab immediately ──────────────────
+  loadTracks('N');
+
+})();
+</script>

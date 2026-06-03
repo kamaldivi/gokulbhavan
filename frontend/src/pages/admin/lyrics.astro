@@ -1,0 +1,555 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Lyrics Editor" activePath="/admin/lyrics">
+
+  <div class="flex gap-6 h-[calc(100vh-theme(spacing.40))] min-h-0">
+
+    <!-- ══════════════════════════════════════════════════════════
+         LEFT PANEL — Track list
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="w-72 shrink-0 flex flex-col border border-brand-tan rounded-xl overflow-hidden bg-white">
+
+      <!-- Search / filter bar -->
+      <div class="px-3 py-3 border-b border-brand-tan bg-brand-parchment space-y-2">
+        <input id="lyr-search" type="text" placeholder="Search track name…"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan
+                      focus:outline-none focus:ring-2 focus:ring-brand-lotus/40 bg-white" />
+        <div class="flex gap-1.5 flex-wrap">
+          {['', 'B', 'S', 'N', 'A'].map(t => (
+            <button class="lyr-type-btn px-2.5 py-1 rounded-full text-xs font-semibold border border-brand-tan
+                           transition-colors bg-white text-brand-slate hover:bg-brand-parchment"
+                    data-type={t}>
+              {t === '' ? 'All' : t === 'B' ? 'Bhajan' : t === 'S' ? 'Sloka' : t === 'N' ? 'Sankirtan' : 'Album'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Track list -->
+      <div id="lyr-track-list" class="flex-1 overflow-y-auto divide-y divide-brand-tan/60">
+        <div id="lyr-list-loading" class="px-4 py-8 text-center text-sm text-brand-slate animate-pulse">
+          Loading tracks…
+        </div>
+        <div id="lyr-list-empty" class="hidden px-4 py-8 text-center text-sm text-brand-slate italic">
+          No tracks found.
+        </div>
+      </div>
+
+      <!-- Load more -->
+      <div class="px-3 py-2.5 border-t border-brand-tan">
+        <button id="lyr-load-more"
+                class="hidden w-full text-xs font-semibold text-brand-slate hover:text-brand-navy
+                       py-1.5 rounded-lg hover:bg-brand-parchment transition-colors">
+          Load more…
+        </button>
+        <p id="lyr-list-count" class="text-[11px] text-brand-slate/60 text-center"></p>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RIGHT PANEL — Editor
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="flex-1 min-w-0 flex flex-col">
+
+      <!-- Empty state -->
+      <div id="lyr-editor-empty"
+           class="flex-1 flex items-center justify-center text-brand-slate/50 text-sm italic">
+        Select a track to edit its lyrics.
+      </div>
+
+      <!-- Editor card (hidden until track selected) -->
+      <div id="lyr-editor-card" class="hidden flex-1 flex flex-col min-h-0">
+
+        <!-- Track header -->
+        <div class="flex items-start justify-between mb-4 shrink-0">
+          <div>
+            <p id="lyr-editor-id" class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5"></p>
+            <h2 id="lyr-editor-name" class="font-display font-bold text-brand-navy text-lg"></h2>
+          </div>
+          <!-- Utility links -->
+          <div class="flex items-center gap-2">
+            <a href="/api/admin/migrate-lyrics.php" target="_blank" rel="noopener noreferrer"
+               class="text-xs font-semibold text-brand-slate hover:text-brand-navy border border-brand-tan
+                      hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors">
+              Migration →
+            </a>
+            <a href="/api/admin/split-lyrics.php" target="_blank" rel="noopener noreferrer"
+               class="text-xs font-semibold text-brand-slate hover:text-brand-navy border border-brand-tan
+                      hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors">
+              Split Run 1 →
+            </a>
+            <a href="/api/admin/split-lyrics-2.php" target="_blank" rel="noopener noreferrer"
+               class="text-xs font-semibold text-brand-slate hover:text-brand-navy border border-brand-tan
+                      hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors">
+              Split Run 2 →
+            </a>
+            <a href="/api/admin/split-lyrics-3.php" target="_blank" rel="noopener noreferrer"
+               class="text-xs font-semibold text-brand-slate hover:text-brand-navy border border-brand-tan
+                      hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors">
+              Split Run 3 →
+            </a>
+          </div>
+        </div>
+
+        <!-- Language tabs -->
+        <div class="flex items-center gap-2 mb-4 shrink-0">
+          <div id="lyr-lang-tabs" class="flex gap-1 bg-brand-parchment border border-brand-tan rounded-full p-1">
+            <!-- populated by JS -->
+          </div>
+          <button id="lyr-add-lang-btn"
+                  class="flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy
+                         border border-brand-tan hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Add language
+          </button>
+        </div>
+
+        <!-- Add-language input (hidden by default) -->
+        <div id="lyr-add-lang-form" class="hidden flex items-center gap-2 mb-4 shrink-0">
+          <input id="lyr-new-lang" type="text" placeholder="e.g. ta, sa, hi" maxlength="10"
+                 class="px-3 py-1.5 text-sm rounded-lg border border-brand-tan
+                        focus:outline-none focus:ring-2 focus:ring-brand-lotus/40 w-32" />
+          <button id="lyr-add-lang-confirm"
+                  class="text-xs font-semibold bg-brand-navy text-white px-3 py-1.5 rounded-lg hover:bg-brand-slate transition-colors">
+            Add
+          </button>
+          <button id="lyr-add-lang-cancel"
+                  class="text-xs font-semibold text-brand-slate hover:text-brand-navy px-2 py-1.5 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+
+        <!-- Lyrics + Meaning textareas -->
+        <div class="flex-1 flex gap-4 min-h-0">
+
+          <div class="flex-1 flex flex-col min-h-0">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-1.5 shrink-0">
+              Lyrics
+            </label>
+            <textarea id="lyr-lyrics-ta"
+                      class="flex-1 font-mono text-sm border border-brand-tan rounded-xl p-3 resize-none
+                             focus:outline-none focus:ring-2 focus:ring-brand-lotus/40
+                             placeholder:text-brand-slate/40"
+                      placeholder="Paste or type lyrics here…"></textarea>
+          </div>
+
+          <div class="flex-1 flex flex-col min-h-0">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-1.5 shrink-0">
+              Meaning <span class="font-normal normal-case tracking-normal text-brand-slate/50">(optional)</span>
+            </label>
+            <textarea id="lyr-meaning-ta"
+                      class="flex-1 font-mono text-sm border border-brand-tan rounded-xl p-3 resize-none
+                             focus:outline-none focus:ring-2 focus:ring-brand-lotus/40
+                             placeholder:text-brand-slate/40"
+                      placeholder="Paste or type meaning here…"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Action bar -->
+        <div class="flex items-center justify-between mt-4 shrink-0">
+          <button id="lyr-delete-lang"
+                  class="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
+            Delete this language
+          </button>
+          <div class="flex items-center gap-3">
+            <span id="lyr-save-status" class="text-xs text-brand-slate/60"></span>
+            <button id="lyr-save-btn"
+                    class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white
+                           text-xs font-bold uppercase tracking-wide px-5 py-2 rounded-full
+                           transition-colors shadow">
+              Save
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</AdminShell>
+
+<script>
+(function () {
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+  // ── Types ────────────────────────────────────────────────────
+  type TrackItem = {
+    track_id: string;
+    track_name: string;
+    audio_family: string;
+    has_lyrics: number;
+  };
+  type LangRow = {
+    lang: string;
+    lyrics: string | null;
+    meaning: string | null;
+    updated_at: string | null;
+  };
+
+  // ── State ────────────────────────────────────────────────────
+  let allTracks: TrackItem[]          = [];
+  let listOffset                      = 0;
+  let listTotal                       = 0;
+  const LIMIT                         = 100;
+  let currentTrackId: string | null   = null;
+  let currentLang: string             = 'en';
+  let langRows: LangRow[]             = [];
+  let filterType                      = '';
+  let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ── DOM ──────────────────────────────────────────────────────
+  const searchInput    = document.getElementById('lyr-search')    as HTMLInputElement;
+  const typeButtons    = document.querySelectorAll<HTMLButtonElement>('.lyr-type-btn');
+  const trackList      = document.getElementById('lyr-track-list')!;
+  const listLoading    = document.getElementById('lyr-list-loading')!;
+  const listEmpty      = document.getElementById('lyr-list-empty')!;
+  const loadMoreBtn    = document.getElementById('lyr-load-more') as HTMLButtonElement;
+  const listCount      = document.getElementById('lyr-list-count')!;
+  const editorEmpty    = document.getElementById('lyr-editor-empty')!;
+  const editorCard     = document.getElementById('lyr-editor-card')!;
+  const editorId       = document.getElementById('lyr-editor-id')!;
+  const editorName     = document.getElementById('lyr-editor-name')!;
+  const langTabs       = document.getElementById('lyr-lang-tabs')!;
+  const addLangBtn     = document.getElementById('lyr-add-lang-btn') as HTMLButtonElement;
+  const addLangForm    = document.getElementById('lyr-add-lang-form')!;
+  const newLangInput   = document.getElementById('lyr-new-lang')   as HTMLInputElement;
+  const addLangConfirm = document.getElementById('lyr-add-lang-confirm') as HTMLButtonElement;
+  const addLangCancel  = document.getElementById('lyr-add-lang-cancel')  as HTMLButtonElement;
+  const lyricsTa       = document.getElementById('lyr-lyrics-ta')  as HTMLTextAreaElement;
+  const meaningTa      = document.getElementById('lyr-meaning-ta') as HTMLTextAreaElement;
+  const saveBtn        = document.getElementById('lyr-save-btn')   as HTMLButtonElement;
+  const saveStatus     = document.getElementById('lyr-save-status')!;
+  const deleteLangBtn  = document.getElementById('lyr-delete-lang') as HTMLButtonElement;
+
+  // ── Family badge ─────────────────────────────────────────────
+  const FAMILY_LABEL: Record<string, string> = {
+    bhajan: 'B', sloka: 'S', sankirtan: 'N', album: 'A',
+  };
+
+  // ── Filter type buttons ──────────────────────────────────────
+  typeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterType = btn.dataset.type ?? '';
+      typeButtons.forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('bg-brand-navy', active);
+        b.classList.toggle('text-white',    active);
+        b.classList.toggle('bg-white',      !active);
+        b.classList.toggle('text-brand-slate', !active);
+      });
+      resetAndLoad();
+    });
+  });
+
+  // ── Search ───────────────────────────────────────────────────
+  searchInput.addEventListener('input', () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(resetAndLoad, 350);
+  });
+
+  // ── Load track list ──────────────────────────────────────────
+  function resetAndLoad() {
+    listOffset = 0;
+    allTracks  = [];
+    // Remove existing track rows (keep loading/empty placeholders)
+    trackList.querySelectorAll('.lyr-track-row').forEach(el => el.remove());
+    listLoading.classList.remove('hidden');
+    listEmpty.classList.add('hidden');
+    loadMoreBtn.classList.add('hidden');
+    loadTracks();
+  }
+
+  async function loadTracks() {
+    const q = new URLSearchParams({
+      list:   '1',
+      limit:  String(LIMIT),
+      offset: String(listOffset),
+    });
+    if (filterType) q.set('type', filterType);
+    const s = searchInput.value.trim();
+    if (s) q.set('search', s);
+
+    try {
+      const res = await fetch(`${apiBase}/api/admin/lyrics.php?${q}`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      const rows: TrackItem[] = await res.json();
+      listLoading.classList.add('hidden');
+      allTracks = allTracks.concat(rows);
+      listOffset += rows.length;
+
+      if (rows.length > 0) {
+        renderTrackRows(rows);
+      }
+
+      if (allTracks.length === 0) {
+        listEmpty.classList.remove('hidden');
+      }
+
+      // Show load-more if a full page came back (may be more)
+      loadMoreBtn.classList.toggle('hidden', rows.length < LIMIT);
+      listCount.textContent = `${allTracks.length} tracks loaded`;
+
+    } catch {
+      listLoading.classList.add('hidden');
+      listEmpty.textContent = 'Error loading tracks.';
+      listEmpty.classList.remove('hidden');
+    }
+  }
+
+  function renderTrackRows(rows: TrackItem[]) {
+    rows.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'lyr-track-row flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-brand-parchment transition-colors';
+      div.dataset.id = t.track_id;
+      const badge = FAMILY_LABEL[t.audio_family] ?? '?';
+      const dot = t.has_lyrics
+        ? '<span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" title="Has lyrics"></span>'
+        : '<span class="w-1.5 h-1.5 rounded-full bg-brand-tan shrink-0" title="No lyrics"></span>';
+      div.innerHTML = `
+        <span class="shrink-0 text-[10px] font-bold bg-brand-parchment border border-brand-tan
+                     text-brand-slate px-1.5 py-0.5 rounded">${badge}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-brand-navy truncate">${escHtml(t.track_name)}</p>
+          <p class="text-[10px] text-brand-slate/60">${escHtml(t.track_id)}</p>
+        </div>
+        ${dot}
+      `;
+      div.addEventListener('click', () => selectTrack(t.track_id, t.track_name, t.audio_family));
+      trackList.appendChild(div);
+    });
+  }
+
+  loadMoreBtn.addEventListener('click', loadTracks);
+
+  // ── Select track ─────────────────────────────────────────────
+  async function selectTrack(trackId: string, trackName: string, family: string) {
+    // Highlight selected
+    trackList.querySelectorAll('.lyr-track-row').forEach(el => {
+      el.classList.toggle('bg-brand-parchment', (el as HTMLElement).dataset.id === trackId);
+    });
+
+    currentTrackId = trackId;
+    editorId.textContent   = `${FAMILY_LABEL[family] ?? family}  ·  ${trackId}`;
+    editorName.textContent = trackName;
+
+    langTabs.innerHTML = '';
+    lyricsTa.value     = '';
+    meaningTa.value    = '';
+    saveStatus.textContent = '';
+    editorEmpty.classList.add('hidden');
+    editorCard.classList.remove('hidden');
+
+    await loadLangRows(trackId);
+  }
+
+  async function loadLangRows(trackId: string) {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/lyrics.php?track_id=${encodeURIComponent(trackId)}`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      langRows = data.rows ?? [];
+    } catch {
+      langRows = [];
+    }
+
+    // Always ensure 'en' exists in the tab list
+    if (!langRows.find(r => r.lang === 'en')) {
+      langRows.unshift({ lang: 'en', lyrics: null, meaning: null, updated_at: null });
+    }
+
+    renderLangTabs();
+    activateLang(langRows[0]?.lang ?? 'en');
+  }
+
+  // ── Language tabs ─────────────────────────────────────────────
+  function renderLangTabs() {
+    langTabs.innerHTML = '';
+    langRows.forEach(row => {
+      const btn = document.createElement('button');
+      const hasContent = row.lyrics || row.meaning;
+      btn.className = 'lyr-lang-tab px-4 py-1 rounded-full text-xs font-semibold transition-colors text-brand-slate hover:bg-white/70';
+      btn.dataset.lang = row.lang;
+      btn.textContent  = row.lang.toUpperCase();
+      if (hasContent) {
+        const dot = document.createElement('span');
+        dot.className = 'ml-1 inline-block w-1 h-1 rounded-full bg-green-500 align-middle';
+        btn.appendChild(dot);
+      }
+      btn.addEventListener('click', () => activateLang(row.lang));
+      langTabs.appendChild(btn);
+    });
+  }
+
+  function activateLang(lang: string) {
+    currentLang = lang;
+    langTabs.querySelectorAll<HTMLButtonElement>('.lyr-lang-tab').forEach(btn => {
+      const active = btn.dataset.lang === lang;
+      btn.classList.toggle('bg-brand-navy', active);
+      btn.classList.toggle('text-white',    active);
+      btn.classList.toggle('text-brand-slate', !active);
+    });
+
+    const row = langRows.find(r => r.lang === lang);
+    lyricsTa.value  = row?.lyrics  ?? '';
+    meaningTa.value = row?.meaning ?? '';
+    saveStatus.textContent = row?.updated_at ? `Last saved: ${row.updated_at}` : '';
+  }
+
+  // ── Add language ──────────────────────────────────────────────
+  addLangBtn.addEventListener('click', () => {
+    addLangForm.classList.remove('hidden');
+    newLangInput.value = '';
+    newLangInput.focus();
+  });
+
+  addLangCancel.addEventListener('click', () => {
+    addLangForm.classList.add('hidden');
+  });
+
+  addLangConfirm.addEventListener('click', () => {
+    const lang = newLangInput.value.trim().toLowerCase();
+    if (!/^[a-z]{2,10}$/.test(lang)) {
+      newLangInput.classList.add('border-red-400');
+      return;
+    }
+    newLangInput.classList.remove('border-red-400');
+    if (!langRows.find(r => r.lang === lang)) {
+      langRows.push({ lang, lyrics: null, meaning: null, updated_at: null });
+    }
+    addLangForm.classList.add('hidden');
+    renderLangTabs();
+    activateLang(lang);
+  });
+
+  // ── Save ──────────────────────────────────────────────────────
+  saveBtn.addEventListener('click', async () => {
+    if (!currentTrackId) return;
+
+    const lyricsBody  = lyricsTa.value;
+    const meaningBody = meaningTa.value;
+
+    saveBtn.disabled = true;
+    saveStatus.textContent = 'Saving…';
+
+    try {
+      const saves: Promise<Response>[] = [];
+
+      // Always upsert lyrics row (even if empty, to record intent)
+      if (lyricsBody.trim() !== '' || langRows.find(r => r.lang === currentLang)?.lyrics !== null) {
+        saves.push(fetch(`${apiBase}/api/admin/lyrics.php`, {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            track_id:     currentTrackId,
+            lang:         currentLang,
+            content_type: 'lyrics',
+            body:         lyricsBody,
+          }),
+        }));
+      }
+
+      if (meaningBody.trim() !== '') {
+        saves.push(fetch(`${apiBase}/api/admin/lyrics.php`, {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            track_id:     currentTrackId,
+            lang:         currentLang,
+            content_type: 'meaning',
+            body:         meaningBody,
+          }),
+        }));
+      }
+
+      if (saves.length === 0) {
+        saveStatus.textContent = 'Nothing to save.';
+        saveBtn.disabled = false;
+        return;
+      }
+
+      await Promise.all(saves);
+
+      // Update local cache
+      const row = langRows.find(r => r.lang === currentLang);
+      if (row) {
+        row.lyrics  = lyricsBody  || null;
+        row.meaning = meaningBody || null;
+        row.updated_at = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      }
+
+      // Refresh has_lyrics dot in list
+      refreshListDot(currentTrackId, !!(lyricsBody || meaningBody));
+
+      saveStatus.textContent = 'Saved ✓';
+      renderLangTabs();
+      activateLang(currentLang);
+
+    } catch {
+      saveStatus.textContent = 'Error saving.';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  // ── Delete language ───────────────────────────────────────────
+  deleteLangBtn.addEventListener('click', async () => {
+    if (!currentTrackId || !currentLang) return;
+    if (!confirm(`Delete all "${currentLang}" lyrics for this track?`)) return;
+
+    try {
+      const res = await fetch(`${apiBase}/api/admin/lyrics.php`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ track_id: currentTrackId, lang: currentLang }),
+      });
+      if (!res.ok) throw new Error();
+      langRows = langRows.filter(r => r.lang !== currentLang);
+      if (!langRows.find(r => r.lang === 'en')) {
+        langRows.unshift({ lang: 'en', lyrics: null, meaning: null, updated_at: null });
+      }
+      const hasAny = langRows.some(r => r.lyrics || r.meaning);
+      refreshListDot(currentTrackId, hasAny);
+      renderLangTabs();
+      activateLang(langRows[0]?.lang ?? 'en');
+    } catch {
+      saveStatus.textContent = 'Delete failed.';
+    }
+  });
+
+  // ── Refresh has_lyrics dot in track list ──────────────────────
+  function refreshListDot(trackId: string, hasLyrics: boolean) {
+    const row = trackList.querySelector(`.lyr-track-row[data-id="${CSS.escape(trackId)}"]`);
+    if (!row) return;
+    const dot = row.querySelector('span.rounded-full');
+    if (dot) {
+      dot.classList.toggle('bg-green-500', hasLyrics);
+      dot.classList.toggle('bg-brand-tan', !hasLyrics);
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function escHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  // Activate "All" tab
+  typeButtons.forEach(btn => {
+    if (btn.dataset.type === '') {
+      btn.classList.add('bg-brand-navy', 'text-white');
+      btn.classList.remove('bg-white', 'text-brand-slate');
+    }
+  });
+  resetAndLoad();
+
+})();
+</script>

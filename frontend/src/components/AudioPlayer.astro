@@ -1,0 +1,646 @@
+---
+/**
+ * AudioPlayer — modal + persistent mini bar.
+ *
+ * Include once in Base.astro (already done). API unchanged:
+ *
+ *   window.__audioPlayer.play(track)
+ *   window.__audioPlayer.setQueue(tracks, startIndex)
+ *
+ * Track shape:
+ *   { track_id, track_name, display_name, audio_file_path, lyrics_file_path,
+ *     download_allowed, type }   ← type = 'B' | 'S'
+ *
+ * Behaviour:
+ *   - play() / setQueue() → opens modal + starts audio
+ *   - ✕ on modal → closes modal, audio keeps playing, mini bar stays
+ *   - [↑] on mini bar → reopens modal for current track
+ *   - Backdrop click → same as ✕
+ *   - Prev / Next → advances queue, reloads modal content
+ *   - Auto-advance at track end
+ */
+---
+
+<!-- ── Hidden audio element ───────────────────────────────────── -->
+<audio id="gb-audio" preload="metadata"></audio>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL
+════════════════════════════════════════════════════════════════ -->
+<div id="gb-modal"
+     class="fixed inset-0 z-[300] hidden"
+     role="dialog" aria-modal="true" aria-labelledby="gb-modal-title">
+
+  <!-- Backdrop -->
+  <div id="gb-backdrop"
+       class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Panel — centred, scrollable on small screens -->
+  <div class="relative flex items-center justify-center min-h-full px-4 py-8">
+    <div class="relative w-full max-w-lg bg-brand-navy rounded-2xl shadow-2xl
+                flex flex-col overflow-hidden max-h-[90vh]">
+
+      <!-- ── Header: track info + close ──────────────────────── -->
+      <div class="flex items-start gap-3 px-5 pt-5 pb-4 shrink-0">
+
+        <!-- Disc icon -->
+        <div class="w-12 h-12 shrink-0 rounded-xl bg-brand-lotus/20
+                    flex items-center justify-center">
+          <svg class="w-6 h-6 fill-brand-lotus" viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zm0 4a5 5 0 1 1 0 10A5 5 0 0 1 12 7zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+          </svg>
+        </div>
+
+        <!-- Title + category -->
+        <div class="flex-1 min-w-0 pt-0.5">
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-lotus/80 mb-0.5"
+             id="gb-modal-category"></p>
+          <h2 id="gb-modal-title"
+              class="font-display font-bold text-white text-lg leading-snug"></h2>
+          <p id="gb-modal-bhajan"
+             class="hidden text-xs font-mono font-semibold text-white mt-0.5"></p>
+          <p id="gb-modal-queue"
+             class="text-xs text-white/40 mt-0.5"></p>
+        </div>
+
+        <!-- Close button -->
+        <button id="gb-modal-close"
+                title="Close (audio keeps playing)"
+                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full
+                       text-white/40 hover:text-white hover:bg-white/10 transition-colors mt-0.5">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ── Progress bar ─────────────────────────────────────── -->
+      <div class="px-5 pb-2 shrink-0">
+        <div id="gb-modal-progress-track"
+             class="w-full h-1.5 bg-white/15 rounded-full cursor-pointer relative group">
+          <div id="gb-modal-progress-fill"
+               class="h-full bg-brand-lotus rounded-full transition-none pointer-events-none"
+               style="width:0%"></div>
+          <!-- Scrub thumb -->
+          <div id="gb-modal-thumb"
+               class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3
+                      bg-white rounded-full shadow opacity-0 group-hover:opacity-100
+                      transition-opacity pointer-events-none"
+               style="left:0%"></div>
+        </div>
+        <div class="flex justify-between mt-1">
+          <span id="gb-modal-time-current"
+                class="text-sm text-white/60 tabular-nums">0:00</span>
+          <span id="gb-modal-time-total"
+                class="text-sm text-white/60 tabular-nums">0:00</span>
+        </div>
+      </div>
+
+      <!-- ── Controls ────────────────────────────────────────── -->
+      <div class="flex items-center justify-between px-5 pb-4 shrink-0">
+
+        <!-- Speed selector -->
+        <select id="gb-speed"
+                title="Playback speed"
+                class="text-xs bg-white/10 text-white/70 border border-white/10
+                       rounded-lg px-2 py-1.5 cursor-pointer hover:bg-white/15
+                       focus:outline-none focus:ring-1 focus:ring-brand-lotus">
+          <option value="0.5">0.5×</option>
+          <option value="0.75">0.75×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+
+        <!-- Prev / Play-Pause / Next -->
+        <div class="flex items-center gap-3">
+          <button id="gb-prev" title="Previous"
+                  class="w-9 h-9 flex items-center justify-center rounded-full
+                         text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+            </svg>
+          </button>
+
+          <button id="gb-play-pause" title="Play / Pause"
+                  class="w-14 h-14 flex items-center justify-center rounded-full
+                         bg-brand-lotus hover:bg-pink-700 text-white transition-colors shadow-lg">
+            <svg id="gb-icon-play" class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="gb-icon-pause" class="w-7 h-7 fill-current hidden" viewBox="0 0 24 24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+
+          <button id="gb-next" title="Next"
+                  class="w-9 h-9 flex items-center justify-center rounded-full
+                         text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M6 18l8.5-6L6 6v12zm8.5-6 3.5 6V6z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Bookmark + Download -->
+        <div class="flex items-center gap-3">
+          <button id="gb-bookmark" title="Save to playlist"
+                  class="text-xs font-semibold flex items-center gap-1
+                         text-white/50 hover:text-white transition-colors">
+            <svg id="gb-bookmark-icon" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
+            </svg>
+            Playlist
+          </button>
+          <a id="gb-download" href="#" download title="Download track"
+             class="text-xs font-semibold flex items-center gap-1.5
+                    text-white/50 hover:text-white transition-colors invisible">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+            </svg>
+            Download
+          </a>
+        </div>
+      </div>
+
+      <!-- ── Lyrics area ──────────────────────────────────────── -->
+      <div class="border-t border-white/10 overflow-y-auto shrink min-h-0">
+        <!-- Loading state -->
+        <div id="gb-lyrics-loading"
+             class="hidden px-5 py-5 text-center text-sm text-white/40 animate-pulse">
+          Loading lyrics…
+        </div>
+        <!-- No lyrics -->
+        <div id="gb-lyrics-none"
+             class="hidden px-5 py-5 text-center text-sm text-white/40 italic">
+          No lyrics available for this track.
+        </div>
+        <!-- Lyrics + Meaning stacked -->
+        <div id="gb-lyrics-content" class="hidden">
+          <!-- Lyrics section -->
+          <div id="gb-lyrics-text"
+               class="px-5 pt-5 pb-4 font-mono text-sm text-white/85
+                      whitespace-pre-wrap leading-relaxed"></div>
+          <!-- Meaning section (only shown when meaning is present) -->
+          <div id="gb-lyrics-meaning-wrap" class="hidden">
+            <div class="mx-5 border-t border-white/10"></div>
+            <div class="px-5 pt-4 pb-5">
+              <p class="text-[10px] font-bold uppercase tracking-widest
+                        text-brand-lotus/70 mb-2">Meaning</p>
+              <div id="gb-lyrics-meaning"
+                   class="font-mono text-sm text-white/70
+                          whitespace-pre-wrap leading-relaxed"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MINI BAR  (visible while modal is closed)
+════════════════════════════════════════════════════════════════ -->
+<div id="gb-bar"
+     class="fixed bottom-0 left-0 right-0 z-[200]
+            translate-y-full transition-transform duration-300
+            bg-brand-navy border-t border-white/15 shadow-2xl select-none">
+
+  <div class="flex items-center gap-3 px-4 py-2.5 max-w-6xl mx-auto">
+
+    <!-- Mini play/pause -->
+    <button id="gb-bar-play-pause" title="Play / Pause"
+            class="w-8 h-8 shrink-0 flex items-center justify-center rounded-full
+                   bg-brand-lotus hover:bg-pink-700 text-white transition-colors">
+      <svg id="gb-bar-icon-play" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+      <svg id="gb-bar-icon-pause" class="w-4 h-4 fill-current hidden" viewBox="0 0 24 24">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+    </button>
+
+    <!-- Track info + progress (click to open modal) -->
+    <button id="gb-bar-expand"
+            class="flex-1 min-w-0 text-left flex flex-col gap-0.5">
+      <p id="gb-bar-title"
+         class="text-sm font-semibold text-white truncate leading-tight"></p>
+      <div class="flex items-center gap-2">
+        <p id="gb-bar-family"
+           class="text-xs text-white/45 truncate shrink-0"></p>
+        <!-- inline mini progress -->
+        <div class="flex-1 h-0.5 bg-white/15 rounded-full hidden sm:block">
+          <div id="gb-bar-progress"
+               class="h-full bg-brand-lotus rounded-full transition-none"
+               style="width:0%"></div>
+        </div>
+        <span id="gb-bar-time"
+              class="text-xs text-white/35 tabular-nums shrink-0 hidden sm:block">0:00</span>
+      </div>
+    </button>
+
+    <!-- Expand icon -->
+    <button id="gb-bar-expand-icon"
+            title="Open player"
+            class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full
+                   text-white/40 hover:text-white hover:bg-white/10 transition-colors">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
+      </svg>
+    </button>
+
+    <!-- Bookmark -->
+    <button id="gb-bar-bookmark" title="Save to playlist"
+            class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full
+                   text-white/40 hover:text-white hover:bg-white/10 transition-colors">
+      <svg id="gb-bar-bookmark-icon" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
+      </svg>
+    </button>
+
+    <!-- Dismiss bar -->
+    <button id="gb-bar-close"
+            title="Stop and dismiss"
+            class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full
+                   text-white/30 hover:text-white hover:bg-white/10 transition-colors">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+import { isInAnyPlaylist } from '@lib/playlist-store';
+
+(function () {
+
+  /* ── Types ──────────────────────────────────────────────────── */
+  type Track = {
+    track_id:          string;
+    track_name:        string;
+    display_name:      string;
+    audio_file_path:   string;
+    lyrics_file_path:  string | null;
+    download_allowed:  number;
+    type:              'B' | 'S' | 'N' | 'A';
+    lyrics_id?:        string;  // override for API lookup when track_id has a suffix (-1, -B, etc.)
+    bhajan_id?:        string | null;  // source bhajan ID for album tracks
+  };
+
+  /* ── DOM refs: audio ────────────────────────────────────────── */
+  const audio = document.getElementById('gb-audio') as HTMLAudioElement;
+
+  /* ── DOM refs: modal ────────────────────────────────────────── */
+  const modal           = document.getElementById('gb-modal')!;
+  const backdrop        = document.getElementById('gb-backdrop')!;
+  const modalClose      = document.getElementById('gb-modal-close')!;
+  const modalCategory   = document.getElementById('gb-modal-category')!;
+  const modalTitle      = document.getElementById('gb-modal-title')!;
+  const modalBhajan     = document.getElementById('gb-modal-bhajan')!;
+  const modalQueue      = document.getElementById('gb-modal-queue')!;
+  const progressTrack   = document.getElementById('gb-modal-progress-track')!;
+  const progressFill    = document.getElementById('gb-modal-progress-fill')!;
+  const progressThumb   = document.getElementById('gb-modal-thumb')!;
+  const timeCurrent     = document.getElementById('gb-modal-time-current')!;
+  const timeTotal       = document.getElementById('gb-modal-time-total')!;
+  const speedSelect     = document.getElementById('gb-speed') as HTMLSelectElement;
+  const btnPrev         = document.getElementById('gb-prev')!;
+  const btnPlayPause    = document.getElementById('gb-play-pause')!;
+  const iconPlay        = document.getElementById('gb-icon-play')!;
+  const iconPause       = document.getElementById('gb-icon-pause')!;
+  const btnNext         = document.getElementById('gb-next')!;
+  const downloadBtn     = document.getElementById('gb-download') as HTMLAnchorElement;
+  const lyricsLoading   = document.getElementById('gb-lyrics-loading')!;
+  const lyricsNone      = document.getElementById('gb-lyrics-none')!;
+  const lyricsContent   = document.getElementById('gb-lyrics-content')!;
+  const lyricsText      = document.getElementById('gb-lyrics-text')!;
+  const lyricsMeaningWrap = document.getElementById('gb-lyrics-meaning-wrap')!;
+  const lyricsMeaning   = document.getElementById('gb-lyrics-meaning')!;
+
+  /* ── DOM refs: mini bar ─────────────────────────────────────── */
+  const bar             = document.getElementById('gb-bar')!;
+  const barPlayPause    = document.getElementById('gb-bar-play-pause')!;
+  const barIconPlay     = document.getElementById('gb-bar-icon-play')!;
+  const barIconPause    = document.getElementById('gb-bar-icon-pause')!;
+  const barExpand       = document.getElementById('gb-bar-expand')!;
+  const barExpandIcon   = document.getElementById('gb-bar-expand-icon')!;
+  const barTitle        = document.getElementById('gb-bar-title')!;
+  const barFamily       = document.getElementById('gb-bar-family')!;
+  const barProgress     = document.getElementById('gb-bar-progress')!;
+  const barTime         = document.getElementById('gb-bar-time')!;
+  const barClose        = document.getElementById('gb-bar-close')!;
+  const bookmarkBtn     = document.getElementById('gb-bookmark')!;
+  const bookmarkIcon    = document.getElementById('gb-bookmark-icon')!;
+  const barBookmarkBtn  = document.getElementById('gb-bar-bookmark')!;
+  const barBookmarkIcon = document.getElementById('gb-bar-bookmark-icon')!;
+
+  /* ── State ──────────────────────────────────────────────────── */
+  let queue:      Track[] = [];
+  let queueIdx            = 0;
+  let modalOpen           = false;
+  type CachedLyrics = { lyrics: string | null; meaning: string | null };
+  let lyricsCache: Record<string, CachedLyrics | null> = {};
+
+  /* ── Helpers ────────────────────────────────────────────────── */
+  function fmt(sec: number): string {
+    if (!isFinite(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function setPlayIcons(playing: boolean) {
+    // modal icons
+    iconPlay.classList.toggle('hidden', playing);
+    iconPause.classList.toggle('hidden', !playing);
+    // bar icons
+    barIconPlay.classList.toggle('hidden', playing);
+    barIconPause.classList.toggle('hidden', !playing);
+  }
+
+  function updateBookmarkState(track: Track) {
+    const saved = isInAnyPlaylist(track.track_id);
+    const filledPath = '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>';
+    const outlinePath = '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    bookmarkIcon.innerHTML    = saved ? filledPath : outlinePath;
+    barBookmarkIcon.innerHTML = saved ? filledPath : outlinePath;
+    bookmarkBtn.classList.toggle('text-brand-lotus', saved);
+    bookmarkBtn.classList.toggle('text-white/50',    !saved);
+    barBookmarkBtn.classList.toggle('text-brand-lotus', saved);
+    barBookmarkBtn.classList.toggle('text-white/40',    !saved);
+  }
+
+  function showBar() {
+    bar.classList.remove('translate-y-full');
+  }
+
+  function hideBar() {
+    bar.classList.add('translate-y-full');
+  }
+
+  /* ── Modal open / close ─────────────────────────────────────── */
+  function openModal() {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    modalOpen = true;
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    modalOpen = false;
+    // Show bar if a track is loaded (audio src set)
+    if (audio.src && audio.src !== window.location.href) showBar();
+  }
+
+  /* ── Load a track ───────────────────────────────────────────── */
+  async function loadTrack(track: Track, autoplay = true) {
+    // Audio source
+    audio.src = track.audio_file_path.startsWith('http')
+      ? track.audio_file_path
+      : '/' + track.audio_file_path;
+    audio.playbackRate = parseFloat(speedSelect.value);
+
+    // Modal content
+    const displayId = track.lyrics_id ?? track.track_id;
+    modalCategory.textContent = track.display_name;
+    modalTitle.textContent    = displayId + '  ' + track.track_name;
+    if (track.bhajan_id) {
+      modalBhajan.textContent = track.bhajan_id;
+      modalBhajan.classList.remove('hidden');
+    } else {
+      modalBhajan.classList.add('hidden');
+    }
+    modalQueue.textContent    = queue.length > 1
+      ? `Track ${queueIdx + 1} of ${queue.length}`
+      : '';
+
+    // Progress reset
+    progressFill.style.width  = '0%';
+    progressThumb.style.left  = '0%';
+    timeCurrent.textContent   = '0:00';
+    timeTotal.textContent     = '0:00';
+
+    // Download
+    const src = '/' + track.audio_file_path.replace(/^\//, '');
+    if (track.download_allowed) {
+      downloadBtn.href = src;
+      (downloadBtn as HTMLAnchorElement).download = displayId + '-' + track.track_name + '.mp3';
+      downloadBtn.classList.remove('invisible');
+    } else {
+      downloadBtn.classList.add('invisible');
+    }
+
+    // Mini bar
+    barTitle.textContent  = displayId + '  ' + track.track_name;
+    barFamily.textContent = track.display_name;
+
+    // Bookmark
+    updateBookmarkState(track);
+
+    // Lyrics
+    showLyricsState('loading');
+    fetchLyrics(track);
+
+    // Open modal + play
+    openModal();
+    if (autoplay) {
+      try { await audio.play(); } catch (_) {}
+    }
+  }
+
+  /* ── Lyrics states ──────────────────────────────────────────── */
+  function showLyricsState(state: 'loading' | 'none' | 'content', cached?: CachedLyrics) {
+    lyricsLoading.classList.toggle('hidden', state !== 'loading');
+    lyricsNone.classList.toggle('hidden',    state !== 'none');
+    lyricsContent.classList.toggle('hidden', state !== 'content');
+
+    if (state === 'content' && cached) {
+      lyricsText.textContent = cached.lyrics ?? '';
+      if (cached.meaning) {
+        lyricsMeaning.textContent = cached.meaning;
+        lyricsMeaningWrap.classList.remove('hidden');
+      } else {
+        lyricsMeaningWrap.classList.add('hidden');
+      }
+    }
+  }
+
+  async function fetchLyrics(track: Track) {
+    const lookupId = track.lyrics_id ?? track.track_id;
+    const key = lookupId + ':' + track.type;
+    if (lyricsCache[key] !== undefined) {
+      const cached = lyricsCache[key];
+      if (cached && (cached.lyrics || cached.meaning)) {
+        showLyricsState('content', cached);
+      } else {
+        showLyricsState('none');
+      }
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/lyrics.php?id=${encodeURIComponent(lookupId)}&type=${track.type}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        // Support both new shape { lyrics, meaning } and legacy { text }
+        const lyricsBody  = (data.lyrics  ?? data.text ?? '').trim() || null;
+        const meaningBody = (data.meaning ?? '').trim() || null;
+        const cached: CachedLyrics = { lyrics: lyricsBody, meaning: meaningBody };
+        lyricsCache[key] = cached;
+        if (lyricsBody || meaningBody) {
+          showLyricsState('content', cached);
+        } else {
+          showLyricsState('none');
+        }
+      } else {
+        lyricsCache[key] = null;
+        showLyricsState('none');
+      }
+    } catch {
+      lyricsCache[key] = null;
+      showLyricsState('none');
+    }
+  }
+
+  /* ── Audio events ───────────────────────────────────────────── */
+  audio.addEventListener('play',  () => setPlayIcons(true));
+  audio.addEventListener('pause', () => setPlayIcons(false));
+
+  audio.addEventListener('timeupdate', () => {
+    if (!audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    const pctStr = pct + '%';
+    progressFill.style.width = pctStr;
+    progressThumb.style.left = pctStr;
+    timeCurrent.textContent  = fmt(audio.currentTime);
+    barProgress.style.width  = pctStr;
+    barTime.textContent      = fmt(audio.currentTime);
+  });
+
+  audio.addEventListener('durationchange', () => {
+    timeTotal.textContent = fmt(audio.duration);
+  });
+
+  audio.addEventListener('ended', () => {
+    if (queue.length > 1) {
+      queueIdx = (queueIdx + 1) % queue.length;
+      loadTrack(queue[queueIdx]);
+    } else {
+      setPlayIcons(false);
+    }
+  });
+
+  /* ── Progress bar scrubbing ─────────────────────────────────── */
+  let scrubbing = false;
+
+  function scrubTo(e: MouseEvent | TouchEvent) {
+    const rect = progressTrack.getBoundingClientRect();
+    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    if (audio.duration) audio.currentTime = pct * audio.duration;
+  }
+
+  progressTrack.addEventListener('mousedown', (e) => { scrubbing = true; scrubTo(e); });
+  progressTrack.addEventListener('touchstart', (e) => { scrubbing = true; scrubTo(e); }, { passive: true });
+  document.addEventListener('mousemove',  (e) => { if (scrubbing) scrubTo(e); });
+  document.addEventListener('mouseup',    ()  => { scrubbing = false; });
+  document.addEventListener('touchend',   ()  => { scrubbing = false; });
+
+  /* ── Speed ──────────────────────────────────────────────────── */
+  speedSelect.addEventListener('change', () => {
+    audio.playbackRate = parseFloat(speedSelect.value);
+  });
+
+  /* ── Modal controls ─────────────────────────────────────────── */
+  btnPlayPause.addEventListener('click', () => {
+    audio.paused ? audio.play() : audio.pause();
+  });
+
+  btnPrev.addEventListener('click', () => {
+    if (!queue.length) return;
+    queueIdx = (queueIdx - 1 + queue.length) % queue.length;
+    loadTrack(queue[queueIdx]);
+  });
+
+  btnNext.addEventListener('click', () => {
+    if (!queue.length) return;
+    queueIdx = (queueIdx + 1) % queue.length;
+    loadTrack(queue[queueIdx]);
+  });
+
+  function openPickerForCurrent() {
+    const track = queue[queueIdx];
+    if (!track) return;
+    (window as any).__playlistPicker?.open({
+      track_id:         track.track_id,
+      track_name:       track.track_name,
+      display_name:     track.display_name,
+      audio_file_path:  track.audio_file_path,
+      lyrics_file_path: track.lyrics_file_path ?? undefined,
+      download_allowed: track.download_allowed,
+      type:             track.type,
+    });
+  }
+
+  bookmarkBtn.addEventListener('click', openPickerForCurrent);
+  barBookmarkBtn.addEventListener('click', openPickerForCurrent);
+
+  window.addEventListener('playlist-changed', () => {
+    if (queue[queueIdx]) updateBookmarkState(queue[queueIdx]);
+  });
+
+  modalClose.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+
+  // Prevent clicks inside the panel from closing via backdrop
+  modal.querySelector('.relative.flex')!
+    .addEventListener('click', (e) => e.stopPropagation());
+
+  /* ── Mini bar controls ──────────────────────────────────────── */
+  barPlayPause.addEventListener('click', () => {
+    audio.paused ? audio.play() : audio.pause();
+  });
+
+  barExpand.addEventListener('click', openModal);
+  barExpandIcon.addEventListener('click', openModal);
+
+  barClose.addEventListener('click', () => {
+    audio.pause();
+    hideBar();
+    closeModal();
+    // Reset state so the bar doesn't re-appear
+    audio.src = '';
+  });
+
+  /* ── Keyboard: Escape closes modal ─────────────────────────── */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOpen) closeModal();
+  });
+
+  /* ── Public API ─────────────────────────────────────────────── */
+  (window as any).__audioPlayer = {
+    play(track: Track) {
+      queue    = [track];
+      queueIdx = 0;
+      loadTrack(track);
+    },
+    setQueue(tracks: Track[], startIndex = 0) {
+      queue    = tracks;
+      queueIdx = Math.max(0, Math.min(startIndex, tracks.length - 1));
+      if (queue[queueIdx]) loadTrack(queue[queueIdx]);
+    },
+  };
+
+})();
+</script>

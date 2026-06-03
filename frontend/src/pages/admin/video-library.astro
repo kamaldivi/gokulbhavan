@@ -1,0 +1,565 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Video Library" activePath="/admin/video-library">
+
+  <div class="flex gap-8 min-h-[70vh]">
+
+    <!-- ── Left: Categories ─────────────────────────────────── -->
+    <div class="w-72 shrink-0 flex flex-col gap-4">
+
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-widest text-brand-slate">Categories</h2>
+        <button id="cat-add-btn"
+                class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold px-3 py-1.5 rounded-lg transition-colors">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add
+        </button>
+      </div>
+
+      <!-- Add/rename inline form -->
+      <div id="cat-form-wrap" class="hidden rounded-xl border border-brand-tan bg-brand-parchment p-4 space-y-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate">
+          Category Name <span class="text-brand-lotus">*</span>
+        </label>
+        <input id="cat-name-input" type="text" placeholder="e.g. Harikatha English"
+               class="w-full rounded-lg border border-brand-tan px-3 py-2 text-base text-brand-navy focus:outline-none focus:border-brand-navy" />
+        <div class="flex gap-2">
+          <button id="cat-form-save"
+                  class="flex-1 bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold py-2 rounded-lg transition-colors">
+            Save
+          </button>
+          <button id="cat-form-cancel"
+                  class="flex-1 border border-brand-tan text-brand-slate hover:text-brand-navy text-sm font-bold py-2 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Category list -->
+      <div id="cat-loading" class="text-sm text-brand-slate/60 py-6 text-center">Loading…</div>
+      <ul id="cat-list" class="hidden space-y-1.5"></ul>
+    </div>
+
+    <!-- ── Right: Playlists ──────────────────────────────────── -->
+    <div class="flex-1 min-w-0">
+
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="pl-heading" class="text-sm font-bold uppercase tracking-widest text-brand-slate">
+          Select a category →
+        </h2>
+        <button id="pl-add-btn"
+                class="hidden inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add Playlist
+        </button>
+      </div>
+
+      <!-- Add playlist form -->
+      <div id="pl-form-wrap" class="hidden mb-5 p-5 rounded-xl border border-brand-tan bg-brand-parchment space-y-4">
+        <p class="text-sm font-bold text-brand-navy">New Playlist</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">
+              YouTube Playlist ID <span class="text-brand-lotus">*</span>
+            </label>
+            <input id="pl-id-input" type="text" placeholder="PLA7jDWp35w8…"
+                   class="w-full rounded-lg border border-brand-tan px-3 py-2 text-sm text-brand-navy focus:outline-none focus:border-brand-navy" />
+            <p class="text-xs text-brand-slate/60 mt-1">Copy from YouTube playlist URL</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">
+              Display Name <span class="text-brand-lotus">*</span>
+            </label>
+            <input id="pl-name-input" type="text" placeholder="e.g. Jaiva Dharma 2024"
+                   class="w-full rounded-lg border border-brand-tan px-3 py-2 text-sm text-brand-navy focus:outline-none focus:border-brand-navy" />
+            <p class="text-xs text-brand-slate/60 mt-1">Shown in navigation menus</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="pl-form-save"
+                  class="bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold px-5 py-2 rounded-lg transition-colors">
+            Add Playlist
+          </button>
+          <button id="pl-form-cancel"
+                  class="border border-brand-tan text-brand-slate hover:text-brand-navy text-sm font-bold px-5 py-2 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div id="pl-banner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+
+      <!-- States -->
+      <div id="pl-loading" class="hidden text-sm text-brand-slate/60 py-8 text-center">Loading playlists…</div>
+      <div id="pl-empty"   class="hidden text-sm text-brand-slate/60 py-8 text-center">No playlists in this category.</div>
+
+      <!-- Playlist table -->
+      <table id="pl-table" class="hidden w-full border-collapse">
+        <thead>
+          <tr class="border-b-2 border-brand-tan text-left">
+            <th class="text-xs font-bold uppercase tracking-widest text-brand-slate pb-3 pr-4 w-1/3">Playlist Name</th>
+            <th class="text-xs font-bold uppercase tracking-widest text-brand-slate pb-3 pr-4">YouTube Playlist ID</th>
+            <th class="text-xs font-bold uppercase tracking-widest text-brand-slate pb-3 pr-4 text-center w-24">Videos</th>
+            <th class="text-xs font-bold uppercase tracking-widest text-brand-slate pb-3 text-right w-32">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pl-tbody"></tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- Confirm delete modal -->
+  <div id="confirm-modal"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 fill-red-600" viewBox="0 0 24 24">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+      </div>
+      <p id="confirm-msg" class="text-brand-navy font-semibold text-center mb-2"></p>
+      <p id="confirm-sub" class="text-brand-slate text-sm text-center mb-6"></p>
+      <div class="flex gap-3">
+        <button id="confirm-cancel"
+                class="flex-1 border-2 border-brand-tan text-brand-slate hover:text-brand-navy text-sm font-bold px-4 py-2.5 rounded-xl transition-colors">
+          Cancel
+        </button>
+        <button id="confirm-ok"
+                class="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors">
+          Yes, Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+</AdminShell>
+
+<script>
+const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+const API = `${apiBase}/api/admin/video-library.php`;
+
+// ── Types ─────────────────────────────────────────────────
+interface Category {
+  category_id:    number;
+  category_name:  string;
+  playlist_count: number;
+}
+// video-category.php returns playlists with field "name" (not "playlist_name")
+interface Playlist {
+  playlist_id: string;
+  name:        string;
+}
+
+// ── State ─────────────────────────────────────────────────
+let categories:       Category[] = [];
+let activeCategoryId: number | null = null;
+let editingCatId:     number | null = null;
+
+// ── DOM refs ──────────────────────────────────────────────
+const catLoading    = document.getElementById('cat-loading')!;
+const catList       = document.getElementById('cat-list')!;
+const catAddBtn     = document.getElementById('cat-add-btn')!;
+const catFormWrap   = document.getElementById('cat-form-wrap')!;
+const catNameInput  = document.getElementById('cat-name-input') as HTMLInputElement;
+const catFormSave   = document.getElementById('cat-form-save')!;
+const catFormCancel = document.getElementById('cat-form-cancel')!;
+
+const plHeading    = document.getElementById('pl-heading')!;
+const plAddBtn     = document.getElementById('pl-add-btn')!;
+const plFormWrap   = document.getElementById('pl-form-wrap')!;
+const plIdInput    = document.getElementById('pl-id-input') as HTMLInputElement;
+const plNameInput  = document.getElementById('pl-name-input') as HTMLInputElement;
+const plFormSave   = document.getElementById('pl-form-save')!;
+const plFormCancel = document.getElementById('pl-form-cancel')!;
+const plBanner     = document.getElementById('pl-banner')!;
+const plLoading    = document.getElementById('pl-loading')!;
+const plEmpty      = document.getElementById('pl-empty')!;
+const plTable      = document.getElementById('pl-table')!;
+const plTbody      = document.getElementById('pl-tbody')!;
+
+const confirmModal  = document.getElementById('confirm-modal')!;
+const confirmMsg    = document.getElementById('confirm-msg')!;
+const confirmSub    = document.getElementById('confirm-sub')!;
+const confirmOk     = document.getElementById('confirm-ok')!;
+const confirmCancel = document.getElementById('confirm-cancel')!;
+
+// ── Banner ────────────────────────────────────────────────
+function showBanner(msg: string, ok = true) {
+  plBanner.textContent = msg;
+  plBanner.className = `mb-4 rounded-lg px-4 py-3 text-sm text-center font-semibold ${
+    ok ? 'bg-green-50 text-green-700 border border-green-200'
+       : 'bg-red-50 text-red-700 border border-red-200'
+  }`;
+  plBanner.classList.remove('hidden');
+  setTimeout(() => plBanner.classList.add('hidden'), 5000);
+}
+
+// ── Confirm modal ─────────────────────────────────────────
+function askConfirm(msg: string, sub = ''): Promise<boolean> {
+  return new Promise(resolve => {
+    confirmMsg.textContent = msg;
+    confirmSub.textContent = sub;
+    confirmModal.classList.remove('hidden');
+    const onOk     = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    const cleanup  = () => {
+      confirmModal.classList.add('hidden');
+      confirmOk.removeEventListener('click', onOk);
+      confirmCancel.removeEventListener('click', onCancel);
+    };
+    confirmOk.addEventListener('click', onOk);
+    confirmCancel.addEventListener('click', onCancel);
+  });
+}
+
+// ── Load categories ────────────────────────────────────────
+async function loadCategories() {
+  catLoading.classList.remove('hidden');
+  catList.classList.add('hidden');
+  const res = await fetch(API);
+  categories = await res.json();
+  renderCategories();
+  catLoading.classList.add('hidden');
+  catList.classList.remove('hidden');
+}
+
+function renderCategories() {
+  catList.innerHTML = categories.map(c => `
+    <li class="cat-row group rounded-xl border-2 transition-all cursor-pointer ${
+      c.category_id === activeCategoryId
+        ? 'bg-brand-navy border-brand-navy text-white'
+        : 'bg-white border-brand-tan hover:border-brand-navy text-brand-navy'
+    }" data-id="${c.category_id}">
+      <div class="flex items-center gap-2 px-3 py-2.5">
+        <span class="flex-1 text-base font-semibold leading-snug">${esc(c.category_name)}</span>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+          c.category_id === activeCategoryId ? 'bg-white/20 text-white' : 'bg-brand-parchment text-brand-slate'
+        }">${c.playlist_count}</span>
+      </div>
+      <div class="flex gap-1.5 px-3 pb-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button class="cat-rename-btn flex-1 inline-flex items-center justify-center gap-1.5
+                       border border-current rounded-lg py-1 text-xs font-bold
+                       ${c.category_id === activeCategoryId ? 'text-white hover:bg-white/20' : 'text-brand-navy hover:bg-brand-navy/10'}
+                       transition-colors"
+                data-id="${c.category_id}" data-name="${esc(c.category_name)}">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+          Rename
+        </button>
+        <button class="cat-del-btn inline-flex items-center justify-center gap-1.5
+                       bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1 text-xs font-bold
+                       transition-colors"
+                data-id="${c.category_id}" data-name="${esc(c.category_name)}" data-count="${c.playlist_count}">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+          Delete
+        </button>
+      </div>
+    </li>`).join('');
+
+  catList.querySelectorAll<HTMLElement>('.cat-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      selectCategory(parseInt(row.dataset.id!));
+    });
+  });
+
+  catList.querySelectorAll<HTMLElement>('.cat-rename-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      editingCatId = parseInt(btn.dataset.id!);
+      catNameInput.value = btn.dataset.name!;
+      catFormWrap.classList.remove('hidden');
+      catNameInput.focus();
+      catNameInput.select();
+    });
+  });
+
+  catList.querySelectorAll<HTMLElement>('.cat-del-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const count = parseInt(btn.dataset.count!);
+      if (count > 0) {
+        showBanner(`Cannot delete "${btn.dataset.name}" — remove its ${count} playlist(s) first.`, false);
+        return;
+      }
+      const yes = await askConfirm(
+        `Delete category "${btn.dataset.name}"?`,
+        'This cannot be undone.'
+      );
+      if (!yes) return;
+      const r = await fetch(`${API}?id=${btn.dataset.id}`, { method: 'DELETE' });
+      const j = await r.json();
+      if (r.ok) {
+        if (activeCategoryId === parseInt(btn.dataset.id!)) clearPlaylists();
+        await loadCategories();
+        showBanner('Category deleted.');
+      } else {
+        showBanner(j.message, false);
+      }
+    });
+  });
+}
+
+// ── Category form ─────────────────────────────────────────
+catAddBtn.addEventListener('click', () => {
+  editingCatId = null;
+  catNameInput.value = '';
+  catFormWrap.classList.remove('hidden');
+  catNameInput.focus();
+});
+
+catFormCancel.addEventListener('click', () => {
+  catFormWrap.classList.add('hidden');
+  catNameInput.value = '';
+  editingCatId = null;
+});
+
+catFormSave.addEventListener('click', async () => {
+  const name = catNameInput.value.trim();
+  if (!name) { catNameInput.focus(); return; }
+  const isEdit = editingCatId !== null;
+  const r = await fetch(isEdit ? `${API}?id=${editingCatId}` : API, {
+    method: isEdit ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category_name: name }),
+  });
+  const j = await r.json();
+  if (r.ok) {
+    catFormWrap.classList.add('hidden');
+    catNameInput.value = '';
+    editingCatId = null;
+    await loadCategories();
+    showBanner(isEdit ? 'Category renamed.' : 'Category added.');
+  } else {
+    showBanner(j.message, false);
+  }
+});
+
+// ── Select category → load playlists ──────────────────────
+function selectCategory(id: number) {
+  activeCategoryId = id;
+  const cat = categories.find(c => c.category_id === id);
+  plHeading.textContent = cat?.category_name ?? '';
+  plAddBtn.classList.remove('hidden');
+  renderCategories();
+  loadPlaylists(id);
+}
+
+function clearPlaylists() {
+  activeCategoryId = null;
+  plHeading.textContent = 'Select a category →';
+  plAddBtn.classList.add('hidden');
+  plFormWrap.classList.add('hidden');
+  plTable.classList.add('hidden');
+  plEmpty.classList.add('hidden');
+  plTbody.innerHTML = '';
+}
+
+async function loadPlaylists(categoryId: number) {
+  plTable.classList.add('hidden');
+  plEmpty.classList.add('hidden');
+  plLoading.classList.remove('hidden');
+
+  // video-category.php returns playlists[].name (not playlist_name)
+  const menuRes = await fetch(`${apiBase}/api/video-category.php`);
+  const menu: any[] = await menuRes.json();
+  const cat = menu.find((c: any) => c.category_id === categoryId);
+  const playlists: Playlist[] = cat?.playlists ?? [];
+
+  // Video counts per playlist
+  const countRes = await fetch(`${apiBase}/api/videos.php?category_id=${categoryId}`);
+  const videos: any[] = await countRes.json();
+  const countMap: Record<string, number> = {};
+  videos.forEach(v => { countMap[v.playlist_id] = (countMap[v.playlist_id] ?? 0) + 1; });
+
+  plLoading.classList.add('hidden');
+
+  if (playlists.length === 0) {
+    plEmpty.classList.remove('hidden');
+    return;
+  }
+
+  plTbody.innerHTML = playlists.map(p => `
+    <tr class="border-b border-brand-tan hover:bg-brand-parchment/40 transition-colors" data-playlist-id="${esc(p.playlist_id)}">
+
+      <!-- Name cell — normal view -->
+      <td class="py-3 pr-4">
+        <span class="pl-name-display text-base font-semibold text-brand-navy">${esc(p.name)}</span>
+        <div class="pl-rename-wrap hidden flex items-center gap-2 mt-1">
+          <input class="pl-rename-input rounded-lg border border-brand-navy px-2 py-1 text-sm text-brand-navy focus:outline-none w-48"
+                 value="${esc(p.name)}" />
+          <button class="pl-rename-save bg-brand-navy hover:bg-brand-navy/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+            Save
+          </button>
+          <button class="pl-rename-cancel border border-brand-tan text-brand-slate hover:text-brand-navy text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+      </td>
+
+      <!-- YouTube ID -->
+      <td class="py-3 pr-4 font-mono text-sm text-brand-slate">${esc(p.playlist_id)}</td>
+
+      <!-- Video count -->
+      <td class="py-3 pr-4 text-center">
+        <span class="inline-block bg-brand-parchment text-brand-navy text-sm font-bold px-3 py-0.5 rounded-full">
+          ${countMap[p.playlist_id] ?? 0}
+        </span>
+      </td>
+
+      <!-- Actions -->
+      <td class="py-3 text-right">
+        <div class="inline-flex items-center gap-2">
+          <button class="pl-rename-btn inline-flex items-center gap-1.5 border-2 border-brand-navy text-brand-navy hover:bg-brand-navy hover:text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                  data-id="${esc(p.playlist_id)}" title="Rename playlist">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            Rename
+          </button>
+          <button class="pl-del-btn inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                  data-id="${esc(p.playlist_id)}" data-name="${esc(p.name)}"
+                  data-count="${countMap[p.playlist_id] ?? 0}">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  plTable.classList.remove('hidden');
+  wirePlaylistRows();
+}
+
+function wirePlaylistRows() {
+  // ── Rename: show inline input ──────────────────────────
+  plTbody.querySelectorAll<HTMLElement>('.pl-rename-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr')!;
+      row.querySelector('.pl-name-display')!.classList.add('hidden');
+      row.querySelector('.pl-rename-wrap')!.classList.remove('hidden');
+      (row.querySelector('.pl-rename-input') as HTMLInputElement).focus();
+    });
+  });
+
+  plTbody.querySelectorAll<HTMLElement>('.pl-rename-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('tr')!;
+      row.querySelector('.pl-name-display')!.classList.remove('hidden');
+      row.querySelector('.pl-rename-wrap')!.classList.add('hidden');
+    });
+  });
+
+  plTbody.querySelectorAll<HTMLElement>('.pl-rename-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row        = btn.closest('tr')!;
+      const playlistId = row.dataset.playlistId!;
+      const input      = row.querySelector('.pl-rename-input') as HTMLInputElement;
+      const newName    = input.value.trim();
+      if (!newName) { input.focus(); return; }
+
+      const r = await fetch(`${API}?action=rename_playlist`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playlist_id: playlistId, playlist_name: newName }),
+      });
+      const j = await r.json();
+      if (r.ok) {
+        // Update display without full reload
+        const display = row.querySelector('.pl-name-display')!;
+        display.textContent = newName;
+        display.classList.remove('hidden');
+        row.querySelector('.pl-rename-wrap')!.classList.add('hidden');
+        // Update del-btn data-name for accuracy
+        (row.querySelector('.pl-del-btn') as HTMLElement).dataset.name = newName;
+        showBanner('Playlist renamed.');
+      } else {
+        showBanner(j.message, false);
+      }
+    });
+  });
+
+  // ── Delete ─────────────────────────────────────────────
+  plTbody.querySelectorAll<HTMLElement>('.pl-del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const count = parseInt(btn.dataset.count!);
+      if (count > 0) {
+        showBanner(`Cannot delete "${btn.dataset.name}" — ${count} video(s) are mapped to it.`, false);
+        return;
+      }
+      const yes = await askConfirm(
+        `Delete playlist "${btn.dataset.name}"?`,
+        'This cannot be undone. Make sure you have removed it from YouTube first.'
+      );
+      if (!yes) return;
+      const r = await fetch(`${API}?action=del_playlist`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playlist_id: btn.dataset.id }),
+      });
+      const j = await r.json();
+      if (r.ok) {
+        await loadCategories();
+        loadPlaylists(activeCategoryId!);
+        showBanner('Playlist deleted.');
+      } else {
+        showBanner(j.message, false);
+      }
+    });
+  });
+}
+
+// ── Add playlist form ─────────────────────────────────────
+plAddBtn.addEventListener('click', () => {
+  plFormWrap.classList.remove('hidden');
+  plIdInput.focus();
+});
+
+plFormCancel.addEventListener('click', () => {
+  plFormWrap.classList.add('hidden');
+  plIdInput.value = '';
+  plNameInput.value = '';
+});
+
+plFormSave.addEventListener('click', async () => {
+  const playlistId   = plIdInput.value.trim();
+  const playlistName = plNameInput.value.trim();
+  if (!playlistId || !playlistName) {
+    showBanner('Both Playlist ID and Display Name are required.', false);
+    return;
+  }
+  const r = await fetch(`${API}?action=add_playlist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playlist_id: playlistId, playlist_name: playlistName, category_id: activeCategoryId }),
+  });
+  const j = await r.json();
+  if (r.ok) {
+    plFormWrap.classList.add('hidden');
+    plIdInput.value = '';
+    plNameInput.value = '';
+    await loadCategories();
+    loadPlaylists(activeCategoryId!);
+    showBanner('Playlist added. Run YouTube Sync to import its videos.');
+  } else {
+    showBanner(j.message, false);
+  }
+});
+
+// ── Helpers ───────────────────────────────────────────────
+function esc(s: string): string {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────
+loadCategories();
+</script>

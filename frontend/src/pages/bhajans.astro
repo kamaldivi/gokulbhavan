@@ -1,0 +1,464 @@
+---
+/**
+ * /bhajans — Bhajan library
+ * Categories sidebar + searchable track list + persistent audio player.
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base
+  title="Bhajans"
+  activePath="/bhajans"
+  description="Sacred bhajans of the Gauḍīya Vaiṣṇava tradition - with lyrics and audio."
+>
+
+  <PageHero
+    title="Bhajans"
+    description="Search by title or ID, or browse by category - then listen uninterrupted with the Play All feature. Lyrics open automatically in the player for every bhajan."
+  />
+
+  <!-- Page body -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+    <!-- ── Search bar (full width) ───────────────────────── -->
+    <div class="relative mb-3">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-slate fill-current pointer-events-none"
+           viewBox="0 0 24 24">
+        <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input id="bh-search" type="text" placeholder="Search by title or ID…"
+             autocorrect="off" autocapitalize="off" spellcheck="false"
+             class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+      <button id="bh-search-clear"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate hover:text-brand-navy text-lg leading-none">✕</button>
+    </div>
+    <p id="bh-search-summary" class="hidden text-xs font-bold uppercase tracking-widest text-brand-slate mb-5"></p>
+
+    <!-- ── Category tabs ────────────────────────────────────── -->
+    <div id="bh-cat-tabs"
+         class="flex items-center gap-1 flex-wrap mb-6 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+      <div class="text-xs text-brand-slate/50 px-2 py-1 italic">Loading…</div>
+    </div>
+
+    <section>
+
+      <!-- Category heading -->
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="bh-heading" class="font-display font-bold text-xl text-brand-navy">
+          All Bhajans
+        </h2>
+        <span id="bh-count" class="text-xs text-brand-slate"></span>
+      </div>
+
+      <!-- Play all button -->
+      <button id="bh-play-all"
+              class="hidden mb-4 inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700
+                     text-white text-xs font-bold uppercase tracking-wide px-4 py-2
+                     rounded-full transition-colors shadow">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Play All
+      </button>
+
+      <!-- Loading skeleton -->
+      <div id="bh-loading" class="space-y-2">
+        {Array.from({length: 8}).map(() => (
+          <div class="h-12 rounded-lg bg-brand-tan/30 animate-pulse"></div>
+        ))}
+      </div>
+
+      <!-- Track table -->
+      <div id="bh-tracks" class="hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[480px]">
+          <thead>
+            <tr class="text-left text-xs text-brand-slate/60 uppercase tracking-widest border-b border-brand-tan">
+              <th class="pb-2 pr-3 w-10"></th>
+              <th class="pb-2">Track</th>
+              <th class="pb-2 w-20 text-right"></th>
+            </tr>
+          </thead>
+          <tbody id="bh-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div id="bh-empty" class="hidden text-center py-16 text-brand-slate">
+        <p class="text-lg font-semibold mb-1">No bhajans found</p>
+        <p class="text-sm">Try a different search term or category.</p>
+      </div>
+
+    </section>
+  </div><!-- end page body -->
+
+</Base>
+
+<script>
+import { isInAnyPlaylist } from '@lib/playlist-store';
+(function () {
+
+  /* ── Types ─────────────────────────────────────────────── */
+  type Family = {
+    category_code: string;
+    category_name: string;
+    sort_order: number;
+    track_count: number;
+  };
+
+  type Singer = { singer: string; audio_file_path: string };
+
+  type Track = {
+    track_id: string;
+    track_name: string;
+    category_code: string;
+    display_name: string;
+    audio_file_path: string;
+    lyrics_file_path: string | null;
+    base_track_path: string | null;
+    download_allowed: number;
+    singers: Singer[];
+  };
+
+  /* ── Row type (flattened for rendering + queue) ────────── */
+  type Row = {
+    displayId:       string;   // 'A-10', 'A-10-1'
+    title:           string;   // table display: singer name on child rows, track title otherwise
+    playerTitle?:    string;   // audio player / download: 'Track Title - Singer' on child rows
+    subtitle:        string;   // '' or singer name on child rows
+    audioPath:       string;
+    downloadAllowed: number;
+    mediaId:         string;
+    lyricsPath:      string | null;
+    displayName:     string;
+    isGroupHead:     boolean;  // original track heading a multi-singer group
+    isChild:         boolean;  // indented singer sub-row
+    basePath:        string | null;  // non-null only on group-head rows that have a base track
+    lyricsId?:       string;   // original media_id for lyrics API when row has a derived media_id
+  };
+
+  /* ── State ─────────────────────────────────────────────── */
+  let allTracks:     Track[]  = [];
+  let filteredTracks: Track[] = [];
+  let playableRows:  Row[]    = [];  // rows with audio — used as the play queue
+  let activeCat      = '';
+  let searchQuery    = '';
+
+  /* ── DOM ───────────────────────────────────────────────── */
+  const catTabs    = document.getElementById('bh-cat-tabs')!;
+  const heading    = document.getElementById('bh-heading')!;
+  const countEl    = document.getElementById('bh-count')!;
+  const playAllBtn = document.getElementById('bh-play-all') as HTMLButtonElement;
+  const loadingEl     = document.getElementById('bh-loading')!;
+  const tracksEl      = document.getElementById('bh-tracks')!;
+  const tbody         = document.getElementById('bh-tbody')!;
+  const emptyEl       = document.getElementById('bh-empty')!;
+  const searchBox     = document.getElementById('bh-search') as HTMLInputElement;
+  const searchClear   = document.getElementById('bh-search-clear') as HTMLButtonElement;
+  const searchSummary = document.getElementById('bh-search-summary')!;
+
+  /* ── Fetch categories ──────────────────────────────────── */
+  async function loadCategories() {
+    const res = await fetch('/api/audio-category.php?type=B');
+    if (!res.ok) return;
+    const families: Family[] = await res.json();
+
+    // Build "All" tab + one tab per category
+    const allFamilies = [{ category_code: '', category_name: 'All Bhajans' }, ...families];
+    catTabs.innerHTML = allFamilies.map(f => `
+      <button class="bh-cat-btn px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              data-cat="${f.category_code}">
+        ${f.category_name}
+      </button>`).join('');
+
+    document.querySelectorAll<HTMLButtonElement>('.bh-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCat   = btn.dataset.cat ?? '';
+        searchQuery = '';
+        searchBox.value = '';
+        searchClear.classList.add('hidden');
+        searchSummary.classList.add('hidden');
+        const catName = families.find(f => f.category_code === activeCat)?.category_name ?? 'All Bhajans';
+        heading.textContent = activeCat === '' ? 'All Bhajans' : catName;
+        updateActive(btn);
+        applyFilter();
+      });
+    });
+
+    // Activate "All" by default
+    updateActive(catTabs.querySelector<HTMLButtonElement>('[data-cat=""]')!);
+  }
+
+  /* ── Fetch tracks ──────────────────────────────────────── */
+  async function loadTracks() {
+    const res = await fetch('/api/audio.php?type=B');
+    if (!res.ok) return;
+    const raw: Track[] = await res.json();
+    // Deduplicate by media_id (defensive — API already deduplicates)
+    const seen = new Set<string>();
+    allTracks = raw.filter(t => { if (seen.has(t.track_id)) return false; seen.add(t.track_id); return true; });
+    filteredTracks = allTracks;
+
+    loadingEl.classList.add('hidden');
+    renderTracks();
+  }
+
+  /* ── Filter ─────────────────────────────────────────────── */
+  function applyFilter() {
+    const q = searchQuery.toLowerCase().replace(/[\u2013\u2014\u2212]/g, '-');
+    filteredTracks = allTracks.filter(t => {
+      // When a search query is active, ignore category — search all tracks
+      const catMatch    = q !== '' || activeCat === '' || t.category_code === activeCat;
+      const searchMatch = q === '' || t.track_name.toLowerCase().includes(q) || t.track_id.toLowerCase().includes(q);
+      return catMatch && searchMatch;
+    });
+
+    if (q) {
+      searchSummary.textContent = `${filteredTracks.length} result${filteredTracks.length !== 1 ? 's' : ''} for "${searchQuery}"`;
+      searchSummary.classList.remove('hidden');
+    } else {
+      searchSummary.classList.add('hidden');
+    }
+
+    renderTracks();
+  }
+
+  /* ── Render ─────────────────────────────────────────────── */
+  function renderTracks() {
+    tbody.innerHTML = '';
+
+    if (filteredTracks.length === 0) {
+      tracksEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      countEl.textContent = '';
+      playAllBtn.classList.add('hidden');
+      return;
+    }
+
+    tracksEl.classList.remove('hidden');
+    emptyEl.classList.add('hidden');
+    countEl.textContent = `${filteredTracks.length} tracks`;
+    playAllBtn.classList.remove('hidden');
+
+    // ── Build flat row list ────────────────────────────────
+    const rows: Row[] = [];
+
+    for (const track of filteredTracks) {
+      const singers = track.singers ?? [];
+      const hasBase = !!track.base_track_path;
+      const hasExtras = singers.length > 0 || hasBase;
+
+      if (hasExtras) {
+        // Original track heads the group; base path stored inline, no separate row
+        rows.push({ displayId: track.track_id, title: track.track_name, subtitle: '',
+          audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+          mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
+          displayName: track.display_name, isGroupHead: true, isChild: false,
+          basePath: hasBase ? track.base_track_path : null, lyricsId: undefined });
+        // Singer child rows — lyrics_id points back to original so lyrics still load
+        singers.forEach((s, si) => {
+          rows.push({ displayId: `${track.track_id}-${si + 1}`, title: s.singer,
+            playerTitle: `${track.track_name} - ${s.singer}`, subtitle: '',
+            audioPath: s.audio_file_path, downloadAllowed: track.download_allowed,
+            mediaId: `${track.track_id}-${si + 1}`, lyricsPath: track.lyrics_file_path,
+            displayName: s.singer, isGroupHead: false, isChild: true, basePath: null,
+            lyricsId: track.track_id });
+        });
+      } else {
+        // No extras — simple single row
+        rows.push({ displayId: track.track_id, title: track.track_name, subtitle: '',
+          audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+          mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
+          displayName: track.display_name, isGroupHead: false, isChild: false,
+          basePath: null, lyricsId: undefined });
+      }
+    }
+
+    // All rows have audio — every row is playable
+    playableRows = rows;
+
+    // ── Render rows ──────────────────────────────────────────
+    rows.forEach(row => {
+      const queueIdx = playableRows.indexOf(row);
+      const saved    = isInAnyPlaylist(row.mediaId);
+
+      const tr = document.createElement('tr');
+      tr.className = [
+        'border-b border-brand-tan/40 hover:bg-brand-parchment/40 cursor-pointer group transition-colors',
+        row.isGroupHead ? 'bg-brand-parchment/60' : '',
+        row.isChild     ? 'bg-white/60' : '',
+      ].join(' ');
+
+      // Inline base-track button (only on group-head rows that have a base)
+      const baseBtn = row.basePath ? `
+        <button class="bh-base-btn ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                       border border-brand-slate/25 text-brand-slate/50 hover:border-brand-navy
+                       hover:text-brand-navy text-[11px] font-medium transition-colors shrink-0"
+                data-base="${escHtml(row.basePath)}"
+                data-title="${escHtml(row.title)}"
+                data-mid="${escHtml(row.mediaId)}"
+                title="Play base / karaoke track">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          base
+        </button>` : '';
+
+      tr.innerHTML = `
+        <td class="py-1.5 pr-2${row.isChild ? ' pl-6' : ''}">
+          <button class="bh-play-btn w-7 h-7 flex items-center justify-center
+                         text-brand-lotus hover:text-pink-700 transition-colors shrink-0"
+                  data-qidx="${queueIdx}" aria-label="Play ${escHtml(row.title)}" title="Play">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </td>
+        <td class="py-2 pr-2">
+          <span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(row.displayId)}</span><span class="${row.isGroupHead ? 'font-bold' : row.isChild ? 'font-normal text-brand-navy/70' : 'font-semibold'} text-sm group-hover:text-brand-lotus transition-colors">${escHtml(row.title)}</span>${baseBtn}
+        </td>
+        <td class="py-1.5 text-right">
+          <div class="inline-flex items-center justify-end gap-0.5">
+            ${row.downloadAllowed ? `
+            <a class="bh-dl-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                      bg-brand-slate/15 hover:bg-brand-slate text-brand-slate hover:text-white transition-colors"
+               href="/${escHtml(row.audioPath)}" download="${escHtml((row.lyricsId ?? row.displayId) + '-' + (row.playerTitle ?? row.title))}.mp3" title="Download">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+              </svg>
+            </a>` : ''}
+            <button class="bh-save-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                           transition-colors ${saved ? 'bg-brand-lotus text-white hover:bg-pink-700' : 'bg-brand-slate/15 text-brand-slate hover:bg-brand-slate hover:text-white'}"
+                    data-mid="${escHtml(row.mediaId)}"
+                    data-audio="${escHtml(row.audioPath)}"
+                    data-title="${escHtml(row.playerTitle ?? row.title)}"
+                    data-dname="${escHtml(row.displayName)}"
+                    data-lyrics="${row.lyricsPath ? escHtml(row.lyricsPath) : ''}"
+                    data-dl="${row.downloadAllowed}"
+                    title="${saved ? 'Saved to playlist' : 'Save to playlist'}">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                ${saved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+                        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+              </svg>
+            </button>
+          </div>
+        </td>`;
+
+      tr.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.bh-play-btn, .bh-dl-btn, .bh-save-btn, .bh-base-btn')) return;
+        playFromQueue(queueIdx);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    // ── Wire buttons ──────────────────────────────────────────
+    document.querySelectorAll<HTMLButtonElement>('.bh-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playFromQueue(parseInt(btn.dataset.qidx ?? '0'));
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.bh-save-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        (window as any).__playlistPicker?.open({
+          track_id:         btn.dataset.mid!,
+          track_name:       btn.dataset.title!,
+          display_name:     btn.dataset.dname!,
+          audio_file_path:  btn.dataset.audio!,
+          lyrics_file_path: btn.dataset.lyrics || undefined,
+          download_allowed: parseInt(btn.dataset.dl ?? '0'),
+          type:             'B',
+        });
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.bh-base-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const player = (window as any).__audioPlayer;
+        if (!player) return;
+        player.play({
+          track_id:         btn.dataset.mid! + '-B',
+          track_name:       btn.dataset.title! + ' (Base Track)',
+          display_name:     'Karaoke / Base',
+          audio_file_path:  btn.dataset.base!,
+          lyrics_file_path: null,
+          download_allowed: 1,
+          type:             'B',
+          lyrics_id:        btn.dataset.mid!,  // use original ID for lyrics lookup
+        });
+      });
+    });
+  }
+
+  /* ── Bookmark state refresh ─────────────────────────────── */
+  function refreshBookmarkStates() {
+    document.querySelectorAll<HTMLButtonElement>('.bh-save-btn').forEach(btn => {
+      const saved = isInAnyPlaylist(btn.dataset.mid!);
+      btn.classList.toggle('bg-brand-lotus',    saved);
+      btn.classList.toggle('text-white',        saved);
+      btn.classList.toggle('hover:bg-pink-700', saved);
+      btn.classList.toggle('bg-brand-slate/15', !saved);
+      btn.classList.toggle('text-brand-slate',  !saved);
+      btn.classList.toggle('hover:bg-brand-slate',  !saved);
+      btn.classList.toggle('hover:text-white',  !saved);
+      btn.title = saved ? 'Saved to playlist' : 'Save to playlist';
+      btn.querySelector('svg')!.innerHTML = saved
+        ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    });
+  }
+  window.addEventListener('playlist-changed', refreshBookmarkStates);
+
+  /* ── Play ───────────────────────────────────────────────── */
+  function playFromQueue(startIdx: number) {
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    const queue = playableRows.map(r => ({
+      track_id:         r.mediaId,
+      track_name:       r.playerTitle ?? r.title,
+      display_name:     r.displayName,
+      audio_file_path:  r.audioPath,
+      lyrics_file_path: r.lyricsPath,
+      download_allowed: r.downloadAllowed,
+      type:             'B' as const,
+      lyrics_id:        r.lyricsId,
+    }));
+    player.setQueue(queue, startIdx);
+  }
+
+  playAllBtn.addEventListener('click', () => playFromQueue(0));
+
+  /* ── Search ─────────────────────────────────────────────── */
+  searchBox.addEventListener('input', () => {
+    searchQuery = searchBox.value.trim();
+    searchClear.classList.toggle('hidden', !searchQuery);
+    applyFilter();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchBox.value = '';
+    searchQuery = '';
+    searchClear.classList.add('hidden');
+    applyFilter();
+    searchBox.focus();
+  });
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function updateActive(activeBtn: HTMLButtonElement | null) {
+    document.querySelectorAll<HTMLButtonElement>('.bh-cat-btn').forEach(b => {
+      b.classList.remove('bg-brand-navy', 'text-white');
+      b.classList.add('text-brand-slate', 'hover:bg-white/70');
+    });
+    if (activeBtn) {
+      activeBtn.classList.add('bg-brand-navy', 'text-white');
+      activeBtn.classList.remove('text-brand-slate', 'hover:bg-white/70');
+    }
+  }
+
+  function escHtml(s: string): string {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Init ───────────────────────────────────────────────── */
+  Promise.all([loadCategories(), loadTracks()]);
+
+})();
+</script>

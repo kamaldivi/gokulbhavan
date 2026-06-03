@@ -1,0 +1,140 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+import VcalNav from "@components/VcalNav.astro";
+---
+
+<Base
+  title="Ekādaśī Guidelines"
+  activePath="/vcalendar"
+  description="Foods allowed and prohibited on Ekādaśī fasting days - a practical guide for Gauḍīya Vaiṣṇava observance."
+>
+
+  <PageHero
+    title="Ekādaśī Guidelines"
+    description="A practical guide to what to eat and avoid on Ekādaśī - with notes on Cāturmāsya-vrata restrictions."
+  />
+
+  <VcalNav activePath="/vcalendar/ekadasi-guidelines" />
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+
+    <!-- ── Core principle ───────────────────────────────────── -->
+    <div class="rounded-2xl border-2 border-brand-gold bg-brand-parchment px-6 py-5">
+      <p class="text-brand-navy font-display font-semibold text-base leading-relaxed italic">
+        "The essence of observing Ekādaśī is to eat simply, once or twice, so that one can
+        spend more time for hearing, chanting and remembering the Lord."
+      </p>
+    </div>
+
+    <!-- ── Two column: Allowed / Prohibited ─────────────────── -->
+    <div class="grid sm:grid-cols-2 gap-6">
+
+      <!-- Allowed -->
+      <div class="rounded-xl border border-brand-tan bg-white p-6">
+        <h2 class="font-display font-bold text-lg text-brand-navy mb-4 flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-sm font-bold">✓</span>
+          Allowed on Ekādaśī
+        </h2>
+        <ul class="space-y-1.5 text-sm text-brand-slate leading-relaxed">
+          {[
+            "Fruits (all varieties)",
+            "Nuts and nut butters",
+            "Non-corn oils",
+            "Potatoes and sweet potatoes",
+            "Pumpkin, cucumber, radish, squash",
+            "Lemon, avocado, olives, coconut",
+            "Buckwheat flour",
+            "Jaggery / brown sugar",
+            "Black pepper",
+            "Rock salt",
+            "Fresh turmeric",
+          ].map(item => (
+            <li class="flex items-start gap-2">
+              <span class="mt-1 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Prohibited -->
+      <div class="rounded-xl border border-brand-tan bg-white p-6">
+        <h2 class="font-display font-bold text-lg text-brand-navy mb-4 flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-600 text-sm font-bold">✕</span>
+          Prohibited on Ekādaśī
+        </h2>
+
+        <div class="space-y-4 text-sm text-brand-slate">
+          <div>
+            <p class="font-semibold text-brand-navy mb-1">Vegetables</p>
+            <p class="leading-relaxed">Tomatoes, eggplant, cauliflower, lettuce, broccoli, peppers, peas, chickpeas, all beans (including tofu and tempeh)</p>
+          </div>
+          <div>
+            <p class="font-semibold text-brand-navy mb-1">Leafy Items &amp; Herbs</p>
+            <p class="leading-relaxed">Spinach, salads, cabbage, parsley, curry leaves</p>
+          </div>
+          <div>
+            <p class="font-semibold text-brand-navy mb-1">Grains &amp; Starches</p>
+            <p class="leading-relaxed">Wheat, rice, corn, barley, millet, dahl, flour, pasta</p>
+          </div>
+          <div>
+            <p class="font-semibold text-brand-navy mb-1">Spices</p>
+            <p class="leading-relaxed">Sesame seeds, cumin, fenugreek, mustard, tamarind, cardamom, cloves, nutmeg</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Always prohibited ─────────────────────────────────── -->
+    <div class="rounded-xl border border-red-200 bg-red-50 p-6">
+      <h2 class="font-display font-bold text-base text-red-800 mb-3">
+        Prohibited at All Times (not just Ekādaśī)
+      </h2>
+      <p class="text-sm text-red-700 leading-relaxed">
+        Onions, garlic, meat, fish, eggs, white sugar, red carrots
+      </p>
+    </div>
+
+    <!-- ── Caturmasya ────────────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white p-6">
+      <h2 class="font-display font-bold text-lg text-brand-navy mb-1">
+        Cāturmāsya-vrata Restrictions
+      </h2>
+      <p class="text-sm text-brand-slate mb-5">
+        During the four-month period of Cāturmāsya (roughly July–November), additional monthly
+        restrictions apply on top of regular Ekādaśī observance.
+      </p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        {[
+          { month: "Month 1", restrict: "Leafy vegetables" },
+          { month: "Month 2", restrict: "Yogurt" },
+          { month: "Month 3", restrict: "Milk" },
+          { month: "Month 4", restrict: "Mustard and sesame oil" },
+        ].map(row => (
+          <div class="flex items-center gap-3 rounded-lg bg-brand-parchment px-4 py-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-slate/60 w-16 shrink-0">{row.month}</span>
+            <span class="text-sm font-medium text-brand-navy">Avoid {row.restrict}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── Link to recipes ───────────────────────────────────── -->
+    <div class="text-center py-4">
+      <p class="text-sm text-brand-slate mb-3">Looking for meal ideas that follow these guidelines?</p>
+      <a href="/vcalendar/ekadasi-recipes"
+         class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white
+                text-sm font-bold uppercase tracking-wide px-6 py-2.5 rounded-full
+                transition-colors shadow">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+          <path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-4.5-6.72-5-8.99-5-2.28 0-9.04.5-9.04 5h18.03zM1 17h15.03v2H1z"/>
+        </svg>
+        View Ekādaśī Recipes
+      </a>
+    </div>
+
+  </div>
+
+</Base>

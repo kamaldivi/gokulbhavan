@@ -1,10 +1,10 @@
 /**
- * Typed fetch helpers for the Flask REST API.
+ * Typed fetch helpers for the PHP API layer.
  * All functions are called client-side (browser fetch).
  *
  * Base URL is injected at build time:
  *   - local dev:  http://localhost:5000  (set by astro.config.mjs default)
- *   - production: https://api.gokulbhavan.org  (set via VITE_API_BASE_URL env var)
+ *   - production: https://gokulbhavan.org  (same domain — PHP lives under /api/)
  */
 
 const BASE = import.meta.env.VITE_API_BASE_URL as string;

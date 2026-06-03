@@ -1,0 +1,455 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base title="Videos" activePath="/videos"
+     description="Hari-kathā discourses, bhajans, sankīrtanas and event recordings from Gokul Bhavan Gauḍīya Maṭha.">
+
+  <PageHero
+    title="Videos"
+    description="Recordings of Hari-kathās, discourses, bhajans, saṅkīrtanas and events. Browse by category or search by title."
+  />
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+    <!-- ── Search bar ─────────────────────────────────────── -->
+    <div class="relative mb-8">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-slate fill-current pointer-events-none"
+           viewBox="0 0 24 24">
+        <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input id="search-input" type="text" placeholder="Search videos by title…"
+             class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+      <button id="search-clear"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate hover:text-brand-navy text-lg leading-none">✕</button>
+    </div>
+
+    <!-- ── Search results panel ───────────────────────────── -->
+    <div id="search-panel" class="hidden">
+      <p id="search-summary" class="text-xs font-bold uppercase tracking-widest text-brand-slate mb-4"></p>
+      <div id="search-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      <p id="search-empty" class="hidden text-center py-12 text-brand-slate text-sm">
+        No videos found matching your search.
+      </p>
+    </div>
+
+    <!-- ── Browse panel ───────────────────────────────────── -->
+    <div id="browse-panel">
+
+      <!-- Category tabs -->
+      <div id="category-tabs"
+           class="flex items-center gap-1 flex-wrap mb-6 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+        <div class="text-xs text-brand-slate/50 px-2 py-1 italic">Loading…</div>
+      </div>
+
+      <!-- Playlist dropdown + view toggle row -->
+      <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div class="flex items-center gap-3">
+          <label for="playlist-select"
+                 class="text-xs font-bold uppercase tracking-widest text-brand-slate shrink-0">
+            Playlist
+          </label>
+          <select id="playlist-select"
+                  class="rounded-lg border border-brand-tan bg-white px-3 py-2 text-sm text-brand-navy focus:outline-none focus:border-brand-navy transition min-w-48">
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Sort toggle -->
+          <div class="flex items-center gap-1 bg-brand-parchment border border-brand-tan rounded-lg p-1">
+            <button id="sort-title" title="Sort by title (A–Z)"
+                    class="sort-btn px-2.5 py-1.5 rounded text-xs font-bold transition">
+              A–Z
+            </button>
+            <button id="sort-date" title="Sort by publish date (newest first)"
+                    class="sort-btn px-2.5 py-1.5 rounded text-xs font-bold transition">
+              Date
+            </button>
+          </div>
+          <!-- Grid / List toggle -->
+          <div class="flex items-center gap-1 bg-brand-parchment border border-brand-tan rounded-lg p-1">
+            <button id="view-grid" title="Grid view"
+                    class="view-btn p-1.5 rounded text-brand-slate transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm0 11h7v7h-7z"/>
+              </svg>
+            </button>
+            <button id="view-list" title="List view"
+                    class="view-btn p-1.5 rounded text-brand-slate transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video count -->
+      <p id="browse-count" class="text-xs font-bold uppercase tracking-widest text-brand-slate mb-4"></p>
+
+      <!-- Video grid/list -->
+      <div id="video-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+      <!-- Empty -->
+      <p id="browse-empty" class="hidden text-center py-12 text-brand-slate text-sm">
+        No videos in this playlist yet.
+      </p>
+    </div>
+
+    <!-- ── Loading / Error states ─────────────────────────── -->
+    <div id="loading" class="text-center py-16 text-brand-slate text-sm">Loading…</div>
+    <div id="error" class="hidden rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 text-center">
+      Could not load videos. Please try again later.
+    </div>
+
+  </div>
+
+  <!-- ── Video modal ──────────────────────────────────────── -->
+  <div id="video-modal"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+       role="dialog" aria-modal="true">
+    <div class="relative w-full max-w-4xl">
+      <button id="modal-close"
+              class="absolute -top-10 right-0 text-white hover:text-brand-gold text-2xl leading-none font-bold">✕</button>
+      <div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl">
+        <iframe id="modal-iframe" width="100%" height="100%"
+                src="" title="Video player"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+        </iframe>
+      </div>
+      <p id="modal-title" class="text-white text-sm font-semibold mt-3 text-center px-4"></p>
+    </div>
+  </div>
+
+</Base>
+
+<script>
+// ── Types ──────────────────────────────────────────────────
+interface Video {
+  video_id:       string;
+  title:          string;
+  thumbnail_url:  string;
+  date:           string;
+  playlist_id:    string;
+  playlist:       string;
+  category:       string;
+}
+interface Playlist {
+  playlist_id: string;
+  name:        string;
+}
+interface Category {
+  category_id: number;
+  category:    string;
+  playlists:   Playlist[];
+}
+
+// ── State ──────────────────────────────────────────────────
+let allVideos:       Video[]    = [];   // full list for search (loaded once)
+let browseVideos:    Video[]    = [];   // current playlist's videos (loaded on demand)
+let menuData:        Category[] = [];
+let activeCategory   = "";
+let activePlaylistId = "";
+let viewMode: "grid" | "list" = "grid";
+let sortMode: "title" | "date" = "title";
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+// ── DOM refs ───────────────────────────────────────────────
+const categoryTabs    = document.getElementById("category-tabs")!;
+const playlistSelect  = document.getElementById("playlist-select") as HTMLSelectElement;
+const videoContainer  = document.getElementById("video-container")!;
+const browseCount     = document.getElementById("browse-count")!;
+const browseEmpty     = document.getElementById("browse-empty")!;
+const browsePanelEl   = document.getElementById("browse-panel")!;
+const searchPanel     = document.getElementById("search-panel")!;
+const searchResults   = document.getElementById("search-results")!;
+const searchSummary   = document.getElementById("search-summary")!;
+const searchEmptyEl   = document.getElementById("search-empty")!;
+const searchInput     = document.getElementById("search-input") as HTMLInputElement;
+const searchClear     = document.getElementById("search-clear")!;
+const loadingEl       = document.getElementById("loading")!;
+const errorEl         = document.getElementById("error")!;
+const modal           = document.getElementById("video-modal")!;
+const modalIframe     = document.getElementById("modal-iframe") as HTMLIFrameElement;
+const modalTitle      = document.getElementById("modal-title")!;
+const modalClose      = document.getElementById("modal-close")!;
+const viewGrid        = document.getElementById("view-grid")!;
+const viewList        = document.getElementById("view-list")!;
+const sortTitleBtn    = document.getElementById("sort-title")!;
+const sortDateBtn     = document.getElementById("sort-date")!;
+
+// ── Video card HTML ────────────────────────────────────────
+function videoCard(v: Video, isListView = false): string {
+  const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`;
+  const dateStr = v.date ? new Date(v.date).toLocaleDateString("en-US",
+    { year: "numeric", month: "short", day: "numeric" }) : "";
+
+  if (isListView) {
+    return `
+      <div class="video-card flex gap-4 bg-white border border-brand-tan rounded-xl p-3 cursor-pointer hover:border-brand-navy hover:shadow-sm transition"
+           data-id="${v.video_id}" data-title="${v.title.replace(/"/g,'&quot;')}">
+        <img src="${thumb}" alt="${v.title.replace(/"/g,'&quot;')}"
+             class="w-32 h-20 object-cover rounded-lg shrink-0 bg-brand-tan" loading="lazy" />
+        <div class="flex-1 min-w-0 py-1">
+          <p class="font-semibold text-brand-navy text-base leading-snug line-clamp-2">${v.title}</p>
+          <p class="text-sm text-brand-slate mt-1">${v.category} · ${v.playlist}</p>
+          ${dateStr ? `<p class="text-sm text-brand-slate/70 mt-0.5">${dateStr}</p>` : ""}
+        </div>
+        <div class="shrink-0 flex items-center pr-1">
+          <svg class="w-8 h-8 text-brand-lotus fill-current opacity-70" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="video-card group bg-white border border-brand-tan rounded-xl overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition"
+         data-id="${v.video_id}" data-title="${v.title.replace(/"/g,'&quot;')}">
+      <div class="relative aspect-video bg-brand-tan">
+        <img src="${thumb}" alt="${v.title.replace(/"/g,'&quot;')}"
+             class="w-full h-full object-cover" loading="lazy" />
+        <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+          <svg class="w-12 h-12 text-white fill-current opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
+               viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <div class="p-3">
+        <p class="font-semibold text-brand-navy text-base leading-snug line-clamp-2">${v.title}</p>
+        ${dateStr ? `<p class="text-sm text-brand-slate/70 mt-1">${dateStr}</p>` : ""}
+      </div>
+    </div>`;
+}
+
+// ── Render browse grid ─────────────────────────────────────
+function renderBrowse() {
+  browseCount.textContent = `${browseVideos.length} video${browseVideos.length !== 1 ? "s" : ""}`;
+  const isList = viewMode === "list";
+  videoContainer.className = isList
+    ? "flex flex-col gap-3"
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5";
+
+  if (browseVideos.length === 0) {
+    videoContainer.innerHTML = "";
+    browseEmpty.classList.remove("hidden");
+    return;
+  }
+  browseEmpty.classList.add("hidden");
+  videoContainer.innerHTML = browseVideos.map(v => videoCard(v, isList)).join("");
+  attachCardListeners(videoContainer);
+}
+
+// ── Render category tabs ───────────────────────────────────
+function renderCategoryTabs() {
+  categoryTabs.innerHTML = menuData.map(cat => `
+    <button class="cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+            data-category="${cat.category}">
+      ${cat.category}
+    </button>`).join("");
+
+  categoryTabs.querySelectorAll<HTMLButtonElement>(".cat-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.category!;
+      setActiveCategory(activeCategory);
+      populatePlaylists(activeCategory);
+    });
+  });
+}
+
+function setActiveCategory(key: string) {
+  categoryTabs.querySelectorAll<HTMLButtonElement>(".cat-tab").forEach(btn => {
+    const active = btn.dataset.category === key;
+    btn.classList.toggle("bg-brand-navy", active);
+    btn.classList.toggle("text-white",    active);
+    btn.classList.toggle("text-brand-slate", !active);
+    btn.classList.toggle("hover:text-brand-navy", !active);
+  });
+}
+
+// ── Populate playlist dropdown and load first playlist ─────
+async function populatePlaylists(category: string) {
+  const cat = menuData.find(c => c.category === category);
+  if (!cat) return;
+  playlistSelect.innerHTML = cat.playlists
+    .map(p => `<option value="${p.playlist_id}">${p.name}</option>`)
+    .join("");
+  await loadPlaylist(playlistSelect.value);
+}
+
+// ── Fetch videos for a playlist ────────────────────────────
+async function loadPlaylist(playlistId: string) {
+  if (!playlistId) return;
+  activePlaylistId = playlistId;
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? "";
+  const sortParam = sortMode === "date"
+    ? "&sort=published_date&sort_order=desc"
+    : "&sort=title&sort_order=asc";
+  browseVideos = [];
+  renderBrowse();  // show empty/loading state immediately
+  try {
+    const res = await fetch(`${apiBase}/api/videos.php?playlist_id=${encodeURIComponent(playlistId)}${sortParam}`);
+    if (!res.ok) throw new Error();
+    browseVideos = await res.json();
+    renderBrowse();
+  } catch {
+    browseEmpty.classList.remove("hidden");
+  }
+}
+
+// ── Search ─────────────────────────────────────────────────
+function runSearch(query: string) {
+  const q = query.trim().toLowerCase();
+
+  if (q.length < 2) {
+    searchPanel.classList.add("hidden");
+    browsePanelEl.classList.remove("hidden");
+    searchClear.classList.add("hidden");
+    return;
+  }
+
+  searchClear.classList.remove("hidden");
+  browsePanelEl.classList.add("hidden");
+  searchPanel.classList.remove("hidden");
+
+  const results = allVideos.filter(v =>
+    v.title.toLowerCase().includes(q)
+  );
+
+  searchSummary.textContent = `${results.length} result${results.length !== 1 ? "s" : ""} for "${query.trim()}"`;
+
+  if (results.length === 0) {
+    searchResults.innerHTML = "";
+    searchEmptyEl.classList.remove("hidden");
+    return;
+  }
+  searchEmptyEl.classList.add("hidden");
+  searchResults.innerHTML = results.map(v => `
+    <div class="video-card group bg-white border border-brand-tan rounded-xl overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition"
+         data-id="${v.video_id}" data-title="${v.title.replace(/"/g,'&quot;')}">
+      <div class="relative aspect-video bg-brand-tan">
+        <img src="${v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`}"
+             alt="${v.title.replace(/"/g,'&quot;')}"
+             class="w-full h-full object-cover" loading="lazy" />
+        <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+          <svg class="w-12 h-12 text-white fill-current opacity-0 group-hover:opacity-100 transition drop-shadow-lg"
+               viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <div class="p-3">
+        <p class="font-semibold text-brand-navy text-sm leading-snug line-clamp-2">${v.title}</p>
+        <p class="text-xs text-brand-slate mt-1">${v.category} · ${v.playlist}</p>
+      </div>
+    </div>`).join("");
+  attachCardListeners(searchResults);
+}
+
+// ── Modal ──────────────────────────────────────────────────
+function openModal(videoId: string, title: string) {
+  modalIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+  modalTitle.textContent = title;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeModal() {
+  modalIframe.src = "";
+  modal.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+modalClose.addEventListener("click", closeModal);
+modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+// ── Card click delegation ──────────────────────────────────
+function attachCardListeners(container: HTMLElement) {
+  container.querySelectorAll<HTMLElement>(".video-card").forEach(card => {
+    card.addEventListener("click", () => {
+      openModal(card.dataset.id!, card.dataset.title!);
+    });
+  });
+}
+
+// ── Sort toggle ────────────────────────────────────────────
+function setSortMode(mode: "title" | "date") {
+  sortMode = mode;
+  const titleActive = mode === "title";
+  sortTitleBtn.classList.toggle("bg-brand-navy",    titleActive);
+  sortTitleBtn.classList.toggle("text-white",        titleActive);
+  sortTitleBtn.classList.toggle("text-brand-slate", !titleActive);
+  sortDateBtn.classList.toggle("bg-brand-navy",    !titleActive);
+  sortDateBtn.classList.toggle("text-white",        !titleActive);
+  sortDateBtn.classList.toggle("text-brand-slate",  titleActive);
+  if (activePlaylistId) loadPlaylist(activePlaylistId);
+}
+sortTitleBtn.addEventListener("click", () => setSortMode("title"));
+sortDateBtn.addEventListener("click",  () => setSortMode("date"));
+
+// ── View toggle ────────────────────────────────────────────
+function setViewMode(mode: "grid" | "list") {
+  viewMode = mode;
+  viewGrid.classList.toggle("bg-brand-navy", mode === "grid");
+  viewGrid.classList.toggle("text-white",    mode === "grid");
+  viewGrid.classList.toggle("text-brand-slate", mode !== "grid");
+  viewList.classList.toggle("bg-brand-navy", mode === "list");
+  viewList.classList.toggle("text-white",    mode === "list");
+  viewList.classList.toggle("text-brand-slate", mode !== "list");
+  renderBrowse();
+}
+viewGrid.addEventListener("click", () => setViewMode("grid"));
+viewList.addEventListener("click", () => setViewMode("list"));
+
+// ── Search listeners ───────────────────────────────────────
+searchInput.addEventListener("input", () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(searchInput.value), 300);
+});
+searchClear.addEventListener("click", () => {
+  searchInput.value = "";
+  runSearch("");
+  searchInput.focus();
+});
+
+// ── Playlist select listener ───────────────────────────────
+playlistSelect.addEventListener("change", () => {
+  loadPlaylist(playlistSelect.value);
+});
+
+// ── Initial data load ──────────────────────────────────────
+async function load() {
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? "";
+  try {
+    // Load menu and all-videos index in parallel
+    const [menuRes, videosRes] = await Promise.all([
+      fetch(`${apiBase}/api/video-category.php`),
+      fetch(`${apiBase}/api/videos.php`),
+    ]);
+    if (!menuRes.ok || !videosRes.ok) throw new Error("API error");
+
+    [menuData, allVideos] = await Promise.all([menuRes.json(), videosRes.json()]);
+
+    loadingEl.classList.add("hidden");
+    browsePanelEl.classList.remove("hidden");
+
+    renderCategoryTabs();
+
+    // Default to first category → triggers playlist load for its first playlist
+    if (menuData.length > 0) {
+      activeCategory = menuData[0].category;
+      setActiveCategory(activeCategory);
+      await populatePlaylists(activeCategory);
+    }
+
+    setSortMode("title");
+    setViewMode("grid");
+
+  } catch (err) {
+    console.error(err);
+    loadingEl.classList.add("hidden");
+    errorEl.classList.remove("hidden");
+  }
+}
+
+load();
+</script>

@@ -4,10 +4,24 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent any element from causing horizontal scroll */
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     font-family: theme("fontFamily.sans");
     background-color: theme("colors.brand.parchment");
     color: theme("colors.brand.navy");
+    /* Readable base on mobile — 16px prevents iOS Safari auto-zoom */
+    font-size: 1rem;
+    overflow-x: hidden;
+  }
+
+  /* Prevent iOS Safari from zooming into inputs (requires ≥16px) */
+  input, select, textarea {
+    font-size: max(1rem, 1em);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -15,5 +29,10 @@
     letter-spacing: -0.03em;
     line-height: 1.15;
     color: theme("colors.brand.navy");
+  }
+
+  /* Body text: step up from text-xs/text-sm on small screens */
+  p, li, td, th, span, label {
+    font-size: inherit;
   }
 }

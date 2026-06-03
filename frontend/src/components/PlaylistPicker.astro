@@ -1,0 +1,230 @@
+---
+/**
+ * PlaylistPicker
+ * ──────────────
+ * Bottom sheet (mobile) / popover (desktop) for adding a track to a playlist.
+ *
+ * Usage
+ * ─────
+ * Include once in any layout that needs the picker.
+ * Trigger from any page with:
+ *
+ *   window.__playlistPicker.open(track)
+ *
+ * Where track is a PlaylistTrack (minus the 'added' field):
+ *   { track_id, track_name, audio_file_path, type, download_allowed, display_name?, lyrics_file_path? }
+ *
+ * The picker fires a custom event 'playlist-changed' on window when done,
+ * so the header badge and bookmark icons can update reactively.
+ */
+---
+
+<!-- ── Backdrop ────────────────────────────────────────────────── -->
+<div id="pp-backdrop"
+     class="fixed inset-0 z-[200] bg-black/40 hidden"
+     aria-hidden="true"></div>
+
+<!-- ── Sheet ──────────────────────────────────────────────────── -->
+<div id="pp-sheet"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="pp-heading"
+     class="fixed z-[201] bg-white shadow-2xl
+            bottom-0 left-0 right-0 rounded-t-2xl
+            sm:bottom-auto sm:left-auto sm:right-6 sm:top-20
+            sm:w-80 sm:rounded-2xl
+            translate-y-full sm:translate-y-0 sm:scale-95 sm:opacity-0
+            transition-all duration-200
+            hidden">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between px-5 py-4 border-b border-brand-tan">
+    <h3 id="pp-heading" class="font-display font-bold text-brand-navy text-base">
+      Save to Playlist
+    </h3>
+    <button id="pp-close"
+            class="text-brand-slate hover:text-brand-navy transition-colors p-1 -mr-1"
+            aria-label="Close">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Track being saved -->
+  <p id="pp-track-name"
+     class="px-5 pt-3 pb-1 text-sm text-brand-slate truncate"></p>
+
+  <!-- Playlist list -->
+  <ul id="pp-list" class="px-3 py-2 space-y-1 max-h-52 overflow-y-auto"></ul>
+
+  <!-- Empty state -->
+  <p id="pp-empty"
+     class="hidden px-5 py-3 text-sm text-brand-slate/60 text-center">
+    No playlists yet. Create one below.
+  </p>
+
+  <!-- New playlist form -->
+  <div class="px-4 pb-5 pt-2 border-t border-brand-tan mt-1">
+    <div class="flex gap-2">
+      <input id="pp-new-name"
+             type="text"
+             placeholder="New playlist name…"
+             maxlength="60"
+             class="flex-1 px-3 py-2 text-sm rounded-lg border border-brand-tan
+                    focus:outline-none focus:ring-2 focus:ring-brand-lotus
+                    placeholder:text-brand-slate/40" />
+      <button id="pp-create-btn"
+              class="shrink-0 bg-brand-navy hover:bg-brand-slate text-white
+                     text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+        Create
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+import {
+  getPlaylists, createPlaylist, addTrack, removeTrack,
+  isInPlaylist, type PlaylistTrack,
+} from '@lib/playlist-store';
+
+type TrackInput = Omit<PlaylistTrack, 'added'>;
+
+const backdrop  = document.getElementById('pp-backdrop')!;
+const sheet     = document.getElementById('pp-sheet')!;
+const closeBtn  = document.getElementById('pp-close')!;
+const trackName = document.getElementById('pp-track-name')!;
+const list      = document.getElementById('pp-list')!;
+const emptyEl   = document.getElementById('pp-empty')!;
+const newName   = document.getElementById('pp-new-name') as HTMLInputElement;
+const createBtn = document.getElementById('pp-create-btn')!;
+
+let currentTrack: TrackInput | null = null;
+
+// ── Open / close ──────────────────────────────────────────────
+function open(track: TrackInput) {
+  currentTrack = track;
+  trackName.textContent = track.track_name;
+  renderList();
+  sheet.classList.remove('hidden');
+  backdrop.classList.remove('hidden');
+  // Animate in
+  requestAnimationFrame(() => {
+    sheet.classList.remove('translate-y-full', 'sm:scale-95', 'sm:opacity-0');
+    sheet.classList.add('translate-y-0', 'sm:scale-100', 'sm:opacity-100');
+  });
+  newName.value = '';
+  newName.focus();
+}
+
+function close() {
+  sheet.classList.add('translate-y-full', 'sm:scale-95', 'sm:opacity-0');
+  sheet.classList.remove('translate-y-0', 'sm:scale-100', 'sm:opacity-100');
+  setTimeout(() => {
+    sheet.classList.add('hidden');
+    backdrop.classList.add('hidden');
+    currentTrack = null;
+  }, 200);
+}
+
+// ── Render playlist rows ───────────────────────────────────────
+function renderList() {
+  const playlists = getPlaylists();
+  list.innerHTML = '';
+
+  if (!playlists.length) {
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+
+  playlists.forEach(pl => {
+    const inList = currentTrack ? isInPlaylist(pl.id, currentTrack.track_id) : false;
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <button class="pp-pl-btn w-full flex items-center justify-between gap-3
+                     px-3 py-2.5 rounded-xl hover:bg-brand-parchment transition-colors text-left"
+              data-id="${pl.id}">
+        <span class="min-w-0">
+          <span class="block font-semibold text-brand-navy text-sm truncate">${esc(pl.name)}</span>
+          <span class="block text-xs text-brand-slate/60">${pl.tracks.length} track${pl.tracks.length !== 1 ? 's' : ''}</span>
+        </span>
+        <span class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors
+                     ${inList ? 'bg-brand-lotus text-white' : 'bg-brand-tan/60 text-brand-slate'}">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            ${inList
+              ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'
+              : '<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>'}
+          </svg>
+        </span>
+      </button>`;
+
+    li.querySelector<HTMLButtonElement>('.pp-pl-btn')!
+      .addEventListener('click', () => toggleTrack(pl.id, inList));
+
+    list.appendChild(li);
+  });
+}
+
+function toggleTrack(playlistId: string, currentlyIn: boolean) {
+  if (!currentTrack) return;
+  if (currentlyIn) {
+    removeTrack(playlistId, currentTrack.track_id);
+    showToast('Removed from playlist');
+  } else {
+    addTrack(playlistId, currentTrack);
+    showToast('Added to playlist ✓');
+  }
+  window.dispatchEvent(new CustomEvent('playlist-changed'));
+  renderList();
+}
+
+// ── Create new playlist ───────────────────────────────────────
+function handleCreate() {
+  const name = newName.value.trim();
+  if (!name) { newName.focus(); return; }
+  const pl = createPlaylist(name);
+  if (currentTrack) {
+    addTrack(pl.id, currentTrack);
+    showToast(`Saved to "${pl.name}" ✓`);
+  }
+  window.dispatchEvent(new CustomEvent('playlist-changed'));
+  newName.value = '';
+  renderList();
+}
+
+createBtn.addEventListener('click', handleCreate);
+newName.addEventListener('keydown', e => { if (e.key === 'Enter') handleCreate(); });
+
+// ── Close triggers ────────────────────────────────────────────
+closeBtn.addEventListener('click', close);
+backdrop.addEventListener('click', close);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+// ── Toast notification ────────────────────────────────────────
+function showToast(msg: string) {
+  const existing = document.getElementById('pp-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'pp-toast';
+  toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 z-[300]
+                     bg-brand-navy text-white text-sm font-semibold
+                     px-5 py-2.5 rounded-full shadow-lg
+                     transition-opacity duration-300`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+
+  setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+  setTimeout(() => toast.remove(), 2100);
+}
+
+// ── Escape helpers ────────────────────────────────────────────
+function esc(s: string) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Global API ────────────────────────────────────────────────
+(window as any).__playlistPicker = { open };
+</script>

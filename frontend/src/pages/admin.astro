@@ -1,0 +1,111 @@
+---
+import Base from "@layouts/Base.astro";
+---
+
+<Base title="Admin Login" activePath="/admin"
+     description="Gokul Bhavan administration portal.">
+
+  <div class="min-h-[80vh] flex items-center justify-center px-4 py-16">
+    <div class="w-full max-w-sm">
+
+      <!-- Logo / heading -->
+      <div class="text-center mb-8">
+        <div class="w-14 h-14 rounded-full bg-brand-navy flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-brand-gold fill-current" viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
+          </svg>
+        </div>
+        <h1 class="font-display font-bold text-2xl text-brand-navy">Admin Portal</h1>
+        <p class="text-brand-slate text-sm mt-1">Gokul Bhavan Gauḍīya Maṭha</p>
+      </div>
+
+      <!-- Login card -->
+      <div class="bg-white rounded-2xl border border-brand-tan shadow-md overflow-hidden">
+
+        <div class="bg-brand-parchment border-b border-brand-tan px-6 py-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-brand-slate">Administrator Login</p>
+        </div>
+
+        <div class="px-6 py-8 flex flex-col items-center gap-5">
+
+          <!-- Error banner -->
+          <div id="login-error" class="hidden w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 text-center"></div>
+
+          <!-- Session expired notice -->
+          <div id="session-notice" class="hidden w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 text-center">
+            Your session has expired. Please sign in again.
+          </div>
+
+          <p class="text-sm text-brand-slate text-center leading-relaxed">
+            Access is restricted to authorized administrators.<br/>
+            Sign in with your Google account to continue.
+          </p>
+
+          <!-- Google Sign-In button -->
+          <button id="google-signin"
+                  class="w-full inline-flex items-center justify-center gap-3 bg-white hover:bg-gray-50 border-2 border-brand-tan hover:border-brand-navy text-brand-navy font-semibold text-sm px-6 py-3 rounded-xl transition-colors shadow-sm">
+            <!-- Google logo SVG -->
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign in with Google
+          </button>
+
+          <p class="text-xs text-brand-slate/60 text-center">
+            Only pre-approved Google accounts can access this portal.
+          </p>
+
+        </div>
+      </div>
+
+      <p class="text-center text-xs text-brand-slate mt-6">
+        <a href="/" class="hover:text-brand-navy transition-colors">← Return to main site</a>
+      </p>
+
+    </div>
+  </div>
+
+</Base>
+
+<script>
+  // Show error/session messages from URL params
+  const params = new URLSearchParams(window.location.search);
+
+  const errorBox   = document.getElementById('login-error')!;
+  const noticeBox  = document.getElementById('session-notice')!;
+
+  const error = params.get('error');
+  if (error === 'session_expired') {
+    noticeBox.classList.remove('hidden');
+  } else if (error) {
+    const messages: Record<string, string> = {
+      'Access denied — this account is not authorized': 'This Google account is not authorized. Contact the site administrator.',
+      'OAuth not configured':   'Google login is not yet configured. Please try again later.',
+      'Invalid state — possible CSRF': 'Login failed due to a security check. Please try again.',
+    };
+    errorBox.textContent = messages[error] ?? 'Login failed. Please try again.';
+    errorBox.classList.remove('hidden');
+  }
+
+  // Build Google OAuth URL and redirect
+  document.getElementById('google-signin')!.addEventListener('click', async () => {
+    // Fetch the OAuth URL from our PHP API (so client_id stays server-side)
+    const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+    try {
+      const res  = await fetch(`${apiBase}/api/auth/google-login.php`);
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        errorBox.textContent = 'Could not initiate login. Please try again.';
+        errorBox.classList.remove('hidden');
+      }
+    } catch {
+      errorBox.textContent = 'Could not reach the server. Please try again.';
+      errorBox.classList.remove('hidden');
+    }
+  });
+</script>

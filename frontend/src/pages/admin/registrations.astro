@@ -1,0 +1,401 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Registrations" activePath="/admin/registrations">
+
+  <!-- Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+    <div class="relative flex-1 max-w-xs">
+      <input id="reg-search" type="search" placeholder="Search name, email, city…"
+             class="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-brand-tan
+                    bg-white focus:outline-none focus:ring-2 focus:ring-brand-lotus
+                    placeholder:text-brand-slate/50" />
+      <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 fill-brand-slate/50 pointer-events-none" viewBox="0 0 24 24">
+        <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span id="reg-count" class="text-xs text-brand-slate font-semibold"></span>
+    <button id="reg-export"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-navy border border-brand-tan hover:border-brand-navy px-4 py-2 rounded-full transition-colors">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+      </svg>
+      Export CSV
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div id="reg-loading" class="text-center py-16 text-brand-slate text-sm">Loading…</div>
+
+  <!-- Table -->
+  <div id="reg-table" class="hidden overflow-x-auto rounded-xl border border-brand-tan">
+    <table class="w-full text-sm">
+      <thead class="bg-brand-parchment">
+        <tr class="text-left text-xs text-brand-slate/60 uppercase tracking-widest">
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3 hidden sm:table-cell">Email</th>
+          <th class="px-4 py-3 hidden md:table-cell">Phone</th>
+          <th class="px-4 py-3 hidden lg:table-cell">Location</th>
+          <th class="px-4 py-3 hidden lg:table-cell">Lang</th>
+          <th class="px-4 py-3 hidden xl:table-cell">WhatsApp</th>
+          <th class="px-4 py-3">Submitted</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reg-tbody" class="divide-y divide-brand-tan/60"></tbody>
+    </table>
+  </div>
+
+  <!-- Empty -->
+  <div id="reg-empty" class="hidden text-center py-16 text-brand-slate text-sm">No registrations found.</div>
+
+</AdminShell>
+
+<!-- ── Edit modal ──────────────────────────────────────────────── -->
+<div id="edit-overlay"
+     class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-brand-tan">
+      <h2 class="font-display font-bold text-brand-navy text-lg">Edit Registration</h2>
+      <button id="edit-close" class="text-brand-slate hover:text-brand-navy p-1 transition-colors" aria-label="Close">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <div class="overflow-y-auto px-6 py-5 flex-1">
+      <div id="edit-error"
+           class="hidden mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"></div>
+
+      <div class="grid grid-cols-2 gap-4">
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">First Name</label>
+          <input id="ef-first_name" type="text" class="field-input" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Last Name</label>
+          <input id="ef-last_name" type="text" class="field-input" />
+        </div>
+
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">
+            Spiritual Name
+            <span class="font-normal normal-case tracking-normal text-brand-slate/60 ml-1">(optional)</span>
+          </label>
+          <input id="ef-spiritual_name" type="text" class="field-input"
+                 placeholder="e.g. Govinda Dasa" />
+        </div>
+
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Email</label>
+          <input id="ef-email" type="email" class="field-input" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Phone</label>
+          <input id="ef-phone" type="text" class="field-input" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">WhatsApp</label>
+          <input id="ef-whatsapp" type="text" class="field-input" />
+        </div>
+
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Address Line 1</label>
+          <input id="ef-address1" type="text" class="field-input" />
+        </div>
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Address Line 2</label>
+          <input id="ef-address2" type="text" class="field-input" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">City</label>
+          <input id="ef-city" type="text" class="field-input" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">State / Province</label>
+          <input id="ef-state_province" type="text" class="field-input" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Postal Code</label>
+          <input id="ef-postal_code" type="text" class="field-input" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Country</label>
+          <input id="ef-country" type="text" class="field-input" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Language</label>
+          <select id="ef-language_pref" class="field-input">
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2 pb-1">
+          <input id="ef-active" type="checkbox" class="w-4 h-4 accent-brand-navy" />
+          <label for="ef-active" class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Active</label>
+        </div>
+
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="text-xs font-semibold text-brand-slate uppercase tracking-wide">Notes</label>
+          <textarea id="ef-notes" rows="3"
+                    class="field-input resize-none"
+                    placeholder="Admin notes…"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-brand-tan">
+      <button id="edit-cancel"
+              class="text-sm font-semibold text-brand-slate hover:text-brand-navy px-4 py-2 rounded-full border border-brand-tan hover:border-brand-navy transition-colors">
+        Cancel
+      </button>
+      <button id="edit-save"
+              class="text-sm font-bold text-white bg-brand-navy hover:bg-brand-slate px-6 py-2 rounded-full transition-colors">
+        Save Changes
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .field-input {
+    @apply w-full px-3 py-2 text-sm rounded-lg border border-brand-tan bg-white
+           text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30;
+  }
+</style>
+
+<script>
+  type Reg = {
+    id: number; first_name: string; last_name: string; spiritual_name: string | null; email: string;
+    phone: string | null; whatsapp: string | null;
+    address1: string | null; address2: string | null;
+    city: string | null; state_province: string | null;
+    postal_code: string | null; country: string | null;
+    language_pref: string; active: number;
+    notes: string | null; submitted_at: string;
+  };
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  let allRegs: Reg[] = [];
+  let editingId = 0;
+
+  // List elements
+  const loadingEl = document.getElementById('reg-loading')!;
+  const tableEl   = document.getElementById('reg-table')!;
+  const tbodyEl   = document.getElementById('reg-tbody')!;
+  const emptyEl   = document.getElementById('reg-empty')!;
+  const countEl   = document.getElementById('reg-count')!;
+  const searchEl  = document.getElementById('reg-search') as HTMLInputElement;
+
+  // Modal elements
+  const overlay    = document.getElementById('edit-overlay')!;
+  const editError  = document.getElementById('edit-error')!;
+  const editSave   = document.getElementById('edit-save')!;
+  const editCancel = document.getElementById('edit-close')!;
+  const editCancelBtn = document.getElementById('edit-cancel')!;
+
+  const FIELDS = ['first_name','last_name','spiritual_name','email','phone','whatsapp',
+                  'address1','address2','city','state_province','postal_code',
+                  'country','language_pref','notes'] as const;
+
+  // ── Load ──────────────────────────────────────────────────────
+  async function load() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/registrations.php`, { credentials: 'include' });
+      if (res.status === 401) { location.href = '/admin'; return; }
+      allRegs = await res.json();
+      loadingEl.classList.add('hidden');
+      render(allRegs);
+    } catch {
+      loadingEl.textContent = 'Failed to load.';
+    }
+  }
+
+  // ── Render table ──────────────────────────────────────────────
+  function render(rows: Reg[]) {
+    countEl.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''}`;
+    tbodyEl.innerHTML = '';
+    if (rows.length === 0) {
+      emptyEl.classList.remove('hidden');
+      tableEl.classList.add('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    tableEl.classList.remove('hidden');
+
+    rows.forEach(r => {
+      const date     = r.submitted_at
+        ? new Date(r.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+      const location = [r.city, r.state_province, r.country].filter(Boolean).join(', ');
+      const inactive = !r.active
+        ? '<span class="ml-1 text-[10px] font-bold text-red-500 uppercase">Inactive</span>' : '';
+
+      const tr = document.createElement('tr');
+      tr.className = `hover:bg-brand-parchment/40 transition-colors ${!r.active ? 'opacity-50' : ''}`;
+      tr.innerHTML = `
+        <td class="px-4 py-3 whitespace-nowrap">
+          ${r.spiritual_name
+            ? `<div class="font-semibold text-brand-navy">${esc(r.spiritual_name)}${inactive}</div>
+               <div class="text-xs text-brand-slate/70 mt-0.5">${esc(r.first_name)} ${esc(r.last_name)}</div>`
+            : `<div class="font-medium text-brand-navy">${esc(r.first_name)} ${esc(r.last_name)}${inactive}</div>`
+          }
+        </td>
+        <td class="px-4 py-3 hidden sm:table-cell text-brand-slate">
+          <a href="mailto:${esc(r.email)}" class="hover:text-brand-navy hover:underline">${esc(r.email)}</a>
+        </td>
+        <td class="px-4 py-3 hidden md:table-cell text-brand-slate text-xs">${esc(r.phone || '—')}</td>
+        <td class="px-4 py-3 hidden lg:table-cell text-brand-slate text-xs">${esc(location || '—')}</td>
+        <td class="px-4 py-3 hidden lg:table-cell">
+          <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+                       ${r.language_pref === 'Tamil' ? 'bg-brand-lotus/10 text-brand-lotus' : 'bg-brand-navy/10 text-brand-navy'}">
+            ${esc(r.language_pref)}
+          </span>
+        </td>
+        <td class="px-4 py-3 hidden xl:table-cell text-brand-slate text-xs">${esc(r.whatsapp || '—')}</td>
+        <td class="px-4 py-3 text-brand-slate text-xs whitespace-nowrap">${date}</td>
+        <td class="px-4 py-3 text-right whitespace-nowrap">
+          <button data-edit="${r.id}"
+                  class="text-xs font-semibold text-brand-navy hover:underline mr-3">Edit</button>
+          <button data-delete="${r.id}"
+                  class="text-xs font-semibold text-red-500 hover:underline">Delete</button>
+        </td>`;
+      tbodyEl.appendChild(tr);
+    });
+
+    // Wire action buttons
+    tbodyEl.querySelectorAll('[data-edit]').forEach(btn =>
+      btn.addEventListener('click', () => openEdit(parseInt((btn as HTMLElement).dataset.edit!)))
+    );
+    tbodyEl.querySelectorAll('[data-delete]').forEach(btn =>
+      btn.addEventListener('click', () => confirmDelete(parseInt((btn as HTMLElement).dataset.delete!)))
+    );
+  }
+
+  // ── Edit modal ────────────────────────────────────────────────
+  function openEdit(id: number) {
+    const reg = allRegs.find(r => r.id === id);
+    if (!reg) return;
+    editingId = id;
+
+    FIELDS.forEach(f => {
+      const el = document.getElementById(`ef-${f}`) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      if (el) el.value = (reg as any)[f] ?? '';
+    });
+    (document.getElementById('ef-active') as HTMLInputElement).checked = reg.active === 1;
+
+    editError.classList.add('hidden');
+    editError.textContent = '';
+    overlay.classList.remove('hidden');
+  }
+
+  function closeEdit() {
+    overlay.classList.add('hidden');
+    editingId = 0;
+  }
+
+  editCancel.addEventListener('click', closeEdit);
+  editCancelBtn.addEventListener('click', closeEdit);
+
+  editSave.addEventListener('click', async () => {
+    editError.classList.add('hidden');
+    const body: Record<string, any> = {};
+    FIELDS.forEach(f => {
+      const el = document.getElementById(`ef-${f}`) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      if (el) body[f] = el.value.trim() || null;
+    });
+    body['active'] = (document.getElementById('ef-active') as HTMLInputElement).checked ? 1 : 0;
+
+    editSave.textContent = 'Saving…';
+    (editSave as HTMLButtonElement).disabled = true;
+
+    try {
+      const res = await fetch(`${apiBase}/api/admin/registrations.php?id=${editingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        editError.textContent = data.message || 'Save failed.';
+        editError.classList.remove('hidden');
+        return;
+      }
+      // Update local data
+      const idx = allRegs.findIndex(r => r.id === editingId);
+      if (idx !== -1) allRegs[idx] = { ...allRegs[idx], ...body };
+      closeEdit();
+      render(filterRegs());
+    } catch {
+      editError.textContent = 'Network error. Please try again.';
+      editError.classList.remove('hidden');
+    } finally {
+      editSave.textContent = 'Save Changes';
+      (editSave as HTMLButtonElement).disabled = false;
+    }
+  });
+
+  // ── Delete ────────────────────────────────────────────────────
+  async function confirmDelete(id: number) {
+    const reg = allRegs.find(r => r.id === id);
+    if (!reg) return;
+    if (!confirm(`Delete registration for ${reg.first_name} ${reg.last_name}?\n\nThis cannot be undone.`)) return;
+
+    try {
+      const res = await fetch(`${apiBase}/api/admin/registrations.php?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) { alert('Delete failed. Please try again.'); return; }
+      allRegs = allRegs.filter(r => r.id !== id);
+      render(filterRegs());
+    } catch {
+      alert('Network error. Please try again.');
+    }
+  }
+
+  // ── Search ────────────────────────────────────────────────────
+  function filterRegs(): Reg[] {
+    const q = searchEl.value.toLowerCase().trim();
+    if (!q) return allRegs;
+    return allRegs.filter(r =>
+      `${r.first_name} ${r.last_name} ${r.email} ${r.city}`.toLowerCase().includes(q)
+    );
+  }
+
+  searchEl.addEventListener('input', () => render(filterRegs()));
+
+  // ── CSV export ────────────────────────────────────────────────
+  document.getElementById('reg-export')!.addEventListener('click', () => {
+    if (!allRegs.length) return;
+    const headers = ['First Name','Last Name','Email','Phone','WhatsApp','Address','City','State','Postal','Country','Language','Active','Submitted'];
+    const lines = [headers.join(','), ...allRegs.map(r => [
+      r.first_name, r.last_name, r.email, r.phone, r.whatsapp ?? '',
+      r.address1 ?? '', r.city, r.state_province ?? '', r.postal_code ?? '',
+      r.country, r.language_pref, r.active ? 'Yes' : 'No', r.submitted_at
+    ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `registrations-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  });
+
+  function esc(s: string | null) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  load();
+</script>

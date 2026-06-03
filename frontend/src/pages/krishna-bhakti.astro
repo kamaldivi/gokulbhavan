@@ -5,6 +5,7 @@
  * Card layout with image + content, alternating background, sticky step nav.
  */
 import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
 
 const STEPS = [
   {
@@ -26,9 +27,9 @@ const STEPS = [
     title: "Śrī Guru",
     subtitle: "The Gateway to Divine Service",
     image: "/assets/foundations/sriguru.png",
-    imageAlt: "Śrī Guru — spiritual master",
+    imageAlt: "Śrī Guru - spiritual master",
     body: [
-      "Without the mercy of śrī guru, it is not possible to properly understand Bhagavān or enter deeply into devotional life. Even when Śrī Kṛṣṇa appears in this world, He accepts a guru and worships the guru — to set an example for us to follow.",
+      "Without the mercy of śrī guru, it is not possible to properly understand Bhagavān or enter deeply into devotional life. Even when Śrī Kṛṣṇa appears in this world, He accepts a guru and worships the guru - to set an example for us to follow.",
       "When a sincere seeker deeply desires to surrender to Bhagavān and perform devotion, Śrī Kṛṣṇa mercifully sends a spiritual master who connects that soul to Śrī Kṛṣṇa.",
     ],
     sanskrit: {
@@ -118,23 +119,20 @@ const STEPS = [
 ---
 
 <Base title="Kṛṣṇa-bhakti" activePath="/krishna-bhakti"
-     description="Seven foundations of Gauḍīya devotee life — paramparā, śrī guru, Śrī Gaurāṅga, bhakti, Kṛṣṇa-nāma, home temple, and initiation.">
+     description="Seven foundations of Gauḍīya devotee life - paramparā, śrī guru, Śrī Gaurāṅga, bhakti, Kṛṣṇa-nāma, home temple, and initiation.">
 
-  <!-- ── Hero ──────────────────────────────────────────────────── -->
-  <div class="bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-14 text-center">
+  <PageHero
+    title="The Path to Kṛṣṇa-bhakti"
+    eyebrow="Gauḍīya Devotee Life"
+    description="The 7 pillars guide the devotee toward a life of sincere practice, spiritual discipline, family devotion, guru-sevā, Vaiṣṇava-sevā, and loving remembrance of Śrī Śrī Rādhā-Kṛṣṇa."
+  />
 
-      <h1 class="font-display font-bold text-3xl md:text-4xl text-brand-navy mb-4 leading-tight">
-        The Path to Kṛṣṇa-bhakti
-      </h1>
-      <p class="text-brand-slate text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
-        The 7 pillars guide the devotee toward a life of sincere practice, spiritual discipline, family devotion, guru-sevā, Vaiṣṇava-sevā, and loving remembrance of  <b>Śrī Śrī Rādhā-Kṛṣṇa</b>.
-      </p>
-      <a href="/register"
-         class="mt-6 inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white font-display font-bold text-sm uppercase tracking-widest px-7 py-3.5 rounded-full transition-colors shadow">
-        Begin Your Journey
-      </a>
-    </div>
+  <!-- ── CTA (mobile-visible replacement for hero CTA) ───────────── -->
+  <div class="sm:hidden max-w-5xl mx-auto px-4 pt-6 pb-2 text-center">
+    <a href="/register"
+       class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white font-display font-bold text-sm uppercase tracking-widest px-7 py-3.5 rounded-full transition-colors shadow">
+      Begin Your Journey
+    </a>
   </div>
 
   <!-- ── Sticky step nav ────────────────────────────────────────── -->

@@ -10,6 +10,29 @@ frontend/.astro/
 design/node_modules/
 design/tokens/output.css
 
+# ── PHP API ─────────────────────────────────────────
+# Real DB credentials — never commit
+api/config.php
+
+# ── Deployment ───────────────────────────────────────
+# SFTP credentials — never commit
+.deploy.env
+
+# ── Frontend env ────────────────────────────────────
+frontend/.env
+
+# ── Media (large binary/audio files — served from server) ───
+media/
+
+# ── Database dumps — may contain sensitive data ─────
+data/*.dump.sql
+data/dbs*.sql
+
+# ── Scripts (analysis utilities) ────────────────────
+scripts/.env
+scripts/__pycache__/
+scripts/*.csv          # generated snapshots — large, no need to track
+
 # ── Backend (Python / Flask) ────────────────────────
 backend/__pycache__/
 backend/**/__pycache__/

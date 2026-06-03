@@ -1,26 +1,17 @@
 ---
 /**
- * Tamil Sangha home page — gokulbhavan.com/tamil/
- * Gitamrita (கீதா அமுதம்) launch banner + program overview.
- * Nav labels are in Tamil; shared Header/Footer components used.
+ * Tamil page — gokulbhavan.org/tamil
+ * Gitamrita (கீதா அமுதம்) program info + Tamil video strip.
+ * Uses the standard main-site navigation.
  */
 import Base from "@layouts/Base.astro";
-
-const TAMIL_NAV = [
-  { label: "முகப்பு",        href: "/tamil" },
-  { label: "நிகழ்ச்சிகள்",  href: "/tamil/programs" },
-  { label: "பஜன்கள்",       href: "/tamil/bhajans" },
-  { label: "ஸ்லோகங்கள்",   href: "/tamil/slokas" },
-  { label: "ஹரிகதைகள்",    href: "/tamil/harikathas" },
-  { label: "சங்கீர்த்தன்", href: "/tamil/sankirtans" },
-];
+import FeaturedVideos from "@components/FeaturedVideos.astro";
 ---
 
 <Base
-  title="தமிழ் சங்கம் | Gokul Bhavan"
-  description="கீதா அமுதம் — A weekly Tamil Bhagavad-Gita study program by Gokul Bhavan Gaudiya Matha."
+  title="தமிழ் | Gokul Bhavan"
+  description="கீதா அமுதம் - A weekly Tamil Bhagavad-Gita study program by Gokul Bhavan Gaudiya Matha."
   activePath="/tamil"
-  navItems={TAMIL_NAV}
 >
 
   <!-- Hero banner — Gitamrita launch -->
@@ -47,7 +38,7 @@ const TAMIL_NAV = [
 
       <!-- English title -->
       <h1 class="font-display font-bold text-3xl md:text-4xl lg:text-5xl text-white leading-tight mb-3 drop-shadow-md">
-        Gita Amrutam
+        Gita Amutham
       </h1>
 
       <!-- Tagline -->
@@ -60,9 +51,8 @@ const TAMIL_NAV = [
 
       <!-- Program snapshot -->
       <div class="flex flex-wrap items-center justify-center gap-3 mb-7 text-xs font-semibold text-white/80">
-        <span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">📅 Every Friday</span>
-        <span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">🇮🇳 8:00 PM IST</span>
-        <span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">🇺🇸 9:30 AM CST · 10:30 AM EST</span>
+        <span id="tamil-day-chip" class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">📅 Every Friday</span>
+        <span id="tamil-time-chip" class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">🕐 10:30 AM EST</span>
         <span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full">⏱ 95 minutes</span>
       </div>
 
@@ -72,7 +62,7 @@ const TAMIL_NAV = [
            class="inline-flex items-center justify-center bg-brand-lotus hover:bg-pink-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
           பதிவு செய்யுங்கள் · Register
         </a>
-        <a href="/tamil/programs"
+        <a href="/programs"
            class="inline-flex items-center justify-center border-2 border-white text-white hover:bg-white hover:text-brand-navy font-semibold px-7 py-3 rounded-full transition-colors">
           நிகழ்ச்சிகள் காண · Explore Programs
         </a>
@@ -86,86 +76,164 @@ const TAMIL_NAV = [
 
     <div class="text-center mb-10">
       <h2 class="font-display font-bold text-3xl text-brand-navy mb-2">
-        About <span class="text-brand-lotus">கீதா அமுதம்</span>
+        <span class="text-brand-lotus">கீதா அமுதம் பற்றி</span>
       </h2>
       <p class="text-brand-slate text-sm max-w-2xl mx-auto leading-relaxed">
-        A weekly Tamil spiritual study program focused on listening to the timeless message of the
-        Bhagavad-Gita and applying its teachings in daily life — in the Gauḍīya Sampradāya tradition.
+        பகவத் கீதையின் காலத்தால் அழியாத ஆன்மிகச் செய்திகளை கேட்டு, அவற்றை அன்றாட வாழ்க்கையில் நடைமுறைப்படுத்துவதைக் குறிக்கோளாகக் கொண்ட வாராந்திர தமிழ் ஆன்மிகப் பயிலரங்கு - கௌடிய சம்பிரதாய மரபின் அடிப்படையில்.
       </p>
-    </div>
-
-    <!-- Detail cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-
-      <div class="bg-brand-linen border border-brand-tan rounded-xl p-6 text-center shadow-sm">
-        <div class="text-3xl mb-3">📖</div>
-        <h3 class="font-display font-bold text-brand-navy mb-1">Weekly Study</h3>
-        <p class="text-xs text-brand-slate leading-relaxed">
-          Systematic study of the Bhagavad-Gita with commentary from the Gauḍīya Sampradāya.
-        </p>
-      </div>
-
-      <div class="bg-brand-linen border border-brand-tan rounded-xl p-6 text-center shadow-sm">
-        <div class="text-3xl mb-3">🎵</div>
-        <h3 class="font-display font-bold text-brand-navy mb-1">Kirtan & Sankirtanam</h3>
-        <p class="text-xs text-brand-slate leading-relaxed">
-          Each session opens and closes with devotional kirtan and Tamil bhajans.
-        </p>
-      </div>
-
-      <div class="bg-brand-linen border border-brand-tan rounded-xl p-6 text-center shadow-sm">
-        <div class="text-3xl mb-3">💬</div>
-        <h3 class="font-display font-bold text-brand-navy mb-1">Q&amp;A &amp; Satsang</h3>
-        <p class="text-xs text-brand-slate leading-relaxed">
-          15 minutes of open questions and community satsang after each discourse.
-        </p>
-      </div>
-
     </div>
 
     <!-- Session schedule -->
     <div class="bg-brand-navy rounded-2xl p-7 text-white">
-      <h3 class="font-display font-bold text-lg text-brand-gold mb-4">Session Flow — 95 Minutes</h3>
+      <h3 class="font-display font-bold text-lg text-brand-gold mb-4">Session Flow - 95 Minutes</h3>
       <ol class="space-y-2.5 text-sm">
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">1</span>
-          <span><strong class="text-white">Opening Prayers &amp; Kirtan</strong> <span class="text-white/60">— 10 min</span></span>
+          <span>
+            <strong class="text-white">Opening Prayers &amp; Kirtan</strong>
+            <span class="text-white/60"> - 10 min</span>
+            <span class="block font-tamil text-white/50 text-xs mt-0.5">தொடக்க பிரார்த்தனைகள் மற்றும் கீர்த்தனம் - 10 நிமிடங்கள்</span>
+          </span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">2</span>
-          <span><strong class="text-white">Gita Discourse</strong> <span class="text-white/60">— 60 min</span></span>
+          <span>
+            <strong class="text-white">Gita Discourse</strong>
+            <span class="text-white/60"> - 60 min</span>
+            <span class="block font-tamil text-white/50 text-xs mt-0.5">கீதா உபந்யாசம் - 60 நிமிடங்கள்</span>
+          </span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">3</span>
-          <span><strong class="text-white">Sankirtanam</strong> <span class="text-white/60">— 5 min</span></span>
+          <span>
+            <strong class="text-white">Sankirtanam</strong>
+            <span class="text-white/60"> - 5 min</span>
+            <span class="block font-tamil text-white/50 text-xs mt-0.5">சங்கீர்த்தனம் - 5 நிமிடங்கள்</span>
+          </span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">4</span>
-          <span><strong class="text-white">Questions &amp; Satsang</strong> <span class="text-white/60">— 15 min</span></span>
+          <span>
+            <strong class="text-white">Questions &amp; Satsang</strong>
+            <span class="text-white/60"> - 15 min</span>
+            <span class="block font-tamil text-white/50 text-xs mt-0.5">கேள்விகள் மற்றும் சத்சங்கம் - 15 நிமிடங்கள்</span>
+          </span>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">5</span>
-          <span><strong class="text-white">Announcements</strong> <span class="text-white/60">— 5 min</span></span>
+          <span>
+            <strong class="text-white">Announcements</strong>
+            <span class="text-white/60"> - 5 min</span>
+            <span class="block font-tamil text-white/50 text-xs mt-0.5">அறிவிப்புகள் - 5 நிமிடங்கள்</span>
+          </span>
         </li>
       </ol>
 
       <div class="mt-6 pt-5 border-t border-white/15 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <div>
-          <p class="text-white/50 text-xs uppercase tracking-widest mb-1">Join via Zoom</p>
-          <a href="https://zoom.us/j/2294369627" target="_blank" rel="noopener noreferrer"
-             class="font-mono font-semibold text-brand-gold hover:underline">
-            Meeting ID: 229 436 9627
-          </a>
-          <p class="text-white/50 text-xs mt-0.5">Passcode: 108</p>
-        </div>
-        <div>
           <p class="text-white/50 text-xs uppercase tracking-widest mb-1">Teacher</p>
           <p class="font-semibold text-white">Dr. Bhagavati Kanti</p>
           <p class="text-white/60 text-xs">M.Tech (IIT) · Ph.D</p>
+        </div>
+        <div>
+          <p class="text-white/50 text-xs uppercase tracking-widest mb-2">Join</p>
+          <div class="flex flex-wrap gap-2">
+            <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09"
+               target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-slate text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/>
+              </svg>
+              Zoom
+            </a>
+            <a href="https://www.youtube.com/@bkdasa"
+               target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+              </svg>
+              YouTube
+            </a>
+          </div>
         </div>
       </div>
     </div>
 
   </section>
 
+  <!-- Tamil video strip -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 border-t border-brand-tan">
+    <FeaturedVideos
+      id="tamil-latest"
+      title="Recent Harikathas - Tamil"
+      apiParams="category=Harikatha-Tamil&limit=5&sort=published_date"
+      moreLink="/videos"
+      moreLinkLabel="More videos →"
+      mode="strip"
+    />
+  </div>
+
 </Base>
+
+<script>
+// Gita Amrutam runs every Friday at 10:30 AM America/New_York.
+// Convert to the visitor's browser timezone and update the hero chips.
+(function () {
+  // --- same conversion helper as programs.astro ---
+  function etToLocal(srcDay: string, timeEst: string) {
+    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const srcIdx = DAYS.indexOf(srcDay);
+    // Accept both "7:00 PM" (legacy) and "19:00" (HTML time input, 24-hour)
+    const m12 = timeEst.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    const m24 = timeEst.match(/^(\d{1,2}):(\d{2})$/);
+    if (srcIdx === -1 || (!m12 && !m24)) return null;
+    let h: number, min: number;
+    if (m12) {
+      h = parseInt(m12[1]); min = parseInt(m12[2]);
+      if (m12[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+      if (m12[3].toUpperCase() === 'AM' && h === 12) h = 0;
+    } else {
+      h = parseInt(m24![1]); min = parseInt(m24![2]);
+    }
+
+    const now  = new Date();
+    const diff = (srcIdx - now.getDay() + 7) % 7;
+    const ref  = new Date(now);
+    ref.setDate(now.getDate() + diff);
+
+    const probe = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate(), h, min));
+    const etHourRaw = parseInt(
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(probe)
+    );
+    const etHour = etHourRaw === 24 ? 0 : etHourRaw;
+    let offsetH  = h - etHour;
+    if (offsetH > 12)  offsetH -= 24;
+    if (offsetH < -12) offsetH += 24;
+    const utcDate = new Date(probe.getTime() + offsetH * 3_600_000);
+
+    const dayFull = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(utcDate);
+    const time    = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(utcDate);
+    const tzAbbr  = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+      .formatToParts(utcDate).find((p: Intl.DateTimeFormatPart) => p.type === 'timeZoneName')?.value ?? '';
+    const dayChanged = dayFull !== srcDay;
+
+    return { dayFull, time, tzAbbr, dayChanged };
+  }
+
+  const lt = etToLocal('Friday', '10:30'); // stored as 24-hour by HTML time input
+  if (!lt) return;
+
+  const dayChip  = document.getElementById('tamil-day-chip');
+  const timeChip = document.getElementById('tamil-time-chip');
+
+  if (dayChip) {
+    // If day flips (e.g. Friday ET → Saturday IST), show the local day
+    dayChip.textContent = lt.dayChanged
+      ? `📅 Every ${lt.dayFull}`
+      : '📅 Every Friday';
+  }
+  if (timeChip) {
+    timeChip.textContent = `🕐 ${lt.time} ${lt.tzAbbr}`;
+  }
+})();
+</script>

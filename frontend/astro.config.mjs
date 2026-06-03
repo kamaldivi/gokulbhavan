@@ -18,8 +18,14 @@ export default defineConfig({
   vite: {
     define: {
       "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
-        process.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+        process.env.VITE_API_BASE_URL ?? ""
       ),
+    },
+    server: {
+      proxy: {
+        // Forward all /api/* requests to the local PHP server during dev
+        "/api": "http://localhost:8000",
+      },
     },
   },
 });

@@ -1,36 +1,67 @@
 ---
 /**
- * PageHero — shared warm-parchment hero banner used on all content pages.
- * Replaces the per-page dark navy header rows for visual consistency.
+ * PageHero — shared hero banner for content pages.
  *
  * Props:
  *   title       — main heading (required)
  *   eyebrow     — small label above the title (optional)
  *   description — sub-text below the title (optional)
+ *   variant     — "page" (default) | "main"
+ *
+ * Variants:
+ *   "main"  — full height, always visible (Home, Tamil).
+ *             Dark navy background, large title, always shown on mobile.
+ *   "page"  — lean introductory strip (Programs, Videos, Holy Days, etc.)
+ *             Warm parchment background, compact padding, hidden on mobile.
  */
+
 interface Props {
-  title: string;
-  eyebrow?: string;
+  title:        string;
+  eyebrow?:     string;
   description?: string;
+  variant?:     "page" | "main";
 }
 
-const { title, eyebrow, description } = Astro.props;
+const { title, eyebrow, description, variant = "page" } = Astro.props;
 ---
 
-<div class="bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center">
-    {eyebrow && (
-      <p class="text-brand-lotus text-[11px] font-bold uppercase tracking-widest mb-3">
-        {eyebrow}
-      </p>
-    )}
-    <h1 class="font-display font-bold text-3xl md:text-4xl text-brand-navy leading-tight mb-3">
-      {title}
-    </h1>
-    {description && (
-      <p class="text-brand-slate text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
-        {description}
-      </p>
-    )}
+{variant === "main" ? (
+  <!-- ── Main hero (Home / Tamil style) ──────────────────────── -->
+  <div class="bg-brand-navy">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-16 text-center">
+      {eyebrow && (
+        <p class="text-brand-lotus text-[11px] font-bold uppercase tracking-widest mb-3">
+          {eyebrow}
+        </p>
+      )}
+      <h1 class="font-display font-bold text-3xl md:text-5xl text-white leading-tight mb-4">
+        {title}
+      </h1>
+      {description && (
+        <p class="text-white/70 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
+          {description}
+        </p>
+      )}
+    </div>
   </div>
-</div>
+) : (
+  <!-- ── Page hero — lean strip, hidden on mobile ─────────────── -->
+  <div class="hidden sm:block bg-gradient-to-br from-brand-parchment to-brand-linen border-b border-brand-tan">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-center">
+      {eyebrow && (
+        <p class="text-brand-lotus text-[11px] font-bold uppercase tracking-widest mb-1.5">
+          {eyebrow}
+        </p>
+      )}
+      <h1 class="font-display font-bold text-2xl md:text-3xl text-brand-navy leading-tight
+                 {description ? 'mb-2' : ''}">
+        {title}
+      </h1>
+      {description && (
+        <p class="text-brand-slate text-sm leading-relaxed max-w-2xl mx-auto">
+          {description}
+        </p>
+      )}
+    </div>
+  </div>
+)}

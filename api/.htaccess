@@ -1,0 +1,9 @@
+# Block direct browser access to the sync script.
+# IONOS cron runs PHP via CLI — .htaccess does not affect CLI execution.
+# Remove or comment out this block to temporarily re-enable browser access for re-testing.
+# PHASE 2 — uncomment the block below AFTER you have tested the sync via browser.
+# IONOS cron runs PHP via CLI — .htaccess does not affect CLI execution.
+#
+# <Files "youtubesync.php">
+#     Require all denied
+# </Files>

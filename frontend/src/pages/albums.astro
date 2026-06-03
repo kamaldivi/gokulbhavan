@@ -1,0 +1,450 @@
+---
+/**
+ * /albums — Gokula Ganam CD album library
+ * Album card grid (sidebar) + track list (main) + persistent audio player.
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base
+  title="Albums"
+  activePath="/albums"
+  description="Gokula Ganam - devotional bhajan albums recorded by Gokul Bhavan Gauḍīya Maṭha children and devotees."
+>
+
+  <PageHero
+    title="Albums"
+    description="Listen to devotional bhajan albums produced by Gokul Bhavan - recorded by our children and devotees."
+  />
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex flex-col lg:flex-row gap-8">
+
+    <!-- ── Sidebar: Album cards ──────────────────────────────── -->
+    <aside class="lg:w-64 shrink-0">
+      <div class="sticky top-[72px]">
+
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-slate mb-3 px-1">
+          Albums
+        </h2>
+
+        <!-- Loading skeleton -->
+        <div id="al-sidebar-loading" class="flex flex-col gap-2">
+          {Array.from({length: 4}).map(() => (
+            <div class="h-16 rounded-lg bg-brand-tan/30 animate-pulse"></div>
+          ))}
+        </div>
+
+        <!-- Album list — filled by JS -->
+        <div id="al-sidebar" class="hidden flex flex-col gap-1"></div>
+
+      </div>
+    </aside>
+
+    <!-- ── Main: Track list ──────────────────────────────────── -->
+    <section class="flex-1 min-w-0">
+
+      <!-- Search bar -->
+      <div class="relative mb-4">
+        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-brand-slate/40 pointer-events-none" viewBox="0 0 24 24">
+          <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>
+        <input id="al-search" type="text" placeholder="Search by title or ID…"
+               autocorrect="off" autocapitalize="off" spellcheck="false"
+               class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+        <button id="al-search-clear"
+                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate hover:text-brand-navy text-lg leading-none">✕</button>
+      </div>
+      <p id="al-search-summary" class="hidden text-xs font-bold uppercase tracking-widest text-brand-slate mb-4"></p>
+
+      <!-- Initial prompt -->
+      <div id="al-prompt" class="flex flex-col items-center justify-center py-24 text-brand-slate/50">
+        <svg class="w-14 h-14 mb-4 fill-current opacity-30" viewBox="0 0 24 24">
+          <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/>
+        </svg>
+        <p class="text-sm">Select an album to view tracks</p>
+      </div>
+
+      <!-- Album header (shown after selection) -->
+      <div id="al-header" class="hidden mb-6">
+        <div class="flex items-center gap-5">
+          <img id="al-cover" src="" alt="Album cover"
+               class="w-20 h-20 rounded-lg object-cover shadow-md shrink-0 bg-brand-tan/30
+                      cursor-pointer hover:opacity-90 hover:shadow-lg transition-all"
+               title="Click to view full artwork" />
+          <div class="min-w-0">
+            <p class="text-xs text-brand-slate/60 uppercase tracking-widest font-semibold mb-1">Gokula Ganam</p>
+            <h2 id="al-title" class="font-display font-bold text-2xl text-brand-navy leading-tight"></h2>
+            <p id="al-count" class="text-sm text-brand-slate mt-1"></p>
+          </div>
+        </div>
+
+        <button id="al-play-all"
+                class="mt-4 inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700
+                       text-white text-xs font-bold uppercase tracking-wide px-5 py-2
+                       rounded-full transition-colors shadow">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Play All
+        </button>
+      </div>
+
+      <!-- Track loading skeleton -->
+      <div id="al-track-loading" class="hidden space-y-2">
+        {Array.from({length: 6}).map(() => (
+          <div class="h-12 rounded-lg bg-brand-tan/30 animate-pulse"></div>
+        ))}
+      </div>
+
+      <!-- Track table -->
+      <div id="al-tracks" class="hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[420px]">
+          <thead>
+            <tr class="text-left text-xs text-brand-slate/60 uppercase tracking-widest border-b border-brand-tan">
+              <th class="pb-2 pr-3 w-10"></th>
+              <th class="pb-2 pr-4">Track</th>
+              <th class="pb-2 hidden sm:table-cell">Singer</th>
+              <th class="pb-2 w-14 text-right"></th>
+            </tr>
+          </thead>
+          <tbody id="al-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div id="al-empty" class="hidden text-center py-16 text-brand-slate">
+        <p class="text-lg font-semibold mb-1">No tracks found</p>
+        <p class="text-sm">This album doesn't have any tracks yet.</p>
+      </div>
+
+    </section>
+  </div>
+
+<!-- ── Cover art lightbox ──────────────────────────────────── -->
+<div id="al-lightbox"
+     class="fixed inset-0 z-[400] hidden items-center justify-center bg-black/80
+            backdrop-blur-sm cursor-zoom-out"
+     role="dialog" aria-label="Album artwork">
+  <img id="al-lightbox-img" src="" alt="Full album artwork"
+       class="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain" />
+</div>
+
+</Base>
+
+<script>
+import { isInAnyPlaylist } from '@lib/playlist-store';
+(function () {
+
+  /* ── Types ─────────────────────────────────────────────────── */
+  type Album = {
+    category_code: string;
+    category_name: string;
+    cover_path: string | null;
+    sort_order: number;
+    track_count: number;
+  };
+
+  type Track = {
+    track_id: string;
+    track_name: string;
+    track_num: number;
+    singer: string | null;
+    bhajan_id: string | null;
+    audio_file_path: string;
+    lyrics_file_path: string | null;
+  };
+
+  /* ── State ──────────────────────────────────────────────────── */
+  let albums: Album[]    = [];
+  let currentTracks: Track[] = [];
+  let currentAlbum: Album | null = null;
+  let searchQuery = '';
+
+  /* ── DOM ────────────────────────────────────────────────────── */
+  const sidebarLoading = document.getElementById('al-sidebar-loading')!;
+  const sidebar        = document.getElementById('al-sidebar')!;
+  const prompt         = document.getElementById('al-prompt')!;
+  const headerEl       = document.getElementById('al-header')!;
+  const coverImg       = document.getElementById('al-cover') as HTMLImageElement;
+  const titleEl        = document.getElementById('al-title')!;
+  const countEl        = document.getElementById('al-count')!;
+  const playAllBtn     = document.getElementById('al-play-all') as HTMLButtonElement;
+  const trackLoading   = document.getElementById('al-track-loading')!;
+  const tracksEl       = document.getElementById('al-tracks')!;
+  const tbody          = document.getElementById('al-tbody')!;
+  const emptyEl        = document.getElementById('al-empty')!;
+  const searchBox      = document.getElementById('al-search') as HTMLInputElement;
+  const searchClear    = document.getElementById('al-search-clear') as HTMLButtonElement;
+  const searchSummary  = document.getElementById('al-search-summary')!;
+
+  /* ── Load album list ────────────────────────────────────────── */
+  async function loadAlbums() {
+    const res = await fetch('/api/audio-category.php?type=A');
+    if (!res.ok) return;
+    albums = await res.json();
+
+    sidebarLoading.classList.add('hidden');
+    sidebar.classList.remove('hidden');
+
+    // Auto-select first album on initial load
+    if (albums.length > 0) selectAlbum(albums[0]);
+
+    albums.forEach(album => {
+      const btn = document.createElement('button');
+      btn.dataset.cat = album.category_code;
+      btn.className = 'al-album-btn w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg ' +
+                      'text-brand-slate hover:bg-brand-parchment transition-colors';
+      btn.innerHTML = `
+        <div class="w-10 h-10 shrink-0 rounded overflow-hidden bg-brand-tan/30">
+          ${album.cover_path
+            ? `<img src="/${album.cover_path}" alt="${escHtml(album.category_name)}" class="w-full h-full object-cover">`
+            : `<div class="w-full h-full flex items-center justify-center text-brand-slate/30">
+                 <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+               </div>`}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold truncate">${escHtml(album.category_name)}</p>
+          <p class="text-xs text-brand-slate/50">${album.track_count} tracks</p>
+        </div>`;
+      btn.addEventListener('click', () => selectAlbum(album));
+      sidebar.appendChild(btn);
+    });
+  }
+
+  /* ── Select album & load its tracks ────────────────────────── */
+  async function selectAlbum(album: Album) {
+    currentAlbum = album;
+
+    // Update sidebar active state
+    document.querySelectorAll<HTMLButtonElement>('.al-album-btn').forEach(b => {
+      const active = b.dataset.cat === album.category_code;
+      b.classList.toggle('bg-brand-navy',       active);
+      b.classList.toggle('text-white',          active);
+      b.classList.toggle('text-brand-slate',    !active);
+      b.classList.toggle('hover:bg-brand-parchment', !active);
+    });
+
+    // Show header
+    prompt.classList.add('hidden');
+    headerEl.classList.remove('hidden');
+    titleEl.textContent = album.category_name;
+    countEl.textContent = `${album.track_count} tracks`;
+    if (album.cover_path) {
+      coverImg.src = '/' + album.cover_path;
+      coverImg.classList.remove('hidden');
+    } else {
+      coverImg.classList.add('hidden');
+    }
+
+    // Clear search when switching albums
+    searchQuery = '';
+    searchBox.value = '';
+    searchClear.classList.add('hidden');
+    searchSummary.classList.add('hidden');
+
+    // Show track loading
+    tracksEl.classList.add('hidden');
+    emptyEl.classList.add('hidden');
+    trackLoading.classList.remove('hidden');
+
+    const res = await fetch(`/api/audio.php?type=A&category=${encodeURIComponent(album.category_code)}`);
+    trackLoading.classList.add('hidden');
+
+    if (!res.ok) { emptyEl.classList.remove('hidden'); return; }
+    currentTracks = await res.json();
+
+    renderTracks();
+  }
+
+  /* ── Render track table ─────────────────────────────────────── */
+  function renderTracks() {
+    tbody.innerHTML = '';
+
+    const q = searchQuery.toLowerCase().replace(/[\u2013\u2014\u2212]/g, '-');
+    const visible = q
+      ? currentTracks.filter(t => t.track_name.toLowerCase().includes(q) || (t.bhajan_id ?? '').toLowerCase().includes(q))
+      : currentTracks;
+
+    if (q) {
+      searchSummary.textContent = `${visible.length} result${visible.length !== 1 ? 's' : ''} for "${searchQuery}"`;
+      searchSummary.classList.remove('hidden');
+    } else {
+      searchSummary.classList.add('hidden');
+    }
+
+    if (visible.length === 0) {
+      emptyEl.classList.remove('hidden');
+      tracksEl.classList.add('hidden');
+      return;
+    }
+
+    tracksEl.classList.remove('hidden');
+    emptyEl.classList.add('hidden');
+
+    // idx here maps into currentTracks (not visible) so Play All / setQueue stays correct
+    visible.forEach((track) => {
+      const idx = currentTracks.indexOf(track);
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-brand-tan/40 hover:bg-brand-parchment/40 cursor-pointer group transition-colors';
+      const alSaved = isInAnyPlaylist(track.track_id);
+      tr.innerHTML = `
+        <td class="py-1.5 pr-2">
+          <button class="al-play-btn w-7 h-7 flex items-center justify-center
+                         text-brand-lotus hover:text-pink-700 transition-colors shrink-0"
+                  data-idx="${idx}" aria-label="Play ${escHtml(track.track_name)}" title="Play">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </td>
+        <td class="py-3 pr-4">
+          ${track.bhajan_id ? `<span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(track.bhajan_id)}</span>` : ''}<span class="font-semibold text-brand-navy text-sm group-hover:text-brand-lotus transition-colors">${escHtml(track.track_name)}</span>
+        </td>
+        <td class="py-3 pr-4 hidden sm:table-cell text-brand-slate/70 text-sm">
+          ${track.singer ? escHtml(track.singer) : ''}
+        </td>
+        <td class="py-2 text-right">
+          <div class="inline-flex items-center justify-end gap-0.5">
+            <a class="al-dl-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                      bg-brand-slate/15 hover:bg-brand-slate text-brand-slate hover:text-white transition-colors"
+               href="/${escHtml(track.audio_file_path)}"
+               download="${escHtml(track.track_name)}.mp3"
+               title="Download ${escHtml(track.track_name)}">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+              </svg>
+            </a>
+            <button class="al-save-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                           transition-colors
+                           ${alSaved ? 'bg-brand-lotus text-white hover:bg-pink-700' : 'bg-brand-slate/15 text-brand-slate hover:bg-brand-slate hover:text-white'}"
+                    data-mid="${escHtml(track.track_id)}" data-idx="${idx}"
+                    title="${alSaved ? 'Saved to playlist' : 'Save to playlist'}">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                ${alSaved
+                  ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+                  : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+              </svg>
+            </button>
+          </div>
+        </td>`;
+
+      tr.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.al-play-btn, .al-dl-btn, .al-save-btn')) return;
+        playTrack(idx);
+      });
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.al-save-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx   = parseInt(btn.dataset.idx ?? '0');
+        const track = currentTracks[idx];
+        const picker = (window as any).__playlistPicker;
+        if (!picker) return;
+        picker.open({
+          track_id:         track.track_id,
+          track_name:       track.track_name,
+          display_name:     currentAlbum?.category_name ?? 'Album',
+          audio_file_path:  track.audio_file_path,
+          lyrics_file_path: track.lyrics_file_path ?? undefined,
+          download_allowed: 1,
+          type:             'A',
+          bhajan_id:        track.bhajan_id ?? null,
+        });
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.al-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playTrack(parseInt(btn.dataset.idx ?? '0'));
+      });
+    });
+  }
+
+  function refreshBookmarkStates() {
+    document.querySelectorAll<HTMLButtonElement>('.al-save-btn').forEach(btn => {
+      const saved = isInAnyPlaylist(btn.dataset.mid!);
+      btn.classList.toggle('bg-brand-lotus',       saved);
+      btn.classList.toggle('text-white',           saved);
+      btn.classList.toggle('hover:bg-pink-700',    saved);
+      btn.classList.toggle('bg-brand-slate/15',    !saved);
+      btn.classList.toggle('text-brand-slate',     !saved);
+      btn.classList.toggle('hover:bg-brand-slate', !saved);
+      btn.classList.toggle('hover:text-white',     !saved);
+      btn.title = saved ? 'Saved to playlist' : 'Save to playlist';
+      btn.querySelector('svg')!.innerHTML = saved
+        ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    });
+  }
+  window.addEventListener('playlist-changed', refreshBookmarkStates);
+
+  /* ── Play via global audio player ──────────────────────────── */
+  function playTrack(idx: number) {
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    const queue = currentTracks.map(t => ({
+      track_id:         t.track_id,
+      track_name:       t.track_name,
+      display_name:     currentAlbum?.category_name ?? 'Album',
+      audio_file_path:  t.audio_file_path,
+      lyrics_file_path: t.lyrics_file_path ?? null,
+      download_allowed: 1,
+      type:             'A' as const,
+      bhajan_id:        t.bhajan_id ?? null,
+    }));
+    player.setQueue(queue, idx);
+  }
+
+  playAllBtn.addEventListener('click', () => playTrack(0));
+
+  /* ── Search ─────────────────────────────────────────────────── */
+  searchBox.addEventListener('input', () => {
+    searchQuery = searchBox.value.trim();
+    searchClear.classList.toggle('hidden', !searchQuery);
+    renderTracks();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchBox.value = '';
+    searchQuery = '';
+    searchClear.classList.add('hidden');
+    renderTracks();
+    searchBox.focus();
+  });
+
+  /* ── Lightbox ───────────────────────────────────────────────── */
+  const lightbox    = document.getElementById('al-lightbox')!;
+  const lightboxImg = document.getElementById('al-lightbox-img') as HTMLImageElement;
+
+  coverImg.addEventListener('click', () => {
+    if (!coverImg.src || coverImg.classList.contains('hidden')) return;
+    lightboxImg.src = coverImg.src;
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  });
+
+  lightbox.addEventListener('click', () => {
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
+    document.body.style.overflow = '';
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+      lightbox.classList.add('hidden');
+      lightbox.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+  });
+
+  /* ── Helpers ────────────────────────────────────────────────── */
+  function escHtml(s: string): string {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Init ───────────────────────────────────────────────────── */
+  loadAlbums();
+
+})();
+</script>

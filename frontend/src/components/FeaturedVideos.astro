@@ -1,0 +1,224 @@
+---
+/**
+ * FeaturedVideos.astro — reusable video strip / full grid component
+ *
+ * Props:
+ *   title       — section heading
+ *   apiParams   — query string appended to /api/videos.php
+ *                 e.g. "category=Harikathas-Tamil&limit=5"
+ *                      "playlists=N1,N2"
+ *                      "limit=5"
+ *   moreLink?   — optional "View all" URL
+ *   moreLinkLabel? — label for the link (default "View all →")
+ *   mode?       — "strip" (horizontal scroll, default) | "grid" (full grid)
+ *   id          — unique DOM id suffix (required when multiple on one page)
+ */
+
+interface Props {
+  title:          string;
+  apiParams:      string;
+  moreLink?:      string;
+  moreLinkLabel?: string;
+  mode?:          "strip" | "grid";
+  id:             string;
+}
+
+const {
+  title,
+  apiParams,
+  moreLink,
+  moreLinkLabel = "View all →",
+  mode = "strip",
+  id,
+} = Astro.props;
+---
+
+<section class="py-10" data-fv-id={id} data-fv-params={apiParams} data-fv-mode={mode}>
+
+  <!-- Section header -->
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-1">Videos</p>
+      <h2 class="font-display font-bold text-xl text-brand-navy">{title}</h2>
+    </div>
+    {moreLink && (
+      <a href={moreLink}
+         class="text-sm font-semibold text-brand-navy hover:text-brand-lotus transition-colors shrink-0">
+        {moreLinkLabel}
+      </a>
+    )}
+  </div>
+
+  <!-- Loading skeleton -->
+  <div class={`fv-loading ${mode === "strip"
+    ? "flex gap-4 overflow-x-auto pb-2"
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"}`}>
+    {Array(mode === "strip" ? 5 : 6).fill(null).map(() => (
+      <div class={`shrink-0 rounded-xl bg-brand-tan/60 animate-pulse ${
+        mode === "strip" ? "w-56" : "w-full"}`}>
+        <div class="aspect-video rounded-t-xl bg-brand-tan"></div>
+        <div class="p-3 space-y-2">
+          <div class="h-3 bg-brand-tan rounded w-3/4"></div>
+          <div class="h-3 bg-brand-tan rounded w-1/2"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Error -->
+  <div class="fv-error hidden text-sm text-red-600 py-4">
+    Could not load videos. Please try again later.
+  </div>
+
+  <!-- Video container -->
+  <div class={`fv-container hidden ${mode === "strip"
+    ? "flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scroll-smooth"
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"}`}>
+  </div>
+
+  <!-- Empty -->
+  <p class="fv-empty hidden text-sm text-brand-slate text-center py-6">
+    No videos found.
+  </p>
+
+</section>
+
+<!-- Modal (one shared instance per page — only rendered by first component) -->
+{id === Astro.props.id && (
+  <div id="fv-modal"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+       role="dialog" aria-modal="true">
+    <div class="relative w-full max-w-4xl">
+      <button id="fv-modal-close"
+              class="absolute -top-10 right-0 text-white hover:text-brand-gold text-2xl font-bold">✕</button>
+      <div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl">
+        <iframe id="fv-modal-iframe" width="100%" height="100%"
+                src="" title="Video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+        </iframe>
+      </div>
+      <p id="fv-modal-title" class="text-white text-sm font-semibold mt-3 text-center px-4"></p>
+    </div>
+  </div>
+)}
+
+<script>
+// ── Modal setup (idempotent — only wires once even if component used multiple times)
+if (!window.__fvModalReady) {
+  window.__fvModalReady = true;
+
+  const modal     = document.getElementById("fv-modal")!;
+  const iframe    = document.getElementById("fv-modal-iframe") as HTMLIFrameElement;
+  const titleEl   = document.getElementById("fv-modal-title")!;
+  const closeBtn  = document.getElementById("fv-modal-close")!;
+
+  function openModal(videoId: string, title: string) {
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    titleEl.textContent = title;
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal() {
+    iframe.src = "";
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  // Expose globally so card click handlers can call it
+  (window as any).__fvOpenModal = openModal;
+}
+
+// ── Load each FeaturedVideos section ────────────────────────
+function videoCardHTML(v: {video_id:string, title:string, thumbnail_url:string, date:string, category:string, playlist:string}, mode: string): string {
+  const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`;
+  const safeTitle = v.title.replace(/"/g, '&quot;');
+
+  if (mode === "strip") {
+    return `
+      <div class="fv-card shrink-0 w-56 snap-start rounded-xl border border-brand-tan bg-white overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition group"
+           data-id="${v.video_id}" data-title="${safeTitle}">
+        <div class="relative aspect-video bg-brand-tan">
+          <img src="${thumb}" alt="${safeTitle}" class="w-full h-full object-cover" loading="lazy" />
+          <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+            <svg class="w-10 h-10 text-white fill-current opacity-0 group-hover:opacity-100 transition drop-shadow-lg" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="p-3">
+          <p class="font-semibold text-brand-navy text-xs leading-snug line-clamp-2">${v.title}</p>
+          <p class="text-[10px] text-brand-slate mt-1">${v.category}</p>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="fv-card group rounded-xl border border-brand-tan bg-white overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition"
+         data-id="${v.video_id}" data-title="${safeTitle}">
+      <div class="relative aspect-video bg-brand-tan">
+        <img src="${thumb}" alt="${safeTitle}" class="w-full h-full object-cover" loading="lazy" />
+        <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+          <svg class="w-12 h-12 text-white fill-current opacity-0 group-hover:opacity-100 transition drop-shadow-lg" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="p-3">
+        <p class="font-semibold text-brand-navy text-sm leading-snug line-clamp-2">${v.title}</p>
+        <p class="text-xs text-brand-slate mt-1">${v.category} · ${v.playlist}</p>
+      </div>
+    </div>`;
+}
+
+document.querySelectorAll<HTMLElement>("[data-fv-id]").forEach(async (section) => {
+  const params    = section.dataset.fvParams!;
+  const mode      = section.dataset.fvMode as "strip" | "grid";
+  const loading   = section.querySelector(".fv-loading")!;
+  const container = section.querySelector<HTMLElement>(".fv-container")!;
+  const errorEl   = section.querySelector(".fv-error")!;
+  const emptyEl   = section.querySelector(".fv-empty")!;
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? "";
+
+  try {
+    const res = await fetch(`${apiBase}/api/videos.php?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+
+    // Deduplicate by video_id (same video may appear in multiple playlists)
+    const seen = new Set<string>();
+    const videos = raw.filter((v: any) => {
+      if (seen.has(v.video_id)) return false;
+      seen.add(v.video_id);
+      return true;
+    });
+
+    loading.classList.add("hidden");
+
+    if (!videos.length) {
+      emptyEl.classList.remove("hidden");
+      return;
+    }
+
+    container.innerHTML = videos.map((v: any) => videoCardHTML(v, mode)).join("");
+    container.classList.remove("hidden");
+
+    // Wire click handlers
+    container.querySelectorAll<HTMLElement>(".fv-card").forEach(card => {
+      card.addEventListener("click", () => {
+        (window as any).__fvOpenModal(card.dataset.id, card.dataset.title);
+      });
+    });
+
+  } catch (err) {
+    console.error(err);
+    loading.classList.add("hidden");
+    errorEl.classList.remove("hidden");
+  }
+});
+</script>

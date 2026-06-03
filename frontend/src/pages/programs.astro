@@ -1,0 +1,529 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base title="Programs" activePath="/programs"
+     description="Programs at Gokul Bhavan - Harikathās, spiritual classes, special events, and devotional gatherings offered virtually and in person.">
+
+  <PageHero
+    title="Gokul Bhavan Programs"
+    description="Programs at Gokul Bhavan are sacred opportunities to hear, remember, and immerse ourselves in the teachings of bhakti through Harikathās, spiritual classes, special events, and devotional gatherings offered both virtually and in person."
+  />
+
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-12 space-y-14">
+
+    <!-- Loading skeleton -->
+    <div id="prog-loading" class="space-y-3">
+      {Array(4).fill(null).map(() => (
+        <div class="h-16 rounded-xl bg-brand-tan/40 animate-pulse"></div>
+      ))}
+    </div>
+
+    <!-- Error -->
+    <p id="prog-error" class="hidden text-sm text-red-600 py-4 text-center">
+      Could not load programs. Please try again later.
+    </p>
+
+    <!-- ── Upcoming ──────────────────────────────────────────── -->
+    <section id="sec-upcoming" class="hidden">
+      <div class="mb-4">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Coming Soon</p>
+        <h2 class="font-display font-bold text-xl text-brand-navy">Upcoming Programs</h2>
+      </div>
+      <div id="list-upcoming" class="space-y-2"></div>
+    </section>
+
+    <!-- ── Current / Active ──────────────────────────────────── -->
+    <section id="sec-active" class="hidden">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Live &amp; Ongoing</p>
+          <h2 class="font-display font-bold text-xl text-brand-navy">Current Programs</h2>
+        </div>
+        <!-- Join buttons — populated from active program data -->
+        <div id="join-btns" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div id="list-active" class="space-y-2"></div>
+    </section>
+
+    <!-- ── Completed ─────────────────────────────────────────── -->
+    <section id="sec-completed" class="hidden">
+      <div class="mb-4">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Archives</p>
+        <h2 class="font-display font-bold text-xl text-brand-navy">Completed Programs</h2>
+      </div>
+      <div id="list-completed" class="space-y-2"></div>
+    </section>
+
+    <!-- ── Video panel (shared, slide-down) ─────────────────── -->
+    <div id="vid-panel" class="hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Recordings</p>
+          <h3 id="vid-panel-title" class="font-display font-bold text-xl text-brand-navy"></h3>
+        </div>
+        <button id="vid-panel-close"
+                class="text-brand-slate hover:text-brand-navy text-sm font-semibold flex items-center gap-1 transition-colors">
+          ✕ Close
+        </button>
+      </div>
+      <div id="vid-panel-loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array(3).fill(null).map(() => (
+          <div class="rounded-xl border border-brand-tan bg-brand-parchment/60 animate-pulse">
+            <div class="aspect-video rounded-t-xl bg-brand-tan"></div>
+            <div class="p-3 space-y-2">
+              <div class="h-3 bg-brand-tan rounded w-3/4"></div>
+              <div class="h-3 bg-brand-tan rounded w-1/2"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div id="vid-panel-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <p id="vid-panel-empty" class="hidden text-sm text-brand-slate text-center py-8">No recordings found.</p>
+    </div>
+
+  </div>
+
+</Base>
+
+<script>
+type Program = {
+  id: number;
+  title: string;
+  description: string | null;
+  teacher: string | null;
+  language: string | null;
+  day_of_week: string | null;
+  time_est: string | null;
+  time_ist: string | null;     day_ist: string | null;
+  time_cst: string | null;     day_cst: string | null;
+  time_nigeria: string | null; day_nigeria: string | null;
+  event_date: string | null;
+  event_time: string | null;
+  zoom_url: string | null;
+  youtube_live_url: string | null;
+  video_playlist: string | null;
+  platform: string | null;
+  duration_min: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  site_id: string | null;
+  order_num: number;
+};
+
+const DAY_COLORS: Record<string, string> = {
+  Monday:    'bg-indigo-100 text-indigo-800',
+  Tuesday:   'bg-purple-100 text-purple-800',
+  Wednesday: 'bg-cyan-100 text-cyan-800',
+  Thursday:  'bg-teal-100 text-teal-800',
+  Friday:    'bg-brand-lotus/10 text-brand-lotus',
+  Saturday:  'bg-amber-100 text-amber-800',
+  Sunday:    'bg-orange-100 text-orange-800',
+};
+const LANG_COLORS: Record<string, string> = {
+  Tamil:   'bg-green-100 text-green-800',
+  English: 'bg-blue-100 text-blue-800',
+};
+const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+// ── Helpers ────────────────────────────────────────────────────
+function esc(s: string | null | undefined) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function deriveStatus(p: Program): 'active' | 'upcoming' | 'completed' | 'one-off' {
+  const today = new Date().toISOString().slice(0, 10);
+  const sd = p.start_date, ed = p.end_date;
+  if (sd && ed && sd === ed) return 'one-off';
+  if (ed && ed < today)     return 'completed';
+  if (sd && sd > today)     return 'upcoming';
+  return 'active';
+}
+
+// ── Row builders ───────────────────────────────────────────────
+function dayBadge(day: string | null) {
+  if (!day) return '';
+  const cls = DAY_COLORS[day] ?? 'bg-brand-tan text-brand-navy';
+  return `<span class="inline-block text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0 ${cls}">${esc(day.slice(0,3))}</span>`;
+}
+
+function langBadge(lang: string | null) {
+  if (!lang) return '';
+  const cls = LANG_COLORS[lang] ?? 'bg-brand-tan text-brand-navy';
+  return `<span class="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${cls}">${esc(lang)}</span>`;
+}
+
+function watchButton(playlist: string | null, title: string): string {
+  if (playlist) {
+    return `<button class="watch-btn inline-flex items-center gap-1.5 bg-brand-lotus hover:bg-pink-700 text-white text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors whitespace-nowrap"
+                     data-playlist="${esc(playlist)}" data-title="${esc(title)}">
+      <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      Watch Episodes
+    </button>`;
+  }
+  return `<span class="inline-flex items-center gap-1.5 bg-brand-tan/50 text-brand-slate/40 text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-full whitespace-nowrap cursor-default select-none">
+    <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    Coming Soon
+  </span>`;
+}
+
+// Convert a stored ET day+time to the visitor's browser timezone.
+// Uses a real Date so DST is handled correctly.
+// Returns null if day/time data is missing.
+function localProgramTime(dayOfWeek: string | null, timeEst: string | null): {
+  day3: string; dayFull: string; time: string; tzAbbr: string; dayChanged: boolean;
+} | null {
+  if (!dayOfWeek || !timeEst) return null;
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const srcIdx = DAYS.indexOf(dayOfWeek);
+  if (srcIdx === -1) return null;
+  // Accept both "7:00 PM" (legacy) and "19:00" (HTML time input, 24-hour)
+  const m12 = timeEst.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const m24 = timeEst.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m12 && !m24) return null;
+  let h: number, min: number;
+  if (m12) {
+    h = parseInt(m12[1]); min = parseInt(m12[2]);
+    if (m12[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (m12[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  } else {
+    h = parseInt(m24![1]); min = parseInt(m24![2]);
+  }
+
+  // Build a Date on the next occurrence of srcDay so DST offset is real
+  const now = new Date();
+  const diff = (srcIdx - now.getDay() + 7) % 7;
+  const ref = new Date(now);
+  ref.setDate(now.getDate() + diff);
+
+  // Naive probe: assume h:m is UTC, then find ET offset from that probe
+  const probe = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate(), h, min));
+  const etHourRaw = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(probe)
+  );
+  const etHour = etHourRaw === 24 ? 0 : etHourRaw;
+  let offsetH = h - etHour;
+  if (offsetH > 12)  offsetH -= 24;
+  if (offsetH < -12) offsetH += 24;
+  const utcDate = new Date(probe.getTime() + offsetH * 3_600_000);
+
+  const dayFull = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(utcDate);
+  const time    = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(utcDate);
+  const tzAbbr  = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+    .formatToParts(utcDate).find(p => p.type === 'timeZoneName')?.value ?? '';
+
+  return { day3: dayFull.slice(0, 3).toUpperCase(), dayFull, time, tzAbbr, dayChanged: dayFull !== dayOfWeek };
+}
+
+function shareButton(id: number): string {
+  return `<button class="share-btn inline-flex items-center gap-1.5 text-brand-slate border border-brand-tan hover:border-brand-navy hover:text-brand-navy text-xs font-semibold px-3 py-2 rounded-full transition-colors whitespace-nowrap shrink-0"
+                   data-id="${id}" title="Copy join link">
+    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+      <path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"/>
+    </svg>
+    Share
+  </button>`;
+}
+
+// Right column: optional share button + watch/coming-soon button.
+function rowRight(p: Program, showShare = false): string {
+  const share = showShare ? shareButton(p.id) : '';
+  return `<div class="flex-none flex items-center gap-2">${share}${watchButton(p.video_playlist, p.title)}</div>`;
+}
+
+// All rows: CSS grid with 3 fixed columns (badge | content | button).
+const ROW_GRID = 'style="grid-template-columns: auto minmax(0,1fr) auto"';
+
+function activeRow(p: Program): string {
+  const dur = p.duration_min ? ` · ${p.duration_min} min` : '';
+  const lt  = localProgramTime(p.day_of_week, p.time_est);
+  // Badge shows local day (e.g. SAT when an Indian user views a Friday 7 PM ET class)
+  const badge = dayBadge(lt ? lt.dayFull : p.day_of_week);
+  const timeEl = lt
+    ? `<p class="text-sm mt-1 text-brand-slate/80">
+         <span class="font-semibold text-brand-navy">${esc(lt.time)}</span>
+         <span class="ml-0.5">${esc(lt.tzAbbr)}</span>
+       </p>`
+    : '';
+  return `
+    <div class="grid items-center gap-4 bg-white rounded-xl border border-brand-tan px-4 py-3 hover:border-brand-navy/30 hover:shadow-sm transition" ${ROW_GRID}>
+      ${badge}
+      <div class="min-w-0">
+        <p class="font-semibold text-brand-navy text-base leading-snug truncate">${esc(p.title)}</p>
+        <p class="text-sm text-brand-slate/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
+          ${p.teacher ? `<span>${esc(p.teacher)}${dur}</span>` : ''}
+          ${langBadge(p.language)}
+        </p>
+        ${timeEl}
+      </div>
+      ${rowRight(p, true)}
+    </div>`;
+}
+
+function upcomingRow(p: Program): string {
+  const sd = p.start_date ?? p.event_date ?? '';
+  const lt  = localProgramTime(p.day_of_week, p.time_est);
+  const badge = p.day_of_week
+    ? dayBadge(lt ? lt.dayFull : p.day_of_week)
+    : `<span></span>`;
+  const timeEl = lt
+    ? `<p class="text-sm mt-1 text-brand-slate/80">
+         <span class="font-semibold text-brand-navy">${esc(lt.time)}</span>
+         <span class="ml-0.5">${esc(lt.tzAbbr)}</span>
+       </p>`
+    : '';
+  return `
+    <div class="grid items-center gap-4 bg-brand-parchment/60 rounded-xl border border-brand-tan px-4 py-3 hover:border-brand-navy/30 transition" ${ROW_GRID}>
+      ${badge}
+      <div class="min-w-0">
+        <p class="font-semibold text-brand-navy text-base leading-snug truncate">${esc(p.title)}</p>
+        <p class="text-sm text-brand-slate/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
+          ${p.teacher ? `<span>${esc(p.teacher)}</span>` : ''}
+          ${sd ? `<span class="font-semibold text-brand-navy">From ${sd}</span>` : ''}
+          ${langBadge(p.language)}
+        </p>
+        ${timeEl}
+      </div>
+      ${rowRight(p, true)}
+    </div>`;
+}
+
+function oneOffRow(p: Program): string {
+  const d = p.event_date ?? p.start_date ?? '';
+  const t = p.event_time ?? p.time_est ?? '';
+  return `
+    <div class="grid items-center gap-4 bg-white rounded-xl border border-amber-200 px-4 py-3 hover:border-amber-300 hover:shadow-sm transition" ${ROW_GRID}>
+      <span class="inline-block text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Event</span>
+      <div class="min-w-0">
+        <p class="font-semibold text-brand-navy text-base leading-snug truncate">${esc(p.title)}</p>
+        <p class="text-sm text-brand-slate/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
+          ${d ? `<span>${d}${t ? ' · ' + t + ' EST' : ''}</span>` : ''}
+          ${p.teacher ? `<span>${esc(p.teacher)}</span>` : ''}
+          ${langBadge(p.language)}
+        </p>
+      </div>
+      ${rowRight(p)}
+    </div>`;
+}
+
+function completedRow(p: Program): string {
+  const dateRange = [p.start_date, p.end_date].filter(Boolean).join(' - ');
+  return `
+    <div class="grid items-center gap-4 bg-white rounded-xl border border-brand-tan px-4 py-3 hover:border-brand-navy/20 transition opacity-80 hover:opacity-100" ${ROW_GRID}>
+      ${p.day_of_week ? dayBadge(p.day_of_week) : `<span></span>`}
+      <div class="min-w-0">
+        <p class="font-semibold text-brand-navy text-base leading-snug truncate">${esc(p.title)}</p>
+        <p class="text-sm text-brand-slate/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
+          ${p.teacher ? `<span>${esc(p.teacher)}</span>` : ''}
+          ${dateRange ? `<span>${dateRange}</span>` : ''}
+          ${langBadge(p.language)}
+        </p>
+      </div>
+      ${rowRight(p)}
+    </div>`;
+}
+
+// ── Video panel ────────────────────────────────────────────────
+const vidPanel    = document.getElementById('vid-panel')!;
+const vidTitle    = document.getElementById('vid-panel-title')!;
+const vidLoading  = document.getElementById('vid-panel-loading')!;
+const vidGrid     = document.getElementById('vid-panel-grid')!;
+const vidEmpty    = document.getElementById('vid-panel-empty')!;
+
+let openPlaylist: string | null = null;
+
+function closeVidPanel() {
+  vidPanel.classList.add('hidden');
+  openPlaylist = null;
+}
+
+document.getElementById('vid-panel-close')!.addEventListener('click', closeVidPanel);
+
+async function openVidPanel(playlist: string, title: string) {
+  if (openPlaylist === playlist) { closeVidPanel(); return; }
+  openPlaylist = playlist;
+
+  vidTitle.textContent = title;
+  vidGrid.classList.add('hidden');
+  vidEmpty.classList.add('hidden');
+  vidLoading.classList.remove('hidden');
+  vidPanel.classList.remove('hidden');
+  vidPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await fetch(`${apiBase}/api/videos.php?playlist_name=${encodeURIComponent(playlist)}`);
+    if (!res.ok) throw new Error();
+    const videos: any[] = await res.json();
+
+    vidLoading.classList.add('hidden');
+    if (!videos.length) { vidEmpty.classList.remove('hidden'); return; }
+
+    vidGrid.innerHTML = videos.map(v => {
+      const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`;
+      const st = esc(v.title);
+      return `
+        <div class="fv-card group rounded-xl border border-brand-tan bg-white overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition"
+             data-id="${esc(v.video_id)}" data-title="${st}">
+          <div class="relative aspect-video bg-brand-tan">
+            <img src="${thumb}" alt="${st}" class="w-full h-full object-cover" loading="lazy" />
+            <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+              <svg class="w-10 h-10 text-white fill-current opacity-0 group-hover:opacity-100 transition drop-shadow-lg" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="p-3">
+            <p class="font-semibold text-brand-navy text-sm leading-snug line-clamp-2">${v.title}</p>
+            <p class="text-xs text-brand-slate mt-1">${v.date ?? ''}</p>
+          </div>
+        </div>`;
+    }).join('');
+
+    vidGrid.querySelectorAll<HTMLElement>('.fv-card').forEach(card => {
+      card.addEventListener('click', () => {
+        (window as any).__fvOpenModal?.(card.dataset.id, card.dataset.title);
+      });
+    });
+
+    vidGrid.classList.remove('hidden');
+  } catch {
+    vidLoading.classList.add('hidden');
+    vidEmpty.textContent = 'Could not load recordings. Please try again.';
+    vidEmpty.classList.remove('hidden');
+  }
+}
+
+function wireWatchBtns(container: HTMLElement) {
+  container.querySelectorAll<HTMLButtonElement>('.watch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openVidPanel(btn.dataset.playlist!, btn.dataset.title!);
+    });
+  });
+}
+
+function wireShareBtns(container: HTMLElement) {
+  container.querySelectorAll<HTMLButtonElement>('.share-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = `${window.location.origin}/join.php?id=${btn.dataset.id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!`;
+        btn.classList.add('text-green-700', 'border-green-300');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('text-green-700', 'border-green-300'); }, 2000);
+      });
+    });
+  });
+}
+
+// ── Load & render ──────────────────────────────────────────────
+async function load() {
+  const loading = document.getElementById('prog-loading')!;
+  const errorEl = document.getElementById('prog-error')!;
+
+  try {
+    const res = await fetch(`${apiBase}/api/schedule.php?all=1`);
+    if (!res.ok) throw new Error();
+    const raw: Program[] = await res.json();
+
+    loading.classList.add('hidden');
+
+    const active    = raw.filter(p => deriveStatus(p) === 'active');
+    const upcoming  = raw.filter(p => deriveStatus(p) === 'upcoming');
+    const oneoffs   = raw.filter(p => deriveStatus(p) === 'one-off');
+    const completed = raw.filter(p => deriveStatus(p) === 'completed');
+
+    // Sort active by day order
+    active.sort((a, b) => {
+      const da = DAY_ORDER.indexOf(a.day_of_week ?? '');
+      const db = DAY_ORDER.indexOf(b.day_of_week ?? '');
+      return da !== db ? da - db : a.order_num - b.order_num;
+    });
+    // Sort completed newest first
+    completed.sort((a, b) => (b.end_date ?? '').localeCompare(a.end_date ?? ''));
+
+    // ── Upcoming section ────────────────────────────────────────
+    const upcomingAll = [...upcoming, ...oneoffs.filter(p => (p.event_date ?? p.start_date ?? '') >= new Date().toISOString().slice(0,10))];
+    if (upcomingAll.length) {
+      const sec  = document.getElementById('sec-upcoming')!;
+      const list = document.getElementById('list-upcoming')!;
+      upcomingAll.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = p.start_date === p.end_date ? oneOffRow(p) : upcomingRow(p);
+        list.appendChild(div.firstElementChild as HTMLElement);
+      });
+      wireWatchBtns(list);
+      wireShareBtns(list);
+      sec.classList.remove('hidden');
+    }
+
+    // ── Active section ──────────────────────────────────────────
+    const activeAll = [...active, ...oneoffs.filter(p => (p.event_date ?? p.start_date ?? '') === new Date().toISOString().slice(0,10))];
+    if (activeAll.length) {
+      const sec  = document.getElementById('sec-active')!;
+      const list = document.getElementById('list-active')!;
+
+      // Collect unique join URLs for section header
+      const zoomUrls = [...new Set(activeAll.map(p => p.zoom_url).filter(Boolean))];
+      const ytUrls   = [...new Set(activeAll.map(p => p.youtube_live_url).filter(Boolean))];
+      const joinBtns = document.getElementById('join-btns')!;
+
+      zoomUrls.forEach(url => {
+        joinBtns.innerHTML += `
+          <a href="${esc(url!)}" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-slate text-white text-sm font-bold uppercase tracking-wide px-4 py-2.5 rounded-full transition-colors">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/>
+            </svg>
+            Join on Zoom
+          </a>`;
+      });
+      ytUrls.forEach(url => {
+        joinBtns.innerHTML += `
+          <a href="${esc(url!)}" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-wide px-4 py-2.5 rounded-full transition-colors">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+            </svg>
+            Watch on YouTube
+          </a>`;
+      });
+
+      activeAll.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = activeRow(p);
+        list.appendChild(div.firstElementChild as HTMLElement);
+      });
+      wireWatchBtns(list);
+      wireShareBtns(list);
+      sec.classList.remove('hidden');
+    }
+
+    // ── Completed section ───────────────────────────────────────
+    if (completed.length) {
+      const sec  = document.getElementById('sec-completed')!;
+      const list = document.getElementById('list-completed')!;
+      completed.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = completedRow(p);
+        list.appendChild(div.firstElementChild as HTMLElement);
+      });
+      wireWatchBtns(list);
+      sec.classList.remove('hidden');
+    }
+
+    if (!activeAll.length && !upcomingAll.length && !completed.length) {
+      errorEl.textContent = 'No programs scheduled at this time.';
+      errorEl.classList.remove('hidden');
+    }
+
+  } catch {
+    loading.classList.add('hidden');
+    errorEl.classList.remove('hidden');
+  }
+}
+
+load();
+</script>

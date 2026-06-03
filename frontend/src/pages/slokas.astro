@@ -1,0 +1,365 @@
+---
+/**
+ * /slokas — Sloka library
+ * Categories sidebar + searchable track list + persistent audio player.
+ * Slokas have richer text (Sanskrit + transliteration + translation)
+ * displayed in the lyrics drawer.
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base
+  title="Slokas"
+  activePath="/slokas"
+  description="Sanskrit ślokas and Vaiṣṇava prayers - with transliteration, meaning, and audio."
+>
+
+  <PageHero
+    title="Sanskrit Ślokas"
+    description="Search by title or ID, or browse by category - then play any śloka. The player opens with Sanskrit text, transliteration, and translation displayed automatically below the controls."
+  />
+
+  <!-- Page body -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+    <!-- ── Search bar (full width) ───────────────────────── -->
+    <div class="relative mb-3">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-slate fill-current pointer-events-none"
+           viewBox="0 0 24 24">
+        <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input id="sl-search" type="text" placeholder="Search by title or ID…"
+             autocorrect="off" autocapitalize="off" spellcheck="false"
+             class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+      <button id="sl-search-clear"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate hover:text-brand-navy text-lg leading-none">✕</button>
+    </div>
+    <p id="sl-search-summary" class="hidden text-xs font-bold uppercase tracking-widest text-brand-slate mb-5"></p>
+
+    <!-- ── Category tabs ────────────────────────────────────── -->
+    <div id="sl-cat-tabs"
+         class="flex items-center gap-1 flex-wrap mb-6 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+      <div class="text-xs text-brand-slate/50 px-2 py-1 italic">Loading…</div>
+    </div>
+
+    <section>
+
+      <!-- Category heading -->
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="sl-heading" class="font-display font-bold text-xl text-brand-navy">
+          All Slokas
+        </h2>
+        <span id="sl-count" class="text-xs text-brand-slate"></span>
+      </div>
+
+      <!-- Play all button -->
+      <button id="sl-play-all"
+              class="hidden mb-4 inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700
+                     text-white text-xs font-bold uppercase tracking-wide px-4 py-2
+                     rounded-full transition-colors shadow">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Play All
+      </button>
+
+      <!-- Loading skeleton -->
+      <div id="sl-loading" class="space-y-2">
+        {Array.from({length: 8}).map(() => (
+          <div class="h-12 rounded-lg bg-brand-tan/30 animate-pulse"></div>
+        ))}
+      </div>
+
+      <!-- Track table -->
+      <div id="sl-tracks" class="hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[480px]">
+          <thead>
+            <tr class="text-left text-xs text-brand-slate/60 uppercase tracking-widest border-b border-brand-tan">
+              <th class="pb-2 pr-3 w-10"></th>
+              <th class="pb-2">Track</th>
+              <th class="pb-2 w-14 text-right"></th>
+            </tr>
+          </thead>
+          <tbody id="sl-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div id="sl-empty" class="hidden text-center py-16 text-brand-slate">
+        <p class="text-lg font-semibold mb-1">No slokas found</p>
+        <p class="text-sm">Try a different search term or category.</p>
+      </div>
+
+      <!-- Note about lyrics -->
+      <p class="mt-8 text-xs text-brand-slate/50 border-t border-brand-tan pt-4">
+        Click Play on any śloka — the player opens with Sanskrit text, transliteration,
+        and translation displayed automatically below the controls.
+      </p>
+
+    </section>
+  </div><!-- end page body -->
+
+</Base>
+
+<script>
+import { isInAnyPlaylist } from '@lib/playlist-store';
+(function () {
+
+  /* ── Types ─────────────────────────────────────────────── */
+  type Family = {
+    category_code: string;
+    category_name: string;
+    sort_order: number;
+    track_count: number;
+  };
+
+  type Track = {
+    track_id: string;
+    track_name: string;
+    category_code: string;
+    display_name: string;
+    audio_file_path: string;
+    lyrics_file_path: string | null;
+    download_allowed: number;
+    videos: { video_id: string; title: string }[];
+  };
+
+  /* ── State ─────────────────────────────────────────────── */
+  let allTracks:      Track[] = [];
+  let filteredTracks: Track[] = [];
+  let activeCat       = '';
+  let searchQuery     = '';
+
+  /* ── DOM ───────────────────────────────────────────────── */
+  const catTabs    = document.getElementById('sl-cat-tabs')!;
+  const heading    = document.getElementById('sl-heading')!;
+  const countEl    = document.getElementById('sl-count')!;
+  const playAllBtn = document.getElementById('sl-play-all') as HTMLButtonElement;
+  const loadingEl     = document.getElementById('sl-loading')!;
+  const tracksEl      = document.getElementById('sl-tracks')!;
+  const tbody         = document.getElementById('sl-tbody')!;
+  const emptyEl       = document.getElementById('sl-empty')!;
+  const searchBox     = document.getElementById('sl-search') as HTMLInputElement;
+  const searchClear   = document.getElementById('sl-search-clear') as HTMLButtonElement;
+  const searchSummary = document.getElementById('sl-search-summary')!;
+
+  /* ── Fetch categories ──────────────────────────────────── */
+  async function loadCategories() {
+    const res = await fetch('/api/audio-category.php?type=S');
+    if (!res.ok) return;
+    const families: Family[] = await res.json();
+
+    const allFamilies = [{ category_code: '', category_name: 'All Slokas' }, ...families];
+    catTabs.innerHTML = allFamilies.map(f => `
+      <button class="sl-cat-btn px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              data-cat="${f.category_code}">
+        ${f.category_name}
+      </button>`).join('');
+
+    document.querySelectorAll<HTMLButtonElement>('.sl-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCat   = btn.dataset.cat ?? '';
+        searchQuery = '';
+        searchBox.value = '';
+        searchClear.classList.add('hidden');
+        searchSummary.classList.add('hidden');
+        heading.textContent = activeCat === ''
+          ? 'All Slokas'
+          : families.find(f => f.category_code === activeCat)?.category_name ?? activeCat;
+        updateActive(btn);
+        applyFilter();
+      });
+    });
+
+    updateActive(catTabs.querySelector<HTMLButtonElement>('[data-cat=""]')!);
+  }
+
+  /* ── Fetch tracks ──────────────────────────────────────── */
+  async function loadTracks() {
+    const res = await fetch('/api/audio.php?type=S');
+    if (!res.ok) return;
+    allTracks = await res.json();
+    filteredTracks = allTracks;
+
+    loadingEl.classList.add('hidden');
+    renderTracks();
+  }
+
+  /* ── Filter ─────────────────────────────────────────────── */
+  function applyFilter() {
+    const q = searchQuery.toLowerCase().replace(/[\u2013\u2014\u2212]/g, '-');
+    filteredTracks = allTracks.filter(t => {
+      // When a search query is active, ignore category — search all tracks
+      const catMatch    = q !== '' || activeCat === '' || t.category_code === activeCat;
+      const searchMatch = q === '' || t.track_name.toLowerCase().includes(q) || t.track_id.toLowerCase().includes(q);
+      return catMatch && searchMatch;
+    });
+
+    if (q) {
+      searchSummary.textContent = `${filteredTracks.length} result${filteredTracks.length !== 1 ? 's' : ''} for "${searchQuery}"`;
+      searchSummary.classList.remove('hidden');
+    } else {
+      searchSummary.classList.add('hidden');
+    }
+
+    renderTracks();
+  }
+
+  /* ── Render ─────────────────────────────────────────────── */
+  function renderTracks() {
+    tbody.innerHTML = '';
+
+    if (filteredTracks.length === 0) {
+      tracksEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      countEl.textContent = '';
+      playAllBtn.classList.add('hidden');
+      return;
+    }
+
+    tracksEl.classList.remove('hidden');
+    emptyEl.classList.add('hidden');
+    countEl.textContent = `${filteredTracks.length} ślokas`;
+    playAllBtn.classList.toggle('hidden', filteredTracks.length === 0);
+
+    filteredTracks.forEach((track, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-brand-tan/40 hover:bg-brand-parchment/40 cursor-pointer group transition-colors align-top';
+      tr.dataset.idx = String(idx);
+
+      const slSaved = isInAnyPlaylist(track.track_id);
+      tr.innerHTML = `
+        <td class="py-1.5 pr-2">
+          <button class="sl-play-btn w-7 h-7 flex items-center justify-center
+                         text-brand-lotus hover:text-pink-700 transition-colors shrink-0"
+                  data-idx="${idx}" aria-label="Play ${escHtml(track.track_name)}" title="Play">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </td>
+        <td class="py-2.5 pr-2">
+          <span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(track.track_id)}</span><span class="font-semibold text-brand-navy text-sm group-hover:text-brand-lotus transition-colors">${escHtml(track.track_name)}</span>
+        </td>
+        <td class="py-2 text-right">
+          <div class="inline-flex items-center justify-end gap-0.5">
+            ${track.download_allowed ? `
+            <a class="sl-dl-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                      bg-brand-slate/15 hover:bg-brand-slate text-brand-slate hover:text-white transition-colors"
+               href="/${escHtml(track.audio_file_path)}"
+               download="${escHtml(track.track_name)}.mp3"
+               title="Download">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+              </svg>
+            </a>` : ''}
+            <button class="sl-save-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                           transition-colors
+                           ${slSaved ? 'bg-brand-lotus text-white hover:bg-pink-700' : 'bg-brand-slate/15 text-brand-slate hover:bg-brand-slate hover:text-white'}"
+                    data-mid="${escHtml(track.track_id)}" data-idx="${idx}"
+                    title="${slSaved ? 'Saved to playlist' : 'Save to playlist'}">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                ${slSaved
+                  ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+                  : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+              </svg>
+            </button>
+          </div>
+        </td>`;
+
+      tr.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.sl-play-btn, .sl-dl-btn, .sl-save-btn')) return;
+        playTrack(idx);  // row click also plays
+      });
+      tbody.appendChild(tr);
+    });
+
+    // ── Wire buttons ──────────────────────────────────────────────
+    document.querySelectorAll<HTMLButtonElement>('.sl-save-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx   = parseInt(btn.dataset.idx ?? '0');
+        const track = filteredTracks[idx];
+        const picker = (window as any).__playlistPicker;
+        if (!picker) return;
+        picker.open({
+          track_id:         track.track_id,
+          track_name:       track.track_name,
+          display_name:     track.display_name,
+          audio_file_path:  track.audio_file_path,
+          lyrics_file_path: track.lyrics_file_path ?? undefined,
+          download_allowed: track.download_allowed,
+          type:             'S',
+        });
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.sl-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playTrack(parseInt(btn.dataset.idx ?? '0'));
+      });
+    });
+  }
+
+  function refreshBookmarkStates() {
+    document.querySelectorAll<HTMLButtonElement>('.sl-save-btn').forEach(btn => {
+      const saved = isInAnyPlaylist(btn.dataset.mid!);
+      btn.classList.toggle('bg-brand-lotus',       saved);
+      btn.classList.toggle('text-white',           saved);
+      btn.classList.toggle('hover:bg-pink-700',    saved);
+      btn.classList.toggle('bg-brand-slate/15',    !saved);
+      btn.classList.toggle('text-brand-slate',     !saved);
+      btn.classList.toggle('hover:bg-brand-slate', !saved);
+      btn.classList.toggle('hover:text-white',     !saved);
+      btn.title = saved ? 'Saved to playlist' : 'Save to playlist';
+      btn.querySelector('svg')!.innerHTML = saved
+        ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    });
+  }
+  window.addEventListener('playlist-changed', refreshBookmarkStates);
+
+  /* ── Play ───────────────────────────────────────────────── */
+  function playTrack(idx: number) {
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    const queue = filteredTracks.map(t => ({ ...t, type: 'S' as const }));
+    player.setQueue(queue, idx);
+  }
+
+  playAllBtn.addEventListener('click', () => playTrack(0));
+
+  /* ── Search ─────────────────────────────────────────────── */
+  searchBox.addEventListener('input', () => {
+    searchQuery = searchBox.value.trim();
+    searchClear.classList.toggle('hidden', !searchQuery);
+    applyFilter();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchBox.value = '';
+    searchQuery = '';
+    searchClear.classList.add('hidden');
+    applyFilter();
+    searchBox.focus();
+  });
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function updateActive(activeBtn: HTMLButtonElement | null) {
+    document.querySelectorAll<HTMLButtonElement>('.sl-cat-btn').forEach(b => {
+      b.classList.remove('bg-brand-navy', 'text-white');
+      b.classList.add('text-brand-slate', 'hover:bg-white/70');
+    });
+    if (activeBtn) {
+      activeBtn.classList.add('bg-brand-navy', 'text-white');
+      activeBtn.classList.remove('text-brand-slate', 'hover:bg-white/70');
+    }
+  }
+
+  function escHtml(s: string): string {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Init ───────────────────────────────────────────────── */
+  Promise.all([loadCategories(), loadTracks()]);
+
+})();
+</script>

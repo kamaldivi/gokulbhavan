@@ -1,0 +1,189 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+import VcalNav from "@components/VcalNav.astro";
+---
+
+<Base
+  title="Ekādaśī Recipes"
+  activePath="/vcalendar"
+  description="Simple recipes using Ekādaśī-approved ingredients — suitable for fasting days."
+>
+
+  <PageHero
+    title="Ekādaśī Recipes"
+    description="Simple, approved recipes for Ekādaśī fasting days — using only permitted ingredients."
+  />
+
+  <VcalNav activePath="/vcalendar/ekadasi-recipes" />
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+
+    <!-- ── Note ──────────────────────────────────────────────── -->
+    <p class="text-sm text-brand-slate leading-relaxed border-l-4 border-brand-gold pl-4">
+      All recipes use only Ekādaśī-permitted ingredients. See the
+      <a href="/vcalendar/ekadasi-guidelines" class="text-brand-lotus hover:underline font-semibold">Ekādaśī Guidelines</a>
+      for the complete list of allowed and prohibited foods.
+    </p>
+
+    <!-- ── Recipe 1: Cheese Biscuits ────────────────────────── -->
+    <article class="rounded-xl border border-brand-tan bg-white overflow-hidden">
+      <div class="bg-brand-navy px-6 py-4">
+        <h2 class="font-display font-bold text-white text-xl">Ekādaśī Cheese Biscuits</h2>
+      </div>
+      <div class="p-6 grid sm:grid-cols-2 gap-8">
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Ingredients</h3>
+          <ul class="space-y-1.5 text-sm text-brand-slate">
+            {[
+              "Tapioca flour",
+              "Baking soda",
+              "Salt",
+              "Butter",
+              "Milk",
+              "Cheddar cheese",
+            ].map(item => (
+              <li class="flex items-start gap-2">
+                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Instructions</h3>
+          <ol class="space-y-2 text-sm text-brand-slate">
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">1.</span>
+              Melt butter in a bowl.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">2.</span>
+              Mix all ingredients together into a thick paste.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">3.</span>
+              Form into 1½-inch balls and place on a baking tray.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">4.</span>
+              Bake at 350°F (175°C) for approximately 30 minutes until golden.
+            </li>
+          </ol>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ── Recipe 2: Gauranga Potato ────────────────────────── -->
+    <article class="rounded-xl border border-brand-tan bg-white overflow-hidden">
+      <div class="bg-brand-navy px-6 py-4">
+        <h2 class="font-display font-bold text-white text-xl">Ekādaśī Gauranga Potato</h2>
+      </div>
+      <div class="p-6 grid sm:grid-cols-2 gap-8">
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Ingredients</h3>
+          <ul class="space-y-1.5 text-sm text-brand-slate">
+            {[
+              "Medium potatoes",
+              "Butter",
+              "Sour cream",
+              "Rosemary powder",
+              "Ekādaśī hing (asafoetida)",
+              "Turmeric",
+            ].map(item => (
+              <li class="flex items-start gap-2">
+                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Instructions</h3>
+          <ol class="space-y-2 text-sm text-brand-slate">
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">1.</span>
+              Boil potatoes until just tender, then drain and slice.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">2.</span>
+              Layer sliced potatoes in a baking pan.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">3.</span>
+              Melt butter and mix in rosemary powder, ekādaśī hing, turmeric, and sour cream to make the sauce.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">4.</span>
+              Pour sauce over potatoes and bake uncovered at 350°F (175°C) for 30-40 minutes.
+            </li>
+          </ol>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ── Recipe 3: Buckwheat Chocolate Muffins ────────────── -->
+    <article class="rounded-xl border border-brand-tan bg-white overflow-hidden">
+      <div class="bg-brand-navy px-6 py-4">
+        <h2 class="font-display font-bold text-white text-xl">Ekādaśī Buckwheat Chocolate Muffins</h2>
+      </div>
+      <div class="p-6 grid sm:grid-cols-2 gap-8">
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Ingredients</h3>
+          <ul class="space-y-1.5 text-sm text-brand-slate">
+            {[
+              "Buckwheat flour",
+              "Butter",
+              "Milk",
+              "Chocolate powder (cocoa)",
+              "Brown sugar / jaggery",
+              "Ground coconut or banana",
+              "Baking soda",
+            ].map(item => (
+              <li class="flex items-start gap-2">
+                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-widest text-brand-slate/60 mb-3">Instructions</h3>
+          <ol class="space-y-2 text-sm text-brand-slate">
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">1.</span>
+              Combine all ingredients and mix into a thin, pourable batter.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">2.</span>
+              Pour into greased muffin trays, filling each about ¾ full.
+            </li>
+            <li class="flex gap-3">
+              <span class="font-bold text-brand-navy shrink-0">3.</span>
+              Bake at 350°F (175°C) for 20-30 minutes until a skewer comes out clean.
+            </li>
+          </ol>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ── Back link ─────────────────────────────────────────── -->
+    <div class="text-center pt-2">
+      <a href="/vcalendar/ekadasi-guidelines"
+         class="text-sm text-brand-slate hover:text-brand-navy font-semibold transition-colors">
+        ← Back to Ekādaśī Guidelines
+      </a>
+    </div>
+
+  </div>
+
+</Base>

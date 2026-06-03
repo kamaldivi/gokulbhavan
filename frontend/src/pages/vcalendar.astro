@@ -1,0 +1,604 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+import VcalNav from "@components/VcalNav.astro";
+---
+
+<Base title="Vaishnava Calendar"
+     description="Ekādaśī observances, appearance days, and Gauḍīya festivals — with dates and fasting times for your location.">
+
+  <PageHero
+    title="Vaiṣṇava Calendar"
+    description="Ekādaśī observances, and holy days - with dates and fasting times for your location."
+  />
+
+  <VcalNav activePath="/vcalendar" />
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ── Last Updated Banner ───────────────────────────────── -->
+    <p id="vc-last-updated"
+       class="text-xs text-brand-slate italic mb-6 text-center">
+      Loading calendar data…
+    </p>
+
+    <!-- ── Location Selectors (always visible) ───────────────── -->
+    <div class="mb-8 space-y-4">
+
+      <!-- Detection status note -->
+      <div id="vc-detect-status" class="flex items-center gap-2 text-sm text-brand-slate min-h-[1.5rem]">
+        <svg id="vc-detect-spinner" class="animate-spin w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+        <span id="vc-detect-msg">Detecting your location…</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <!-- Country -->
+        <div class="space-y-1">
+          <label for="vc-country-select"
+                 class="block text-xs font-semibold uppercase tracking-wide text-brand-slate">
+            Country
+          </label>
+          <select id="vc-country-select" disabled
+                  class="w-full rounded-lg border border-brand-tan bg-white px-3 py-2
+                         text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-lotus
+                         disabled:opacity-50 disabled:cursor-not-allowed">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+
+        <!-- City / Location -->
+        <div class="space-y-1">
+          <label for="vc-loc-select"
+                 class="block text-xs font-semibold uppercase tracking-wide text-brand-slate">
+            City / Location
+          </label>
+          <select id="vc-loc-select" disabled
+                  class="w-full rounded-lg border border-brand-tan bg-white px-3 py-2
+                         text-sm text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-lotus
+                         disabled:opacity-50 disabled:cursor-not-allowed">
+            <option value="">Select a country first…</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Events List ───────────────────────────────────────── -->
+    <div id="vc-events" class="space-y-4"></div>
+
+    <p id="vc-empty"
+       class="hidden text-center text-brand-slate italic py-12 text-sm">
+    </p>
+
+    <p id="vc-events-error"
+       class="hidden text-center text-red-600 text-sm py-8">
+      Unable to load calendar events. Please try again.
+    </p>
+
+  </div>
+</Base>
+
+<script>
+  const VCAL = 'https://purebhaktibase.com:8443/api/v1/vcalendar';
+
+  // ── Country name normalisations: ISO 3166-1 alpha-2 → vcalendar name ──
+  const ISO_TO_COUNTRY: Record<string, string> = {
+    US: 'USA',
+    GB: 'UK',
+    TT: 'Trinidad-Tobago',
+    MK: 'Macedonia',
+    CI: 'Ivory Coast',
+    DO: 'Dominican Rep.',
+    SR: 'Surinam',
+    KR: 'South Korea',
+  };
+
+  // ── IANA timezone → vcalendar country (unambiguous timezones only) ────
+  const TZ_COUNTRY_MAP: Record<string, string> = {
+    // India
+    'Asia/Kolkata':                  'India',
+    // Nigeria (Africa/Lagos covers NG, BJ, NE, TD — but for our audience Nigeria is safe)
+    'Africa/Lagos':                  'Nigeria',
+    // USA — timezones exclusive to the US
+    'America/New_York':              'USA',
+    'America/Chicago':               'USA',
+    'America/Denver':                'USA',
+    'America/Los_Angeles':           'USA',
+    'America/Phoenix':               'USA',
+    'America/Anchorage':             'USA',
+    'America/Honolulu':              'USA',
+    'America/Indiana/Indianapolis':  'USA',
+    'America/Indiana/Knox':          'USA',
+    'America/Indiana/Marengo':       'USA',
+    'America/Indiana/Petersburg':    'USA',
+    'America/Indiana/Tell_City':     'USA',
+    'America/Indiana/Vevay':         'USA',
+    'America/Indiana/Vincennes':     'USA',
+    'America/Indiana/Winamac':       'USA',
+    'America/Kentucky/Louisville':   'USA',
+    'America/Kentucky/Monticello':   'USA',
+    'America/North_Dakota/Beulah':   'USA',
+    'America/North_Dakota/Center':   'USA',
+    'America/North_Dakota/New_Salem':'USA',
+    'America/Adak':                  'USA',
+    'America/Metlakatla':            'USA',
+    'America/Nome':                  'USA',
+    'America/Sitka':                 'USA',
+    'America/Yakutat':               'USA',
+    'Pacific/Honolulu':              'USA',
+    // UK
+    'Europe/London':                 'UK',
+    // Other unambiguous
+    'Europe/Berlin':                 'Germany',
+    'Europe/Madrid':                 'Spain',
+    'Europe/Stockholm':              'Sweden',
+    'Europe/Kiev':                   'Ukraine',
+    'Europe/Kyiv':                   'Ukraine',
+    'Europe/Vilnius':                'Lithuania',
+    'Europe/Warsaw':                 'Poland',
+    'Asia/Tokyo':                    'Japan',
+    'Asia/Singapore':                'Singapore',
+    'Asia/Colombo':                  'Sri Lanka',
+    'Africa/Accra':                  'Ghana',
+    'Africa/Nairobi':                'Kenya',
+    'Africa/Lusaka':                 'Zambia',
+    'Africa/Harare':                 'Zimbabwe',
+    'Africa/Freetown':               'Sierra Leone',
+    'Africa/Kampala':                'Uganda',
+    'Africa/Douala':                 'Cameroon',
+  };
+
+  // ── Types ────────────────────────────────────────────────────
+  interface Country {
+    country:        string;
+    location_count: number;
+  }
+
+  interface Location {
+    id:           number;
+    city:         string;
+    state_region: string | null;
+    country:      string;
+    iana_timezone: string;
+  }
+
+  interface EventItem {
+    text:       string;
+    visibility: string;
+  }
+
+  interface CalendarEvent {
+    calendar_entry_id:   number;
+    entry_date:          string;
+    weekday:             string;
+    sunrise:             string;
+    sunset:              string;
+    tithi?:              string | null;
+    tithi_end?:          string | null;
+    paksha?:             string | null;
+    masa?:               string | null;
+    is_ekadasi:          boolean | null;
+    is_holyday:          boolean | null;
+    ekadasi_name?:       string | null;
+    break_fast_note?:    string | null;
+    break_fast_date?:    string | null;
+    break_fast_sunrise?: string | null;
+    break_fast_sunset?:  string | null;
+    event_items:         EventItem[];
+  }
+
+  // ── State ────────────────────────────────────────────────────
+  let countries: Country[] = [];
+  let currentLocationId: number | null = null;
+
+  // ── DOM ──────────────────────────────────────────────────────
+  const lastUpdatedEl   = document.getElementById('vc-last-updated')!;
+  const detectStatus    = document.getElementById('vc-detect-status')!;
+  const detectSpinner   = document.getElementById('vc-detect-spinner')!;
+  const detectMsg       = document.getElementById('vc-detect-msg')!;
+  const countrySelect   = document.getElementById('vc-country-select') as HTMLSelectElement;
+  const locSelect       = document.getElementById('vc-loc-select') as HTMLSelectElement;
+  const eventsEl        = document.getElementById('vc-events')!;
+  const emptyEl         = document.getElementById('vc-empty')!;
+  const eventsErrorEl   = document.getElementById('vc-events-error')!;
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function formatEventDate(iso: string): string {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+  }
+
+  function formatLastUpdated(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    });
+  }
+
+  function to12h(t: string | null | undefined): string {
+    if (!t) return '';
+    const clean = t.replace(/^\*/, '');
+    const [hStr, mStr] = clean.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr ?? '00';
+    if (isNaN(h)) return t;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+  function locationLabel(loc: Location): string {
+    const parts = [loc.city];
+    if (loc.state_region) parts.push(loc.state_region);
+    parts.push(loc.country);
+    return parts.join(', ');
+  }
+
+  function setDetectMsg(msg: string, spinning = false) {
+    detectMsg.textContent = msg;
+    detectSpinner.classList.toggle('hidden', !spinning);
+  }
+
+  // ── Last Updated ─────────────────────────────────────────────
+  const SOURCE_LINK = `<a href="https://www.purebhakti.com/resources/vaisnava-calendar"
+    target="_blank" rel="noopener noreferrer"
+    class="underline hover:text-brand-navy transition-colors">Pure Bhakti</a>`;
+
+  async function loadLastUpdated() {
+    try {
+      const data = await fetch(`${VCAL}/last-updated`).then(r => r.json());
+      lastUpdatedEl.innerHTML = data.last_updated_at
+        ? `Source: ${SOURCE_LINK} · Last loaded: ${formatLastUpdated(data.last_updated_at)}`
+        : `Source: ${SOURCE_LINK}`;
+    } catch {
+      lastUpdatedEl.innerHTML = `Source: ${SOURCE_LINK}`;
+    }
+  }
+
+  // ── Load Country List ─────────────────────────────────────────
+  async function loadCountries(): Promise<void> {
+    const data = await fetch(`${VCAL}/countries`).then(r => r.json());
+    countries = data.countries ?? [];
+    countrySelect.innerHTML = '<option value="">Select a country…</option>';
+    countries.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.country;
+      opt.textContent = c.country;
+      countrySelect.appendChild(opt);
+    });
+    countrySelect.disabled = false;
+  }
+
+  // ── Load Locations for Country ────────────────────────────────
+  async function loadLocationsForCountry(country: string): Promise<Location[]> {
+    locSelect.innerHTML = '<option value="">Loading…</option>';
+    locSelect.disabled = true;
+    try {
+      const data = await fetch(
+        `${VCAL}/locations-by-country?country=${encodeURIComponent(country)}`
+      ).then(r => r.json());
+      const locations: Location[] = data.locations ?? [];
+      locSelect.innerHTML = '<option value="">Select a city…</option>';
+      locations.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = String(loc.id);
+        opt.textContent = locationLabel(loc);
+        locSelect.appendChild(opt);
+      });
+      locSelect.disabled = locations.length === 0;
+      return locations;
+    } catch {
+      locSelect.innerHTML = '<option value="">Unable to load cities</option>';
+      locSelect.disabled = true;
+      return [];
+    }
+  }
+
+  // ── Pre-select helpers ────────────────────────────────────────
+  async function preselectCountry(name: string): Promise<Location[]> {
+    if (!countries.some(c => c.country === name)) return [];
+    countrySelect.value = name;
+    return loadLocationsForCountry(name);
+  }
+
+  async function preselectLocation(locations: Location[], id: number): Promise<void> {
+    locSelect.value = String(id);
+    currentLocationId = id;
+    await loadEvents();
+  }
+
+  // ── 3-Tier Location Detection ─────────────────────────────────
+  async function detectLocation(): Promise<void> {
+    setDetectMsg('Detecting your location…', true);
+
+    // Tier 1 — Browser Geolocation
+    if ('geolocation' in navigator) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+        );
+        const loc: Location = await fetchWithTimeout(
+          `${VCAL}/nearest-location?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
+        ).then(r => {
+          if (!r.ok) throw new Error(`${r.status}`);
+          return r.json();
+        });
+
+        setDetectMsg(`Nearest location: ${locationLabel(loc)}`);
+        const locs = await preselectCountry(loc.country);
+        if (locs.length) {
+          await preselectLocation(locs, loc.id);
+          saveCache(loc.id, loc.country, locationLabel(loc));
+        }
+        return;
+      } catch { /* fall through */ }
+    }
+
+    // Tier 2 — IP Geolocation
+    try {
+      const geo = await fetchWithTimeout('https://ipapi.co/json/', 5000).then(r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      });
+      const isoCode: string  = geo.country_code ?? '';
+      const ipName: string   = geo.country_name  ?? '';
+      const ipCity: string   = geo.city          ?? '';
+      const ipLat: number | null = geo.latitude  ?? null;
+      const ipLon: number | null = geo.longitude ?? null;
+      const countryName      = ISO_TO_COUNTRY[isoCode] ?? ipName;
+
+      if (countryName && countries.some(c => c.country === countryName)) {
+        const locs = await preselectCountry(countryName);
+
+        // Exact city name match
+        if (ipCity && locs.length) {
+          const cityLower = ipCity.toLowerCase();
+          const match = locs.find(l => l.city.toLowerCase() === cityLower);
+          if (match) {
+            setDetectMsg(`Location detected from your network: ${locationLabel(match)}`);
+            await preselectLocation(locs, match.id);
+            saveCache(match.id, match.country, locationLabel(match));
+            return;
+          }
+        }
+
+        // No exact match — fall back to nearest-location using IP coordinates
+        if (ipLat !== null && ipLon !== null) {
+          try {
+            const nearest: Location = await fetchWithTimeout(
+              `${VCAL}/nearest-location?lat=${ipLat}&lon=${ipLon}`
+            ).then(r => {
+              if (!r.ok) throw new Error(`${r.status}`);
+              return r.json();
+            });
+            setDetectMsg(`Nearest location detected from your network: ${locationLabel(nearest)}`);
+            const refreshedLocs = await preselectCountry(nearest.country);
+            if (refreshedLocs.length) {
+              await preselectLocation(refreshedLocs, nearest.id);
+              saveCache(nearest.id, nearest.country, locationLabel(nearest));
+            }
+            return;
+          } catch { /* fall through to country-only */ }
+        }
+
+        setDetectMsg(`Country detected from your network: ${countryName}. Please select your city.`);
+        return;
+      }
+    } catch { /* fall through */ }
+
+    // Tier 3 — Browser Timezone
+    try {
+      const tz          = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const countryName = TZ_COUNTRY_MAP[tz];
+      if (countryName && countries.some(c => c.country === countryName)) {
+        setDetectMsg(`Country estimated from your browser timezone: ${countryName}. Please select your city.`);
+        await preselectCountry(countryName);
+        return;
+      }
+    } catch { /* fall through */ }
+
+    // All tiers exhausted
+    setDetectMsg('Please select your country and city below.');
+  }
+
+  // ── Select Listeners ─────────────────────────────────────────
+  countrySelect.addEventListener('change', async () => {
+    const country = countrySelect.value;
+    currentLocationId = null;
+    eventsEl.innerHTML = '';
+    emptyEl.classList.add('hidden');
+    eventsErrorEl.classList.add('hidden');
+    if (!country) {
+      locSelect.innerHTML = '<option value="">Select a country first…</option>';
+      locSelect.disabled = true;
+      return;
+    }
+    await loadLocationsForCountry(country);
+  });
+
+  locSelect.addEventListener('change', () => {
+    const id = parseInt(locSelect.value);
+    if (!id) return;
+    currentLocationId = id;
+    // Cache manual selection so next visit is instant
+    const country = countrySelect.value;
+    const label   = locSelect.options[locSelect.selectedIndex]?.text ?? '';
+    if (country && label) saveCache(id, country, label);
+    loadEvents();
+  });
+
+  // ── Load Events ───────────────────────────────────────────────
+  async function loadEvents() {
+    if (!currentLocationId) return;
+
+    eventsEl.innerHTML = `
+      <div class="flex justify-center py-12 text-brand-slate">
+        <svg class="animate-spin w-6 h-6" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+      </div>`;
+    emptyEl.classList.add('hidden');
+    eventsErrorEl.classList.add('hidden');
+
+    try {
+      const data = await fetch(
+        `${VCAL}/entries?location_id=${currentLocationId}`
+      ).then(r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      });
+      renderEvents(data.events ?? []);
+    } catch {
+      eventsEl.innerHTML = '';
+      eventsErrorEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Render Events ─────────────────────────────────────────────
+  function renderEvents(events: CalendarEvent[]) {
+    eventsEl.innerHTML = '';
+
+    if (!events.length) {
+      emptyEl.textContent = 'No upcoming events found for this location.';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+
+    events.forEach(ev => {
+      const items   = ev.event_items ?? [];
+      const isEk = ev.is_ekadasi;
+
+      const card = document.createElement('div');
+      card.className = [
+        'rounded-2xl border bg-white shadow-sm overflow-hidden',
+        isEk ? 'border-brand-lotus' : 'border-brand-tan',
+      ].join(' ');
+
+      // Header
+      const headerBg = isEk
+        ? 'bg-gradient-to-r from-brand-lotus/10 to-pink-50 border-b border-brand-lotus/20'
+        : 'bg-brand-parchment/60 border-b border-brand-tan';
+
+      const headerHtml = `
+        <div class="${headerBg} px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            ${isEk ? `<p class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Ekādaśī</p>` : ''}
+            <p class="font-display font-bold text-brand-navy text-sm md:text-base">
+              ${formatEventDate(ev.entry_date)}
+            </p>
+          </div>
+          <div class="flex gap-4 text-xs text-brand-slate">
+            <span>Sunrise: ${to12h(ev.sunrise)}</span>
+            <span>Sunset: ${to12h(ev.sunset)}</span>
+          </div>
+        </div>`;
+
+      // Body
+      let bodyHtml = '<div class="px-5 py-4 space-y-3">';
+
+      if (isEk) {
+        bodyHtml += `<div class="rounded-xl bg-pink-50/60 border border-brand-lotus/20 px-4 py-3 space-y-1.5">`;
+        if (ev.ekadasi_name) {
+          bodyHtml += `<p class="font-semibold text-brand-navy text-sm">${ev.ekadasi_name}</p>`;
+        }
+        if (ev.tithi_end) {
+          bodyHtml += `<p class="text-xs text-brand-slate">
+            <span class="font-medium text-brand-navy">Tithi Ends:</span> ${to12h(ev.tithi_end)}
+          </p>`;
+        }
+        if (ev.break_fast_note || ev.break_fast_date) {
+          const bfParts = [
+            ev.break_fast_note,
+            ev.break_fast_date ? `(${formatEventDate(ev.break_fast_date)})` : '',
+          ].filter(Boolean).join(' ');
+          bodyHtml += `<p class="text-sm font-bold text-brand-navy">${bfParts}</p>`;
+        }
+        bodyHtml += `</div>`;
+      }
+
+      if (items.length) {
+        bodyHtml += `<ul class="space-y-1">`;
+        items.forEach(item => {
+          bodyHtml += `
+            <li class="text-sm text-brand-navy flex items-start gap-2">
+              <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-lotus shrink-0"></span>
+              <span>${item.text}</span>
+            </li>`;
+        });
+        bodyHtml += `</ul>`;
+      }
+
+      bodyHtml += '</div>';
+
+      card.innerHTML = headerHtml + bodyHtml;
+      eventsEl.appendChild(card);
+    });
+  }
+
+  // ── localStorage cache (30-day expiry) ───────────────────────
+  const CACHE_KEY = 'vcal_location_v1';
+  const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
+
+  function saveCache(locationId: number, country: string, label: string) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        locationId, country, label, savedAt: Date.now()
+      }));
+    } catch { /* storage full or private mode */ }
+  }
+
+  function loadCache(): { locationId: number; country: string; label: string } | null {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      if (!c.locationId || !c.country || (Date.now() - c.savedAt) > CACHE_TTL) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      return c;
+    } catch { return null; }
+  }
+
+  // ── Fetch with timeout helper ─────────────────────────────────
+  function fetchWithTimeout(url: string, ms = 5000): Promise<Response> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  // Fire last-updated and country list in parallel immediately.
+  const countriesPromise = loadCountries();
+  loadLastUpdated();
+
+  const cached = loadCache();
+
+  if (cached) {
+    // Fast path: user has visited before — preselect from cache while
+    // countries load in the background, skip detection entirely.
+    setDetectMsg(`Location: ${cached.label}`);
+    countriesPromise.then(async () => {
+      const locs = await preselectCountry(cached.country);
+      if (locs.some(l => l.id === cached.locationId)) {
+        await preselectLocation(locs, cached.locationId);
+      } else {
+        // Cached location no longer exists — fall back to detection
+        localStorage.removeItem(CACHE_KEY);
+        detectLocation();
+      }
+    });
+  } else {
+    // Slow path: run detection after countries are ready.
+    countriesPromise.then(() => detectLocation());
+  }
+</script>
