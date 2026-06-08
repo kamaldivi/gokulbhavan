@@ -23,6 +23,7 @@ frontend/.env
 
 # ── Media (large binary/audio files — served from server) ───
 media/
+media_old/
 
 # ── Database dumps — may contain sensitive data ─────
 data/*.dump.sql
