@@ -97,23 +97,32 @@
       </div>
 
       <!-- ── Controls ────────────────────────────────────────── -->
-      <div class="flex items-center justify-between px-5 pb-4 shrink-0">
+      <!-- 3-col grid keeps Prev/Play/Next always centred regardless
+           of whether the lang selector is visible or hidden.        -->
+      <div class="grid items-center px-5 pb-4 shrink-0"
+           style="grid-template-columns: 1fr auto 1fr">
 
-        <!-- Speed selector -->
-        <select id="gb-speed"
-                title="Playback speed"
-                class="text-xs bg-white/10 text-white/70 border border-white/10
-                       rounded-lg px-2 py-1.5 cursor-pointer hover:bg-white/15
-                       focus:outline-none focus:ring-1 focus:ring-brand-lotus">
-          <option value="0.5">0.5×</option>
-          <option value="0.75">0.75×</option>
-          <option value="1" selected>1×</option>
-          <option value="1.25">1.25×</option>
-          <option value="1.5">1.5×</option>
-          <option value="2">2×</option>
-        </select>
+        <!-- Left: Playlist + Download (always present → stable anchor) -->
+        <div class="flex items-center gap-3 justify-self-start">
+          <button id="gb-bookmark" title="Save to playlist"
+                  class="text-xs font-semibold flex items-center gap-1
+                         text-white/50 hover:text-white transition-colors">
+            <svg id="gb-bookmark-icon" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
+            </svg>
+            Playlist
+          </button>
+          <a id="gb-download" href="#" download title="Download track"
+             class="text-xs font-semibold flex items-center gap-1.5
+                    text-white/50 hover:text-white transition-colors invisible">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+            </svg>
+            Download
+          </a>
+        </div>
 
-        <!-- Prev / Play-Pause / Next -->
+        <!-- Centre: Prev / Play-Pause / Next -->
         <div class="flex items-center gap-3">
           <button id="gb-prev" title="Previous"
                   class="w-9 h-9 flex items-center justify-center rounded-full
@@ -143,24 +152,9 @@
           </button>
         </div>
 
-        <!-- Bookmark + Download -->
-        <div class="flex items-center gap-3">
-          <button id="gb-bookmark" title="Save to playlist"
-                  class="text-xs font-semibold flex items-center gap-1
-                         text-white/50 hover:text-white transition-colors">
-            <svg id="gb-bookmark-icon" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>
-            </svg>
-            Playlist
-          </button>
-          <a id="gb-download" href="#" download title="Download track"
-             class="text-xs font-semibold flex items-center gap-1.5
-                    text-white/50 hover:text-white transition-colors invisible">
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
-            </svg>
-            Download
-          </a>
+        <!-- Right: language selector (hidden until 2+ langs available) -->
+        <div id="gb-lang-selector"
+             class="hidden items-center gap-1 flex-wrap justify-self-end max-w-[120px]">
         </div>
       </div>
 
@@ -312,7 +306,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
   const progressThumb   = document.getElementById('gb-modal-thumb')!;
   const timeCurrent     = document.getElementById('gb-modal-time-current')!;
   const timeTotal       = document.getElementById('gb-modal-time-total')!;
-  const speedSelect     = document.getElementById('gb-speed') as HTMLSelectElement;
+  const langSelector    = document.getElementById('gb-lang-selector')!;
   const btnPrev         = document.getElementById('gb-prev')!;
   const btnPlayPause    = document.getElementById('gb-play-pause')!;
   const iconPlay        = document.getElementById('gb-icon-play')!;
@@ -347,8 +341,13 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
   let queue:      Track[] = [];
   let queueIdx            = 0;
   let modalOpen           = false;
-  type CachedLyrics = { lyrics: string | null; meaning: string | null };
+  let currentLang         = 'en';
+  type CachedLyrics = { lyrics: string | null; meaning: string | null; available_langs: string[] };
   let lyricsCache: Record<string, CachedLyrics | null> = {};
+
+  const LANG_LABELS: Record<string, string> = {
+    en: 'EN', ta: 'Tamil', sa: 'Sanskrit', hi: 'Hindi', te: 'Telugu', ml: 'Malayalam',
+  };
 
   /* ── Helpers ────────────────────────────────────────────────── */
   function fmt(sec: number): string {
@@ -408,7 +407,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     audio.src = track.audio_file_path.startsWith('http')
       ? track.audio_file_path
       : '/' + track.audio_file_path;
-    audio.playbackRate = parseFloat(speedSelect.value);
+    currentLang = 'en'; // reset to English on every new track
 
     // Modal content
     const displayId = track.lyrics_id ?? track.track_id;
@@ -458,6 +457,39 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     }
   }
 
+  /* ── Language selector ──────────────────────────────────────── */
+  function renderLangSelector(availableLangs: string[], track: Track) {
+    if (availableLangs.length < 2) {
+      langSelector.classList.add('hidden');
+      langSelector.classList.remove('flex');
+      langSelector.innerHTML = '';
+      return;
+    }
+
+    langSelector.innerHTML = availableLangs.map(lang => {
+      const label  = LANG_LABELS[lang] ?? lang.toUpperCase();
+      const active = lang === currentLang;
+      return `<button
+        class="lang-btn text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors
+               ${active
+                 ? 'bg-brand-lotus text-white'
+                 : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'}"
+        data-lang="${lang}">${label}</button>`;
+    }).join('');
+
+    langSelector.classList.remove('hidden');
+    langSelector.classList.add('flex');
+
+    langSelector.querySelectorAll<HTMLButtonElement>('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.lang === currentLang) return;
+        currentLang = btn.dataset.lang!;
+        showLyricsState('loading');
+        fetchLyrics(track);
+      });
+    });
+  }
+
   /* ── Lyrics states ──────────────────────────────────────────── */
   function showLyricsState(state: 'loading' | 'none' | 'content', cached?: CachedLyrics) {
     lyricsLoading.classList.toggle('hidden', state !== 'loading');
@@ -477,9 +509,14 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
 
   async function fetchLyrics(track: Track) {
     const lookupId = track.lyrics_id ?? track.track_id;
-    const key = lookupId + ':' + track.type;
+    const key      = `${lookupId}:${track.type}:${currentLang}`;
+
     if (lyricsCache[key] !== undefined) {
       const cached = lyricsCache[key];
+      // Re-render lang selector in case it was built before langs were known
+      const anyKey  = Object.keys(lyricsCache).find(k => k.startsWith(`${lookupId}:${track.type}:`));
+      const anyItem = anyKey ? lyricsCache[anyKey] : null;
+      if (anyItem) renderLangSelector(anyItem.available_langs, track);
       if (cached && (cached.lyrics || cached.meaning)) {
         showLyricsState('content', cached);
       } else {
@@ -487,17 +524,19 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
       }
       return;
     }
+
     try {
       const res = await fetch(
-        `/api/lyrics.php?id=${encodeURIComponent(lookupId)}&type=${track.type}`
+        `/api/lyrics.php?id=${encodeURIComponent(lookupId)}&type=${track.type}&lang=${encodeURIComponent(currentLang)}`
       );
       if (res.ok) {
         const data = await res.json();
-        // Support both new shape { lyrics, meaning } and legacy { text }
-        const lyricsBody  = (data.lyrics  ?? data.text ?? '').trim() || null;
-        const meaningBody = (data.meaning ?? '').trim() || null;
-        const cached: CachedLyrics = { lyrics: lyricsBody, meaning: meaningBody };
+        const lyricsBody     = (data.lyrics  ?? data.text ?? '').trim() || null;
+        const meaningBody    = (data.meaning ?? '').trim() || null;
+        const availableLangs = Array.isArray(data.available_langs) ? data.available_langs : ['en'];
+        const cached: CachedLyrics = { lyrics: lyricsBody, meaning: meaningBody, available_langs: availableLangs };
         lyricsCache[key] = cached;
+        renderLangSelector(availableLangs, track);
         if (lyricsBody || meaningBody) {
           showLyricsState('content', cached);
         } else {
@@ -556,11 +595,6 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
   document.addEventListener('mousemove',  (e) => { if (scrubbing) scrubTo(e); });
   document.addEventListener('mouseup',    ()  => { scrubbing = false; });
   document.addEventListener('touchend',   ()  => { scrubbing = false; });
-
-  /* ── Speed ──────────────────────────────────────────────────── */
-  speedSelect.addEventListener('change', () => {
-    audio.playbackRate = parseFloat(speedSelect.value);
-  });
 
   /* ── Modal controls ─────────────────────────────────────────── */
   btnPlayPause.addEventListener('click', () => {

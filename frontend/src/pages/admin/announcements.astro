@@ -7,9 +7,7 @@ import AdminShell from "@layouts/AdminShell.astro";
   <!-- Top bar -->
   <div class="flex items-center justify-between mb-6">
     <p class="text-sm text-brand-slate">Announcements can be displayed on the homepage or other pages.</p>
-    <button id="ann-new-btn"
-            class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white
-                   text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
+    <button id="ann-new-btn" class="btn-new inline-flex items-center gap-1.5">
       <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
       New Announcement
     </button>
@@ -33,14 +31,14 @@ import AdminShell from "@layouts/AdminShell.astro";
   <div id="ann-panel"
        class="hidden fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
 
-    <div class="flex items-center justify-between px-6 py-4 border-b border-brand-tan">
+    <div class="admin-panel-header">
       <h3 id="ann-panel-title" class="font-display font-bold text-brand-navy text-lg">New Announcement</h3>
       <button id="ann-panel-close" class="text-brand-slate hover:text-brand-navy transition-colors" aria-label="Close">
         <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
       </button>
     </div>
 
-    <form id="ann-form" class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+    <form id="ann-form" class="admin-panel-body">
       <input type="hidden" id="ann-edit-id" value="" />
 
       <div>
@@ -91,13 +89,9 @@ import AdminShell from "@layouts/AdminShell.astro";
       </label>
     </form>
 
-    <div class="px-6 py-4 border-t border-brand-tan flex items-center gap-3">
-      <button id="ann-save-btn"
-              class="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white
-                     text-sm font-bold px-6 py-2.5 rounded-full transition-colors">
-        Save
-      </button>
-      <span id="ann-saving" class="hidden text-xs text-brand-slate">Saving…</span>
+    <div class="admin-panel-footer">
+      <span id="ann-saving" class="hidden text-xs text-brand-slate mr-auto">Saving…</span>
+      <button id="ann-save-btn" class="btn-save">Save</button>
     </div>
   </div>
 
@@ -168,10 +162,8 @@ import AdminShell from "@layouts/AdminShell.astro";
             <p class="text-xs text-brand-slate/60">${dateRange}</p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <button class="ann-edit-btn text-xs font-semibold text-brand-navy border border-brand-tan hover:border-brand-navy px-3 py-1 rounded-full transition-colors"
-                    data-id="${a.id}">Edit</button>
-            <button class="ann-delete-btn text-xs font-semibold text-red-500 border border-red-200 hover:border-red-400 px-3 py-1 rounded-full transition-colors"
-                    data-id="${a.id}">Delete</button>
+            <button class="ann-edit-btn btn-edit" data-id="${a.id}">Edit</button>
+            <button class="ann-delete-btn btn-delete" data-id="${a.id}">Delete</button>
           </div>
         </div>`;
 

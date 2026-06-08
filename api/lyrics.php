@@ -66,6 +66,8 @@ try {
     $pdo = get_db();
 
     // ── 1. Try DB rows (lyrics table) ────────────────────────────
+    $effectiveId = $id; // tracks which track_id was ultimately used
+
     $dbStmt = $pdo->prepare("
         SELECT content_type, body
         FROM lyrics
@@ -87,6 +89,7 @@ try {
         ");
         $sentinelStmt->execute([':lang' => $lang]);
         $dbRows = $sentinelStmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($dbRows)) $effectiveId = 'MAHAMANTRA';
     }
 
     // ── 1b. Source-track redirect (album tracks → source bhajan lyrics) ──
@@ -109,6 +112,7 @@ try {
             ");
             $redirStmt->execute([':src_id' => $srcId, ':lang' => $lang]);
             $dbRows = $redirStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($dbRows)) $effectiveId = $srcId;
         }
     }
 
@@ -119,11 +123,20 @@ try {
             if ($row['content_type'] === 'lyrics')  $lyricsBody  = $row['body'];
             if ($row['content_type'] === 'meaning') $meaningBody = $row['body'];
         }
+
+        // Return available languages for this track so the player can offer a switcher
+        $langStmt = $pdo->prepare("
+            SELECT DISTINCT lang FROM lyrics WHERE track_id = :eid ORDER BY lang ASC
+        ");
+        $langStmt->execute([':eid' => $effectiveId]);
+        $availableLangs = $langStmt->fetchAll(PDO::FETCH_COLUMN);
+
         echo json_encode([
-            'id'      => $id,
-            'lang'    => $lang,
-            'lyrics'  => $lyricsBody,
-            'meaning' => $meaningBody,
+            'id'              => $id,
+            'lang'            => $lang,
+            'lyrics'          => $lyricsBody,
+            'meaning'         => $meaningBody,
+            'available_langs' => $availableLangs,
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }

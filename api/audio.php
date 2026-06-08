@@ -20,7 +20,7 @@
  *   "display_name":     "Guru Vaishnavas",
  *   "audio_file_path":  "media/audio-bhajans/A/A-03-Guru Carana Kamala.mp3",
  *   "lyrics_file_path": "media/bhajan-lyrics/A/A-03.txt",
- *   "base_track_path": "media/base-tracks/A-03-Guru Carana Kamala - Base.mp3",
+ *   "base_track_path": "media/audio/base/A-03-Guru Carana Kamala - Base.mp3",
  *   "download_allowed": 1,
  *   "singers": [{ "singer": "Aishwarya", "audio_file_path": "..." }],
  *   "videos":  [{ "video_id": "dQw4...", "title": "..." }]
@@ -64,9 +64,6 @@ if (!in_array($type, ['B', 'S', 'N', 'A'], true)) {
 // Map type codes to audio_family enum values
 $familyMap = ['B' => 'bhajan', 'S' => 'sloka', 'N' => 'sankirtan', 'A' => 'album'];
 $family    = $familyMap[$type];
-
-$docRoot = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
-$baseDir = $type === 'B' ? 'media/base-tracks' : 'media/slokas-base-tracks';
 
 try {
     $pdo    = get_db();
@@ -206,21 +203,6 @@ try {
                 ];
             }
         }
-    }
-
-    // ── 4. Base track — check DB first, fall back to filesystem ─
-    if ($type === 'B') {
-        foreach ($rows as &$r) {
-            if (!empty($r['base_track_path'])) {
-                continue; // already set from DB
-            }
-            $pattern = "$docRoot/$baseDir/{$r['track_id']}-*.mp3";
-            $found   = glob($pattern);
-            if ($found) {
-                $r['base_track_path'] = $baseDir . '/' . basename($found[0]);
-            }
-        }
-        unset($r);
     }
 
     echo json_encode(array_values($rows), JSON_UNESCAPED_UNICODE);

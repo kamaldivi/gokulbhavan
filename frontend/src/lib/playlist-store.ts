@@ -43,9 +43,30 @@ export interface Playlist {
 
 export type PlaylistStore = Playlist[];
 
+// ── Path rewrite: old media layout → new media/audio/ layout (June 2026) ────
+// Maps legacy folder names to the restructured hierarchy.
+const PATH_REWRITES: [RegExp, string][] = [
+  [/^media\/audio-bhajans\/([^/]+)\//, 'media/audio/bhajan/$1/'],
+  [/^media\/slokas-audio\/([^/]+)\//,  'media/audio/sloka/$1/'],
+  [/^media\/audio-sankirtans\/([^/]+)\//, 'media/audio/sankirtan/$1/'],
+  [/^media\/albums\/([^/]+)\//,        'media/audio/album/$1/'],
+  [/^media\/gokula-ganam\/vol(\d+)\/(?:ready\/)?/, 'media/audio/album/GG$1/'],
+  [/^media\/base-tracks\//,            'media/audio/base/'],
+  [/^media\/audio-bhajans-samples-others\//, 'media/audio/versions/'],
+  [/^media\/audio-bhajans-samples\//,  'media/audio/versions/'],
+];
+
+function rewritePath(p: string): string {
+  for (const [pattern, replacement] of PATH_REWRITES) {
+    if (pattern.test(p)) return p.replace(pattern, replacement);
+  }
+  return p;
+}
+
 // ── Migration: v1 → v2 field rename ──────────────────────────────────────
 // Renames media_id→track_id, title→track_name, audio_path→audio_file_path,
 // lyrics_path→lyrics_file_path in any playlists stored before Phase 1.
+// Also rewrites legacy audio_file_path values to the new media/audio/ layout.
 
 function migrateStore(): void {
   try {
@@ -67,6 +88,13 @@ function migrateStore(): void {
         }
         if ('lyrics_path' in t && !('lyrics_file_path' in t)) {
           t.lyrics_file_path = t.lyrics_path; delete t.lyrics_path; dirty = true;
+        }
+        // Rewrite legacy audio_file_path to new media/audio/ hierarchy
+        if (t.audio_file_path) {
+          const rewritten = rewritePath(t.audio_file_path);
+          if (rewritten !== t.audio_file_path) {
+            t.audio_file_path = rewritten; dirty = true;
+          }
         }
       }
     }

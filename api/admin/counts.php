@@ -19,12 +19,19 @@ try {
     $pdo = get_db();
 
     echo json_encode([
-        'messages_unread'     => safe_count($pdo, "SELECT COUNT(*) FROM contact_submission WHERE status = 'new'"),
-        'registrations_total' => safe_count($pdo, "SELECT COUNT(*) FROM registration"),
-        'announcements_active'=> safe_count($pdo, "SELECT COUNT(*) FROM announcement WHERE active = 1
-                                                    AND (start_date IS NULL OR start_date <= CURDATE())
-                                                    AND (end_date   IS NULL OR end_date   >= CURDATE())"),
-        'questions_new'       => safe_count($pdo, "SELECT COUNT(*) FROM question WHERE status = 'new'"),
+        'registrations_total'  => safe_count($pdo, "SELECT COUNT(*) FROM registration WHERE active = 1"),
+        'registrations_recent' => safe_count($pdo, "SELECT COUNT(*) FROM registration WHERE submitted_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"),
+        'announcements_active' => safe_count($pdo, "SELECT COUNT(*) FROM announcement WHERE active = 1
+                                                     AND (start_date IS NULL OR start_date <= CURDATE())
+                                                     AND (end_date   IS NULL OR end_date   >= CURDATE())"),
+        'questions_pending'    => safe_count($pdo, "SELECT COUNT(*) FROM question WHERE status = 'submitted'"),
+        'questions_total'      => safe_count($pdo, "SELECT COUNT(*) FROM question"),
+        'programs_active'      => safe_count($pdo, "SELECT COUNT(*) FROM program WHERE status IN ('active','upcoming')"),
+        'tracks_total'         => safe_count($pdo, "SELECT COUNT(*) FROM audio_track"),
+        'tracks_with_lyrics'   => safe_count($pdo, "SELECT COUNT(DISTINCT track_id) FROM lyrics"),
+        'bhajan_count'         => safe_count($pdo, "SELECT COUNT(*) FROM audio_track t JOIN audio_category c ON c.category_code = t.category_code WHERE c.audio_family = 'bhajan'"),
+        'sloka_count'          => safe_count($pdo, "SELECT COUNT(*) FROM audio_track t JOIN audio_category c ON c.category_code = t.category_code WHERE c.audio_family = 'sloka'"),
+        'sankirtan_count'      => safe_count($pdo, "SELECT COUNT(*) FROM audio_track t JOIN audio_category c ON c.category_code = t.category_code WHERE c.audio_family = 'sankirtan'"),
     ]);
 
 } catch (PDOException $e) {

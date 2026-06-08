@@ -264,14 +264,17 @@ try {
                 $videoId  = $item->snippet->resourceId->videoId ?? '';
                 if (!$videoId) continue;
 
-                // Always track video_id as seen — even private/deleted entries keep their
-                // existing DB row so a temporarily-private video isn't wiped from the map.
-                $syncedVideoIds[] = $videoId;
-
                 $rawTitle = $item->snippet->title ?? '';
 
-                // Skip upserting private/deleted/unlisted videos
+                // Skip upserting private/deleted/unlisted videos.
+                // Private/Unlisted: also track as seen so a temporarily-hidden video
+                //   isn't pruned from the playlist map during reconciliation.
+                // Deleted: do NOT track — let reconciliation remove it from the map,
+                //   and the orphan cleanup will then delete it from the video table.
                 if (in_array($rawTitle, ['Deleted video', 'Private video', 'Unlisted video'])) {
+                    if ($rawTitle !== 'Deleted video') {
+                        $syncedVideoIds[] = $videoId; // keep private/unlisted in map
+                    }
                     $skippedVideoIds[] = $videoId . ' (' . $rawTitle . ')';
                     $totalSkippedPrivate++;
                     continue;
@@ -281,6 +284,9 @@ try {
                     $totalSkippedFiltered++;
                     continue;
                 }
+
+                // Track normal videos as seen for reconciliation
+                $syncedVideoIds[] = $videoId;
 
                 $extractedId = extractId($rawTitle);
                 $title       = cleanTitle($rawTitle, $extractedId);

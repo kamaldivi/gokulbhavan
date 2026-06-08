@@ -4,82 +4,140 @@ import AdminShell from "@layouts/AdminShell.astro";
 
 <AdminShell title="Dashboard" activePath="/admin/dashboard">
 
-  <div id="dash-counts" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-    <!-- Count cards injected by JS -->
+  <!-- ── Stat row ─────────────────────────────────────────────── -->
+  <h2 class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-3">Metrics</h2>
+  <div id="dash-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <!-- injected by JS -->
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-
-    <a href="/admin/programs"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-brand-navy/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
-          <path d="M19 4h-1V2h-2v2H8V2H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
-        </svg>
-      </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">Programs</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">Manage program schedules, update status, and add new events.</p>
-    </a>
-
-    <a href="/admin/registrations"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-brand-navy/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
-          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-        </svg>
-      </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">Registrations</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">View all sanga member registrations submitted via the website.</p>
-    </a>
-
-    <a href="/admin/sanga"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-brand-navy/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </svg>
-      </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">Sanga Info</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">Update the temple address, service times, and contact details shown on the Contact page.</p>
-    </a>
+  <!-- ── Quick nav ────────────────────────────────────────────── -->
+  <h2 class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-3">Manage</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
     <a href="/admin/announcements"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-brand-navy/10 flex items-center justify-center mb-4">
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
         <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
         </svg>
       </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">Announcements</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">Create and manage announcements displayed to visitors on the site.</p>
+      <div>
+        <h3 class="dash-title">Announcements</h3>
+        <p class="dash-desc">Site-wide banners &amp; notices</p>
+      </div>
+    </a>
+
+    <a href="/admin/questions"
+       class="dash-card group">
+      <div class="dash-icon bg-brand-lotus/10">
+        <svg class="w-5 h-5 fill-brand-lotus" viewBox="0 0 24 24">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="dash-title">Ask Guruji</h3>
+        <p class="dash-desc">Review &amp; respond to questions</p>
+      </div>
+    </a>
+
+    <a href="/admin/audio"
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
+        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="dash-title">Audios</h3>
+        <p class="dash-desc">Tracks, categories, lyrics</p>
+      </div>
+    </a>
+
+    <a href="/admin/programs"
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
+        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
+          <path d="M19 4h-1V2h-2v2H8V2H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="dash-title">Programs</h3>
+        <p class="dash-desc">Schedules, status, new events</p>
+      </div>
+    </a>
+
+    <a href="/admin/registrations"
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
+        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="dash-title">Registrations</h3>
+        <p class="dash-desc">Member registrations &amp; contacts</p>
+      </div>
+    </a>
+
+    <a href="/admin/sanga"
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
+        <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="dash-title">Sanga Info</h3>
+        <p class="dash-desc">Locations, contacts, service times</p>
+      </div>
     </a>
 
     <a href="/admin/video-library"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-brand-navy/10 flex items-center justify-center mb-4">
+       class="dash-card group">
+      <div class="dash-icon bg-brand-navy/10">
         <svg class="w-5 h-5 fill-brand-navy" viewBox="0 0 24 24">
           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
         </svg>
       </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">Video Library</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">Manage video categories and YouTube playlist assignments.</p>
+      <div>
+        <h3 class="dash-title">Videos</h3>
+        <p class="dash-desc">YouTube playlists &amp; categories</p>
+      </div>
     </a>
 
     <a href="/api/youtubesync.php?token=A6CD0196A0274D9EC9AE1B430D5D89F8"
        target="_blank" rel="noopener noreferrer"
-       class="rounded-2xl border border-brand-tan bg-white hover:shadow-md transition p-6 group">
-      <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+       class="dash-card group">
+      <div class="dash-icon bg-red-100">
         <svg class="w-5 h-5 fill-red-600" viewBox="0 0 24 24">
           <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
         </svg>
       </div>
-      <h3 class="font-display font-bold text-brand-navy mb-1 group-hover:text-brand-lotus transition-colors">YouTube Sync</h3>
-      <p class="text-xs text-brand-slate leading-relaxed">Run the YouTube playlist sync to import new videos into the database.</p>
+      <div>
+        <h3 class="dash-title">YouTube Sync</h3>
+        <p class="dash-desc">Import new videos from playlists</p>
+      </div>
     </a>
 
   </div>
 
 </AdminShell>
+
+<style>
+  .dash-card {
+    @apply flex items-center gap-4 rounded-xl border border-brand-tan bg-white
+           px-4 py-4 hover:shadow-md hover:border-brand-navy/30 transition-all;
+  }
+  .dash-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center shrink-0;
+  }
+  .dash-title {
+    @apply font-semibold text-brand-navy text-sm group-hover:text-brand-lotus transition-colors;
+  }
+  .dash-desc {
+    @apply text-xs text-brand-slate/70 leading-snug mt-0.5;
+  }
+</style>
 
 <script>
   const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
@@ -87,20 +145,81 @@ import AdminShell from "@layouts/AdminShell.astro";
   fetch(`${apiBase}/api/admin/counts.php`)
     .then(r => r.json())
     .then((c: any) => {
-      // Count cards
-      const container = document.getElementById('dash-counts')!;
-      const cards = [
-        { label: 'Total Registrations', value: c.registrations_total,  href: '/admin/registrations', color: 'text-brand-navy' },
-        { label: 'Active Announcements',value: c.announcements_active, href: '/admin/announcements', color: 'text-green-700' },
-        { label: 'New Questions',        value: c.questions_new,        href: '/admin/questions',     color: 'text-brand-lotus' },
-      ];
-      container.innerHTML = cards.map(card => `
-        <a href="${card.href}"
-           class="rounded-xl border border-brand-tan bg-white px-5 py-4 flex items-center gap-4 hover:shadow-md transition">
-          <span class="text-3xl font-display font-bold ${card.color.split(' ')[1]}">${card.value ?? '—'}</span>
-          <span class="text-xs font-semibold text-brand-slate leading-snug">${card.label}</span>
-        </a>`).join('');
+      const container = document.getElementById('dash-stats')!;
 
+      const lyricsPercent = c.tracks_total > 0
+        ? Math.round((c.tracks_with_lyrics / c.tracks_total) * 100)
+        : 0;
+
+      const stats = [
+        {
+          value:    c.registrations_total ?? '—',
+          label:    'Active Members',
+          sub:      c.registrations_recent > 0 ? `+${c.registrations_recent} this month` : null,
+          href:     '/admin/registrations',
+          color:    'text-brand-navy',
+          dotColor: 'bg-brand-navy',
+        },
+        {
+          value:    c.questions_pending ?? '—',
+          label:    'Pending Questions',
+          sub:      c.questions_total > 0 ? `${c.questions_total} total` : null,
+          href:     '/admin/questions',
+          color:    'text-brand-lotus',
+          dotColor: c.questions_pending > 0 ? 'bg-brand-lotus animate-pulse' : 'bg-brand-tan',
+        },
+        {
+          value:    c.announcements_active ?? '—',
+          label:    'Active Announcements',
+          sub:      null,
+          href:     '/admin/announcements',
+          color:    'text-emerald-700',
+          dotColor: 'bg-emerald-500',
+        },
+        {
+          value:    `${lyricsPercent}%`,
+          label:    'Tracks with Lyrics',
+          sub:      c.tracks_total > 0 ? `${c.tracks_with_lyrics} of ${c.tracks_total} tracks` : null,
+          href:     '/admin/audio',
+          color:    'text-brand-navy',
+          dotColor: 'bg-brand-navy',
+        },
+        {
+          value:    c.bhajan_count ?? '—',
+          label:    'Bhajans',
+          sub:      null,
+          href:     '/admin/audio',
+          color:    'text-brand-navy',
+          dotColor: 'bg-brand-navy',
+        },
+        {
+          value:    c.sloka_count ?? '—',
+          label:    'Slokas',
+          sub:      null,
+          href:     '/admin/audio',
+          color:    'text-brand-navy',
+          dotColor: 'bg-brand-navy',
+        },
+        {
+          value:    c.sankirtan_count ?? '—',
+          label:    'Sankirtans',
+          sub:      null,
+          href:     '/admin/audio',
+          color:    'text-brand-navy',
+          dotColor: 'bg-brand-navy',
+        },
+      ];
+
+      container.innerHTML = stats.map(s => `
+        <a href="${s.href}"
+           class="rounded-xl border border-brand-tan bg-white px-5 py-4 hover:shadow-md hover:border-brand-navy/30 transition-all">
+          <div class="flex items-start justify-between mb-2">
+            <span class="text-3xl font-display font-bold ${s.color}">${s.value}</span>
+            <span class="w-2 h-2 rounded-full mt-2 ${s.dotColor}"></span>
+          </div>
+          <p class="text-xs font-semibold text-brand-navy leading-snug">${s.label}</p>
+          ${s.sub ? `<p class="text-[11px] text-brand-slate/60 mt-0.5">${s.sub}</p>` : ''}
+        </a>`).join('');
     })
     .catch(() => {});
 </script>

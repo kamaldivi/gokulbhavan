@@ -57,7 +57,7 @@ import FeaturedVideos from "@components/FeaturedVideos.astro";
       </div>
 
       <!-- CTAs -->
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <div class="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
         <a href="/register"
            class="inline-flex items-center justify-center bg-brand-lotus hover:bg-pink-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
           பதிவு செய்யுங்கள் · Register
@@ -66,99 +66,32 @@ import FeaturedVideos from "@components/FeaturedVideos.astro";
            class="inline-flex items-center justify-center border-2 border-white text-white hover:bg-white hover:text-brand-navy font-semibold px-7 py-3 rounded-full transition-colors">
           நிகழ்ச்சிகள் காண · Explore Programs
         </a>
+        <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09"
+           target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-slate text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
+          <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/>
+          </svg>
+          Join on Zoom
+        </a>
+        <a href="https://www.youtube.com/@bkdasa"
+           target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
+          <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+            <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+          </svg>
+          Watch on YouTube
+        </a>
       </div>
 
     </div>
   </section>
 
-  <!-- Program overview -->
-  <section class="max-w-4xl mx-auto px-4 sm:px-6 py-14">
-
-    <div class="text-center mb-10">
-      <h2 class="font-display font-bold text-3xl text-brand-navy mb-2">
-        <span class="text-brand-lotus">கீதா அமுதம் பற்றி</span>
-      </h2>
-      <p class="text-brand-slate text-sm max-w-2xl mx-auto leading-relaxed">
-        பகவத் கீதையின் காலத்தால் அழியாத ஆன்மிகச் செய்திகளை கேட்டு, அவற்றை அன்றாட வாழ்க்கையில் நடைமுறைப்படுத்துவதைக் குறிக்கோளாகக் கொண்ட வாராந்திர தமிழ் ஆன்மிகப் பயிலரங்கு - கௌடிய சம்பிரதாய மரபின் அடிப்படையில்.
-      </p>
-    </div>
-
-    <!-- Session schedule -->
-    <div class="bg-brand-navy rounded-2xl p-7 text-white">
-      <h3 class="font-display font-bold text-lg text-brand-gold mb-4">Session Flow - 95 Minutes</h3>
-      <ol class="space-y-2.5 text-sm">
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">1</span>
-          <span>
-            <strong class="text-white">Opening Prayers &amp; Kirtan</strong>
-            <span class="text-white/60"> - 10 min</span>
-            <span class="block font-tamil text-white/50 text-xs mt-0.5">தொடக்க பிரார்த்தனைகள் மற்றும் கீர்த்தனம் - 10 நிமிடங்கள்</span>
-          </span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">2</span>
-          <span>
-            <strong class="text-white">Gita Discourse</strong>
-            <span class="text-white/60"> - 60 min</span>
-            <span class="block font-tamil text-white/50 text-xs mt-0.5">கீதா உபந்யாசம் - 60 நிமிடங்கள்</span>
-          </span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">3</span>
-          <span>
-            <strong class="text-white">Sankirtanam</strong>
-            <span class="text-white/60"> - 5 min</span>
-            <span class="block font-tamil text-white/50 text-xs mt-0.5">சங்கீர்த்தனம் - 5 நிமிடங்கள்</span>
-          </span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">4</span>
-          <span>
-            <strong class="text-white">Questions &amp; Satsang</strong>
-            <span class="text-white/60"> - 15 min</span>
-            <span class="block font-tamil text-white/50 text-xs mt-0.5">கேள்விகள் மற்றும் சத்சங்கம் - 15 நிமிடங்கள்</span>
-          </span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-brand-lotus flex items-center justify-center text-xs font-bold shrink-0">5</span>
-          <span>
-            <strong class="text-white">Announcements</strong>
-            <span class="text-white/60"> - 5 min</span>
-            <span class="block font-tamil text-white/50 text-xs mt-0.5">அறிவிப்புகள் - 5 நிமிடங்கள்</span>
-          </span>
-        </li>
-      </ol>
-
-      <div class="mt-6 pt-5 border-t border-white/15 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <div>
-          <p class="text-white/50 text-xs uppercase tracking-widest mb-1">Teacher</p>
-          <p class="font-semibold text-white">Dr. Bhagavati Kanti</p>
-          <p class="text-white/60 text-xs">M.Tech (IIT) · Ph.D</p>
-        </div>
-        <div>
-          <p class="text-white/50 text-xs uppercase tracking-widest mb-2">Join</p>
-          <div class="flex flex-wrap gap-2">
-            <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09"
-               target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-slate text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/>
-              </svg>
-              Zoom
-            </a>
-            <a href="https://www.youtube.com/@bkdasa"
-               target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wide px-4 py-2 rounded-full transition-colors">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
-              </svg>
-              YouTube
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <!-- Sanga flyer -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <img src="/assets/tamil_sanga_flyer_1.jpeg"
+         alt="கீதா அமுதம் — Tamil Sanga Flyer"
+         class="w-full rounded-2xl shadow-lg border border-brand-tan" />
   </section>
 
   <!-- Tamil video strip -->

@@ -166,7 +166,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     catTabs.innerHTML = allFamilies.map(f => `
       <button class="bh-cat-btn px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
               data-cat="${f.category_code}">
-        ${f.category_name}
+        ${f.category_code ? `${f.category_code} - ${f.category_name}` : f.category_name}
       </button>`).join('');
 
     document.querySelectorAll<HTMLButtonElement>('.bh-cat-btn').forEach(btn => {
@@ -176,8 +176,9 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
         searchBox.value = '';
         searchClear.classList.add('hidden');
         searchSummary.classList.add('hidden');
-        const catName = families.find(f => f.category_code === activeCat)?.category_name ?? 'All Bhajans';
-        heading.textContent = activeCat === '' ? 'All Bhajans' : catName;
+        const cat = families.find(f => f.category_code === activeCat);
+        heading.textContent = activeCat === '' ? 'All Bhajans'
+          : (cat ? `${cat.category_code} - ${cat.category_name}` : 'All Bhajans');
         updateActive(btn);
         applyFilter();
       });
@@ -203,7 +204,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
 
   /* ── Filter ─────────────────────────────────────────────── */
   function applyFilter() {
-    const q = searchQuery.toLowerCase().replace(/[\u2013\u2014\u2212]/g, '-');
+    const q = searchQuery.toLowerCase().replace(/[\u2013-\u2212]/g, '-');
     filteredTracks = allTracks.filter(t => {
       // When a search query is active, ignore category — search all tracks
       const catMatch    = q !== '' || activeCat === '' || t.category_code === activeCat;

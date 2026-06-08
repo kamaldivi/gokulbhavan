@@ -56,6 +56,24 @@ import PageHero from "@components/PageHero.astro";
       <div id="list-completed" class="space-y-2"></div>
     </section>
 
+    <!-- ── Video modal ───────────────────────────────────────── -->
+    <div id="fv-modal"
+         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+         role="dialog" aria-modal="true">
+      <div class="relative w-full max-w-4xl">
+        <button id="fv-modal-close"
+                class="absolute -top-10 right-0 text-white hover:text-brand-gold text-2xl font-bold">✕</button>
+        <div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl">
+          <iframe id="fv-modal-iframe" width="100%" height="100%"
+                  src="" title="Video player" frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen>
+          </iframe>
+        </div>
+        <p id="fv-modal-title" class="text-white text-sm font-semibold mt-3 text-center px-4"></p>
+      </div>
+    </div>
+
     <!-- ── Video panel (shared, slide-down) ─────────────────── -->
     <div id="vid-panel" class="hidden">
       <div class="flex items-center justify-between mb-4">
@@ -88,6 +106,32 @@ import PageHero from "@components/PageHero.astro";
 </Base>
 
 <script>
+// ── Video modal ────────────────────────────────────────────────
+{
+  const modal    = document.getElementById('fv-modal')!;
+  const iframe   = document.getElementById('fv-modal-iframe') as HTMLIFrameElement;
+  const titleEl  = document.getElementById('fv-modal-title')!;
+  const closeBtn = document.getElementById('fv-modal-close')!;
+
+  function openModal(videoId: string, title: string) {
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    titleEl.textContent = title;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    iframe.src = '';
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  (window as any).__fvOpenModal = openModal;
+}
+
 type Program = {
   id: number;
   title: string;

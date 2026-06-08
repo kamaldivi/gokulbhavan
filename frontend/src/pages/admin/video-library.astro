@@ -2,7 +2,19 @@
 import AdminShell from "@layouts/AdminShell.astro";
 ---
 
-<AdminShell title="Video Library" activePath="/admin/video-library">
+<AdminShell title="Videos" activePath="/admin/video-library">
+
+  <!-- ── YouTube Sync action ──────────────────────────────────── -->
+  <div class="flex items-center justify-end mb-5">
+    <a href="/api/youtubesync.php?token=A6CD0196A0274D9EC9AE1B430D5D89F8"
+       target="_blank" rel="noopener noreferrer"
+       class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
+      </svg>
+      Run YouTube Sync
+    </a>
+  </div>
 
   <div class="flex gap-8 min-h-[70vh]">
 
@@ -11,9 +23,8 @@ import AdminShell from "@layouts/AdminShell.astro";
 
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-bold uppercase tracking-widest text-brand-slate">Categories</h2>
-        <button id="cat-add-btn"
-                class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold px-3 py-1.5 rounded-lg transition-colors">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <button id="cat-add-btn" class="btn-new inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Add
         </button>
       </div>
@@ -49,9 +60,8 @@ import AdminShell from "@layouts/AdminShell.astro";
         <h2 id="pl-heading" class="text-sm font-bold uppercase tracking-widest text-brand-slate">
           Select a category →
         </h2>
-        <button id="pl-add-btn"
-                class="hidden inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <button id="pl-add-btn" class="hidden btn-new inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Add Playlist
         </button>
       </div>
@@ -417,21 +427,11 @@ async function loadPlaylists(categoryId: number) {
       <!-- Actions -->
       <td class="py-3 text-right">
         <div class="inline-flex items-center gap-2">
-          <button class="pl-rename-btn inline-flex items-center gap-1.5 border-2 border-brand-navy text-brand-navy hover:bg-brand-navy hover:text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-                  data-id="${esc(p.playlist_id)}" title="Rename playlist">
-            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-            Rename
-          </button>
-          <button class="pl-del-btn inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+          <button class="pl-rename-btn btn-edit"
+                  data-id="${esc(p.playlist_id)}" title="Rename playlist">Rename</button>
+          <button class="pl-del-btn btn-delete"
                   data-id="${esc(p.playlist_id)}" data-name="${esc(p.name)}"
-                  data-count="${countMap[p.playlist_id] ?? 0}">
-            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-            Delete
-          </button>
+                  data-count="${countMap[p.playlist_id] ?? 0}">Delete</button>
         </div>
       </td>
     </tr>`).join('');

@@ -1,15 +1,15 @@
 <?php
 /**
- * GET /api/lookup-member.php?q=...
+ * GET /api/lookup-member.php?email=...
  *
- * Public endpoint to look up a registered member by name or email.
+ * Looks up a registered member by exact email address (case-insensitive).
  * Used by ask-guruji.php to verify the submitter is a registered member.
  *
- * Returns up to 5 matches — display info only (no phone/email returned).
- * Requires at least 3 characters to prevent full enumeration.
+ * Returns a single-element array on match, empty array if not found.
+ * Email is never returned in the response (display info only).
  *
- * Response:
- * [{ "id": 42, "display_name": "Priya Devi", "city": "Atlanta", "country": "US" }, ...]
+ * Response on match:
+ * [{ "id": 42, "display_name": "Priya Devi", "spiritual_name": "...", "city": "Atlanta", "country": "US" }]
  */
 
 require __DIR__ . '/_cors.php';
@@ -21,23 +21,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-$q = trim($_GET['q'] ?? '');
+$email = trim($_GET['email'] ?? '');
 
-if (mb_strlen($q) < 3) {
+if ($email === '' || mb_strlen($email) > 200) {
     echo json_encode([]);
     exit;
 }
 
-// Sanitise — only allow alphanumeric, spaces, @, ., -
-if (!preg_match('/^[\w\s@.\-]{3,80}$/u', $q)) {
+// Basic email format check before hitting the DB
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode([]);
     exit;
 }
 
 try {
     $pdo  = get_db();
-    $like = '%' . $q . '%';
-
     $stmt = $pdo->prepare("
         SELECT id,
                CONCAT(first_name, ' ', last_name) AS display_name,
@@ -46,24 +44,19 @@ try {
                country
         FROM registration
         WHERE active = 1
-          AND (
-              email          LIKE :exact
-           OR first_name     LIKE :like1
-           OR last_name      LIKE :like2
-           OR CONCAT(first_name, ' ', last_name) LIKE :like3
-           OR spiritual_name LIKE :like4
-          )
-        ORDER BY first_name ASC
-        LIMIT 5
+          AND LOWER(email) = LOWER(:email)
+        LIMIT 1
     ");
-    $stmt->execute([':exact' => $q, ':like1' => $like, ':like2' => $like, ':like3' => $like, ':like4' => $like]);
-    $rows = $stmt->fetchAll();
+    $stmt->execute([':email' => $email]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    foreach ($rows as &$r) {
-        $r['id'] = (int) $r['id'];
+    if (!$row) {
+        echo json_encode([]);
+        exit;
     }
 
-    echo json_encode($rows, JSON_UNESCAPED_UNICODE);
+    $row['id'] = (int) $row['id'];
+    echo json_encode([$row], JSON_UNESCAPED_UNICODE);
 
 } catch (PDOException $e) {
     http_response_code(500);

@@ -4,8 +4,10 @@
  * URL: gokulbhavan.org/ask-guruji.php
  *
  * Two-step flow:
- *   Step 1 — Find your registered profile (name or email search)
+ *   Step 1 — Enter email address for exact match verification
  *   Step 2 — Type your question (submit enabled only after profile confirmed)
+ *
+ * Below the form: publicly answered questions (status=responded, visibility=public)
  */
 
 require_once __DIR__ . '/api/config.php';
@@ -108,7 +110,7 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
       margin-bottom: 5px;
     }
     label .req { color: #C0392B; margin-left: 2px; }
-    input[type="text"], input[type="search"], textarea {
+    input[type="email"], textarea {
       width: 100%;
       padding: 10px 12px;
       font-family: inherit;
@@ -131,55 +133,23 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
       line-height: 1.55;
     }
 
-    /* ── Search results ────────────────────────────────── */
-    #search-results { margin-top: 8px; }
-
-    .result-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 14px;
-      border: 1px solid #EADDB7;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .result-card:hover { border-color: #2A506A; background: #f4f8fb; }
-    .result-card .rc-name {
-      font-weight: 600;
-      font-size: 14px;
-      color: #082A4A;
-    }
-    .result-card .rc-loc {
-      font-size: 12px;
-      color: #2A506A;
-      margin-top: 2px;
-    }
-    .result-card .btn-select {
-      flex-shrink: 0;
-      font-size: 12px;
-      font-weight: 700;
-      color: #2A506A;
-      border: 1px solid #2A506A;
-      border-radius: 999px;
-      padding: 4px 12px;
-      background: none;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-    .result-card:hover .btn-select,
-    .result-card .btn-select:hover {
+    /* ── Find profile button ───────────────────────────── */
+    .btn-find {
+      width: 100%;
+      padding: 11px 20px;
       background: #2A506A;
       color: #fff;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 4px;
     }
-
-    .no-results {
-      font-size: 13px;
-      color: #2A506A;
-      padding: 10px 0 4px;
-    }
+    .btn-find:hover:not(:disabled) { background: #082A4A; }
+    .btn-find:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* ── Confirmed profile chip ────────────────────────── */
     .profile-chip {
@@ -215,8 +185,8 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
       padding: 0;
     }
 
-    /* ── Register prompt ───────────────────────────────── */
-    .register-prompt {
+    /* ── Not-found message ─────────────────────────────── */
+    .not-found-box {
       display: none;
       align-items: flex-start;
       gap: 12px;
@@ -226,8 +196,8 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
       padding: 12px 14px;
       margin-top: 10px;
     }
-    .register-prompt.visible { display: flex; }
-    .register-prompt p {
+    .not-found-box.visible { display: flex; }
+    .not-found-box p {
       font-size: 13px;
       color: #2A506A;
       line-height: 1.5;
@@ -297,6 +267,54 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
     #thank-you p { font-size: 14px; color: #2A506A; line-height: 1.6; margin-bottom: 20px; }
     #thank-you a { color: #2A506A; font-size: 13px; font-weight: 600; text-decoration: underline; }
 
+    /* ── Public Q&A section ────────────────────────────── */
+    .qa-section {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 36px;
+    }
+    .qa-section-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      color: #082A4A;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .qa-item {
+      background: #fff;
+      border: 1px solid #EADDB7;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(8, 42, 74, 0.06);
+    }
+    .qa-question {
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #082A4A;
+      line-height: 1.55;
+      border-bottom: 1px solid #EADDB7;
+      background: #FAFAF7;
+    }
+    .qa-response {
+      padding: 14px 18px;
+      font-size: 14px;
+      color: #2A506A;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .qa-response-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #8a9eb0;
+      margin-bottom: 6px;
+    }
+    #qa-loading { text-align: center; font-size: 13px; color: #8a9eb0; padding: 20px 0; }
+
     /* ── Footer ────────────────────────────────────────── */
     .footer-note {
       margin-top: 16px;
@@ -329,25 +347,25 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
         <input type="text" name="website" id="website" autocomplete="off" tabindex="-1" />
       </div>
 
-      <!-- ── Step 1: Find profile ─────────────────────── -->
+      <!-- ── Step 1: Verify email ────────────────────────── -->
       <div id="step-lookup">
-        <p class="step-label">Step 1 — Find your profile</p>
+        <p class="step-label">Step 1 — Verify your registration</p>
 
         <div class="field">
-          <label for="member-search">Your Name or Email <span class="req">*</span></label>
-          <input type="search" id="member-search" autocomplete="off"
-                 placeholder="e.g. Priya or priya@example.com" />
+          <label for="member-email">Registered Email Address <span class="req">*</span></label>
+          <input type="email" id="member-email" autocomplete="email"
+                 placeholder="e.g. priya@example.com" />
         </div>
 
-        <div id="search-results"></div>
+        <button type="button" class="btn-find" id="btn-find">Find My Profile</button>
 
-        <div id="register-prompt" class="register-prompt">
-          <p>Not registered yet? Please register as a sanga member first.</p>
+        <div id="not-found-box" class="not-found-box">
+          <p>No registered profile found for that email. Please register as a sanga member first.</p>
           <a href="/register" class="btn-register">Register</a>
         </div>
       </div>
 
-      <!-- ── Step 2: Question ─────────────────────────── -->
+      <!-- ── Step 2: Question ─────────────────────────────── -->
       <div id="step-question" style="display:none">
         <div id="profile-chip" class="profile-chip">
           <div>
@@ -384,6 +402,13 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
 
   </div>
 
+  <!-- ── Public Q&A Section ───────────────────────────────────────────── -->
+  <div class="qa-section" id="qa-section" style="display:none">
+    <h2 class="qa-section-title">Questions &amp; Answers</h2>
+    <div id="qa-loading">Loading…</div>
+    <div id="qa-list"></div>
+  </div>
+
   <p class="footer-note">
     This site is protected by reCAPTCHA —
     <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy</a> &amp;
@@ -395,67 +420,54 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
   var SITE_KEY = <?= json_encode($siteKey) ?>;
 
   // State
-  var selectedMember = null; // { id, display_name, city, country }
-  var searchTimer    = null;
+  var selectedMember = null; // { id, display_name, spiritual_name, city, country }
 
   // Elements
-  var memberSearch    = document.getElementById('member-search');
-  var searchResults   = document.getElementById('search-results');
-  var registerPrompt  = document.getElementById('register-prompt');
-  var stepLookup      = document.getElementById('step-lookup');
-  var stepQuestion    = document.getElementById('step-question');
-  var profileChip     = document.getElementById('profile-chip');
-  var chipName        = document.getElementById('chip-name');
-  var chipLoc         = document.getElementById('chip-loc');
-  var btnChange       = document.getElementById('btn-change-profile');
-  var questionEl      = document.getElementById('question');
-  var submitBtn       = document.getElementById('submit-btn');
-  var formError       = document.getElementById('form-error');
-  var formSection     = document.getElementById('form-section');
-  var thankYou        = document.getElementById('thank-you');
+  var memberEmail   = document.getElementById('member-email');
+  var btnFind       = document.getElementById('btn-find');
+  var notFoundBox   = document.getElementById('not-found-box');
+  var stepLookup    = document.getElementById('step-lookup');
+  var stepQuestion  = document.getElementById('step-question');
+  var chipName      = document.getElementById('chip-name');
+  var chipLoc       = document.getElementById('chip-loc');
+  var btnChange     = document.getElementById('btn-change-profile');
+  var questionEl    = document.getElementById('question');
+  var submitBtn     = document.getElementById('submit-btn');
+  var formError     = document.getElementById('form-error');
+  var formSection   = document.getElementById('form-section');
+  var thankYou      = document.getElementById('thank-you');
 
-  // ── Search ────────────────────────────────────────────
-  memberSearch.addEventListener('input', function () {
-    clearTimeout(searchTimer);
-    var q = memberSearch.value.trim();
-    searchResults.innerHTML = '';
-    registerPrompt.classList.remove('visible');
-
-    if (q.length < 3) return;
-
-    searchTimer = setTimeout(function () { doSearch(q); }, 350);
+  // ── Find profile ──────────────────────────────────────
+  btnFind.addEventListener('click', function () { doLookup(); });
+  memberEmail.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doLookup();
   });
 
-  function doSearch(q) {
-    searchResults.innerHTML = '<p style="font-size:13px;color:#8a9eb0;padding:6px 0">Searching…</p>';
-    fetch('/api/lookup-member.php?q=' + encodeURIComponent(q))
+  function doLookup() {
+    var email = memberEmail.value.trim();
+    notFoundBox.classList.remove('visible');
+
+    if (!email) { memberEmail.focus(); return; }
+
+    btnFind.disabled    = true;
+    btnFind.textContent = 'Searching…';
+
+    fetch('/api/lookup-member.php?email=' + encodeURIComponent(email))
       .then(function (r) { return r.json(); })
       .then(function (rows) {
-        searchResults.innerHTML = '';
+        btnFind.disabled    = false;
+        btnFind.textContent = 'Find My Profile';
+
         if (!Array.isArray(rows) || rows.length === 0) {
-          searchResults.innerHTML = '<p class="no-results">No registered profile found.</p>';
-          registerPrompt.classList.add('visible');
+          notFoundBox.classList.add('visible');
           return;
         }
-        rows.forEach(function (m) {
-          var loc = [m.city, m.country].filter(Boolean).join(', ');
-          var nameLine = m.spiritual_name
-            ? esc(m.spiritual_name) + '<span style="font-weight:400;color:#2A506A;margin-left:6px;font-size:12px">(' + esc(m.display_name) + ')</span>'
-            : esc(m.display_name);
-          var card = document.createElement('div');
-          card.className = 'result-card';
-          card.innerHTML =
-            '<div>' +
-              '<div class="rc-name">' + nameLine + '</div>' +
-              (loc ? '<div class="rc-loc">' + esc(loc) + '</div>' : '') +
-            '</div>' +
-            '<button class="btn-select" type="button">This is me</button>';
-          card.addEventListener('click', function () { selectMember(m); });
-          searchResults.appendChild(card);
-        });
+        selectMember(rows[0]);
       })
       .catch(function () {
-        searchResults.innerHTML = '<p class="no-results">Search unavailable. Please try again.</p>';
+        btnFind.disabled    = false;
+        btnFind.textContent = 'Find My Profile';
+        notFoundBox.classList.add('visible');
       });
   }
 
@@ -467,7 +479,7 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
 
     stepLookup.style.display   = 'none';
     stepQuestion.style.display = 'block';
-    submitBtn.disabled         = false;
+    submitBtn.disabled = (questionEl.value.trim().length < 10);
     questionEl.focus();
   }
 
@@ -478,10 +490,9 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
     submitBtn.disabled         = true;
     questionEl.value           = '';
     clearError();
-    memberSearch.value         = '';
-    searchResults.innerHTML    = '';
-    registerPrompt.classList.remove('visible');
-    memberSearch.focus();
+    memberEmail.value          = '';
+    notFoundBox.classList.remove('visible');
+    memberEmail.focus();
   });
 
   // ── Enable submit only when question has content ──────
@@ -505,8 +516,8 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
       return;
     }
 
-    submitBtn.disabled       = true;
-    submitBtn.textContent    = 'Submitting…';
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'Submitting…';
 
     function doSubmit(token) {
       fetch('/api/ask-guruji.php', {
@@ -555,6 +566,43 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
     formError.textContent = '';
     formError.classList.remove('visible');
   }
+
+  // ── Public Q&A ───────────────────────────────────────
+  (function loadQA() {
+    fetch('/api/questions-public.php')
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        var section  = document.getElementById('qa-section');
+        var loading  = document.getElementById('qa-loading');
+        var list     = document.getElementById('qa-list');
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          loading.style.display = 'none';
+          return;
+        }
+
+        loading.style.display = 'none';
+        section.style.display = 'block';
+
+        rows.forEach(function (item) {
+          var el = document.createElement('div');
+          el.className = 'qa-item';
+          el.innerHTML =
+            '<div class="qa-question">' + esc(item.question) + '</div>' +
+            '<div class="qa-response">' +
+              '<div class="qa-response-label">Guruji\'s Response</div>' +
+              esc(item.response) +
+            '</div>';
+          list.appendChild(el);
+        });
+
+        section.style.display = 'block';
+      })
+      .catch(function () {
+        // silently fail — Q&A section just won't show
+      });
+  })();
+
   function esc(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }

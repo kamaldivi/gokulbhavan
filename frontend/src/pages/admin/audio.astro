@@ -1,0 +1,1124 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Audios" activePath="/admin/audio">
+
+<!-- ── Type tabs ─────────────────────────────────────────────────────────── -->
+<div class="flex gap-1 bg-brand-parchment border border-brand-tan rounded-full p-1 mb-4 w-fit">
+  {[['B','Bhajans'],['S','Slokas'],['N','Sankirtans']].map(([t,label]) => (
+    <button class="au-type-btn px-4 py-1.5 rounded-full text-sm font-semibold transition-colors
+                   text-brand-slate hover:text-brand-navy"
+            data-type={t}>{label}</button>
+  ))}
+</div>
+
+<!-- ── 3-column layout ────────────────────────────────────────────────────── -->
+<div id="au-columns" class="flex gap-0 min-h-0" style="height: calc(100vh - 11rem)">
+
+  <!-- ── Col 1: Categories ─────────────────────────────────────────────── -->
+  <div id="au-col1" class="shrink-0 flex flex-col border border-brand-tan rounded-l-xl overflow-hidden bg-white" style="width: 220px; min-width: 140px">
+
+    <div class="flex items-center justify-between px-3 py-2.5 bg-brand-parchment border-b border-brand-tan shrink-0">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-brand-slate">Categories</span>
+      <button id="au-new-cat-btn" class="btn-new">+ New</button>
+    </div>
+
+    <!-- New/Edit category inline form -->
+    <div id="au-cat-form" class="hidden px-3 py-3 bg-brand-parchment border-b border-brand-tan shrink-0 space-y-2">
+      <input id="au-cat-code"  type="text" placeholder="Code (e.g. A)"
+             class="au-input w-full uppercase text-xs" maxlength="20" />
+      <input id="au-cat-name"  type="text" placeholder="Category name"
+             class="au-input w-full text-xs" />
+      <input id="au-cat-order" type="number" placeholder="Sort order"
+             class="au-input w-full text-xs" value="0" min="0" />
+      <div class="flex gap-2">
+        <button id="au-cat-save-btn"
+                class="flex-1 py-1.5 rounded-lg bg-brand-navy text-white text-xs font-semibold
+                       hover:opacity-90 transition-opacity">Save</button>
+        <button id="au-cat-cancel-btn"
+                class="flex-1 py-1.5 rounded-lg border border-brand-tan text-brand-slate
+                       text-xs font-semibold hover:bg-brand-tan/30 transition-colors">Cancel</button>
+      </div>
+      <p id="au-cat-form-error" class="hidden text-xs text-red-600"></p>
+    </div>
+
+    <div id="au-cat-loading" class="px-3 py-6 text-xs text-brand-slate text-center animate-pulse shrink-0">Loading…</div>
+    <ul id="au-cat-list" class="hidden flex-1 overflow-y-auto divide-y divide-brand-tan/40 py-1"></ul>
+  </div>
+
+  <!-- ── Resize handle 1 ──────────────────────────────────────────────── -->
+  <div class="au-resize-handle" data-handle="1"
+       style="width:5px; cursor:col-resize; background:transparent; shrink:0; position:relative; z-index:10"
+       title="Drag to resize"></div>
+
+  <!-- ── Col 2: Tracks ─────────────────────────────────────────────────── -->
+  <div id="au-col2" class="shrink-0 flex flex-col border-t border-b border-r border-brand-tan overflow-hidden bg-white" style="width: 300px; min-width: 180px">
+
+    <div class="flex items-center justify-between px-3 py-2.5 bg-brand-parchment border-b border-brand-tan shrink-0">
+      <span id="au-tracks-heading" class="text-[10px] font-bold uppercase tracking-widest text-brand-slate truncate">Tracks</span>
+      <button id="au-new-track-btn" class="hidden btn-new shrink-0">+ New</button>
+    </div>
+
+    <div id="au-tracks-empty" class="flex-1 flex items-center justify-center text-xs text-brand-slate italic px-4 text-center">
+      Select a category.
+    </div>
+    <div id="au-tracks-loading" class="hidden flex-1 flex items-center justify-center text-xs text-brand-slate animate-pulse">
+      Loading…
+    </div>
+    <div id="au-tracks-wrap" class="hidden flex-1 overflow-y-auto">
+      <table class="w-full text-xs border-collapse">
+        <tbody id="au-tracks-tbody" class="divide-y divide-brand-tan/60"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Resize handle 2 ──────────────────────────────────────────────── -->
+  <div class="au-resize-handle" data-handle="2"
+       style="width:5px; cursor:col-resize; background:transparent; shrink:0; position:relative; z-index:10"
+       title="Drag to resize"></div>
+
+  <!-- ── Col 3: Editor panel ───────────────────────────────────────────── -->
+  <div id="au-col3" class="flex-1 min-w-0 flex flex-col border-t border-b border-r border-brand-tan rounded-r-xl overflow-hidden bg-white" style="min-width: 320px">
+
+    <!-- Placeholder -->
+    <div id="au-editor-empty"
+         class="flex-1 flex items-center justify-center text-brand-slate/40 text-sm italic">
+      Select a track to edit.
+    </div>
+
+    <!-- Editor card -->
+    <div id="au-editor-card" class="hidden flex-1 flex flex-col min-h-0">
+
+      <!-- Track header + tabs -->
+      <div class="px-5 pt-4 pb-0 shrink-0 border-b border-brand-tan bg-brand-parchment/50">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p id="au-editor-track-id" class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5"></p>
+            <h3 id="au-editor-track-name" class="font-display font-bold text-brand-navy text-base"></h3>
+          </div>
+          <button id="au-editor-cancel-btn"
+                  class="text-xs text-brand-slate hover:text-brand-navy px-2 py-1 rounded transition-colors">
+            ✕ Close
+          </button>
+        </div>
+        <!-- Tab pills -->
+        <div class="flex gap-1 -mb-px">
+          <button id="au-tab-audio"
+                  class="au-panel-tab px-4 py-2 text-xs font-semibold border border-b-0 rounded-t-lg
+                         bg-white border-brand-tan text-brand-navy">Audio Files</button>
+          <button id="au-tab-lyrics"
+                  class="au-panel-tab px-4 py-2 text-xs font-semibold border border-b-0 rounded-t-lg
+                         bg-brand-parchment border-brand-tan/60 text-brand-slate hover:text-brand-navy transition-colors">Lyrics</button>
+        </div>
+      </div>
+
+      <!-- ── Tab: Audio Files ───────────────────────────────────── -->
+      <div id="au-panel-audio" class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <h4 id="au-track-form-title" class="text-sm font-bold text-brand-navy">New Track</h4>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="au-label">Track ID</label>
+            <input id="au-trk-id" type="text" placeholder="e.g. A-65"
+                   class="au-input w-full uppercase" />
+          </div>
+          <div>
+            <label class="au-label">Track Name</label>
+            <input id="au-trk-name" type="text" placeholder="Bhajan name" class="au-input w-full" />
+          </div>
+        </div>
+
+        <div>
+          <label class="au-label">Main MP3</label>
+          <div id="au-trk-audio-current" class="hidden mb-1 text-xs text-brand-slate font-mono truncate"></div>
+          <input id="au-trk-audio-file" type="file" accept=".mp3,audio/mpeg" class="au-file-input w-full" />
+          <p class="text-xs text-brand-slate mt-1">Max 50MB. Replaces existing if present.</p>
+        </div>
+
+        <div>
+          <label class="au-label">Base Track MP3 <span class="font-normal text-brand-slate">(optional)</span></label>
+          <div id="au-trk-base-current" class="hidden mb-1 flex items-center gap-2">
+            <span id="au-trk-base-current-path" class="text-xs text-brand-slate font-mono truncate flex-1"></span>
+            <button id="au-trk-base-delete" type="button" title="Delete base track"
+                    class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
+              <svg class="w-3 h-3 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+          <input id="au-trk-base-file" type="file" accept=".mp3,audio/mpeg" class="au-file-input w-full" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="au-label mb-0">Singer Versions <span class="font-normal text-brand-slate">(optional)</span></label>
+            <button id="au-add-singer-btn"
+                    class="text-xs px-2 py-1 rounded bg-brand-tan/60 text-brand-navy
+                           hover:bg-brand-tan transition-colors">+ Add Singer</button>
+          </div>
+          <div id="au-singers-list" class="space-y-2"></div>
+        </div>
+
+        <p id="au-track-form-error" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2"></p>
+
+        <div class="flex gap-2 pt-1">
+          <button id="au-track-save-btn" class="btn-save flex-1">Save Track</button>
+          <button id="au-track-cancel-btn" class="btn-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <!-- ── Tab: Lyrics ────────────────────────────────────────── -->
+      <div id="au-panel-lyrics" class="hidden flex-1 flex flex-col min-h-0 px-5 py-4">
+
+        <!-- Language tabs row -->
+        <div class="flex items-center gap-2 mb-3 shrink-0">
+          <div id="lyr-lang-tabs" class="flex gap-1 bg-brand-parchment border border-brand-tan rounded-full p-1 flex-wrap">
+            <!-- populated by JS -->
+          </div>
+          <button id="lyr-add-lang-btn"
+                  class="flex items-center gap-1 text-xs font-semibold text-brand-slate hover:text-brand-navy
+                         border border-brand-tan hover:border-brand-navy px-3 py-1.5 rounded-full transition-colors shrink-0">
+            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Add lang
+          </button>
+        </div>
+
+        <!-- Add-language input -->
+        <div id="lyr-add-lang-form" class="hidden flex items-center gap-2 mb-3 shrink-0">
+          <input id="lyr-new-lang" type="text" placeholder="e.g. ta, sa, hi" maxlength="10"
+                 class="px-3 py-1.5 text-sm rounded-lg border border-brand-tan
+                        focus:outline-none focus:ring-2 focus:ring-brand-lotus/40 w-28" />
+          <button id="lyr-add-lang-confirm"
+                  class="text-xs font-semibold bg-brand-navy text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+            Add
+          </button>
+          <button id="lyr-add-lang-cancel"
+                  class="text-xs font-semibold text-brand-slate hover:text-brand-navy px-2 py-1.5 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+
+        <!-- Lyrics + Meaning side-by-side -->
+        <div class="flex-1 flex gap-4 min-h-0">
+          <div class="flex-1 flex flex-col min-h-0">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-1.5 shrink-0">Lyrics</label>
+            <textarea id="lyr-lyrics-ta"
+                      class="flex-1 font-mono text-sm border border-brand-tan rounded-xl p-3 resize-none
+                             focus:outline-none focus:ring-2 focus:ring-brand-lotus/40
+                             placeholder:text-brand-slate/40"
+                      placeholder="Paste or type lyrics here…"></textarea>
+          </div>
+          <div class="flex-1 flex flex-col min-h-0">
+            <label class="text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-1.5 shrink-0">
+              Meaning <span class="font-normal normal-case tracking-normal text-brand-slate/50">(optional)</span>
+            </label>
+            <textarea id="lyr-meaning-ta"
+                      class="flex-1 font-mono text-sm border border-brand-tan rounded-xl p-3 resize-none
+                             focus:outline-none focus:ring-2 focus:ring-brand-lotus/40
+                             placeholder:text-brand-slate/40"
+                      placeholder="Paste or type meaning here…"></textarea>
+          </div>
+        </div>
+
+        <!-- Action bar -->
+        <div class="flex items-center justify-between mt-3 shrink-0">
+          <button id="lyr-delete-lang"
+                  class="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
+            Delete this language
+          </button>
+          <div class="flex items-center gap-3">
+            <span id="lyr-save-status" class="text-xs text-brand-slate/60"></span>
+            <button id="lyr-save-btn"
+                    class="inline-flex items-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white
+                           text-xs font-bold uppercase tracking-wide px-5 py-2 rounded-full
+                           transition-colors shadow">
+              Save
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /au-panel-lyrics -->
+    </div><!-- /au-editor-card -->
+  </div><!-- /col 3 -->
+</div><!-- /3-col layout -->
+
+</AdminShell>
+
+<!-- ── Styles ─────────────────────────────────────────────────────────────── -->
+<style>
+  .au-input {
+    @apply px-3 py-2 rounded-lg border border-brand-tan bg-white text-sm
+           text-brand-navy placeholder-brand-slate/50
+           focus:outline-none focus:ring-2 focus:ring-brand-lotus/40;
+  }
+  .au-file-input {
+    @apply text-sm text-brand-slate file:mr-3 file:py-1.5 file:px-3
+           file:rounded-full file:border-0 file:text-xs file:font-semibold
+           file:bg-brand-tan/60 file:text-brand-navy hover:file:bg-brand-tan
+           cursor-pointer;
+  }
+  .au-label {
+    @apply block text-xs font-semibold text-brand-slate mb-1;
+  }
+  .au-type-btn.active {
+    @apply bg-brand-navy text-white;
+  }
+  .au-cat-item.active {
+    @apply bg-brand-navy/10 text-brand-navy font-semibold;
+  }
+  .au-track-row.active {
+    @apply bg-brand-navy/10;
+  }
+  .au-resize-handle {
+    border-left: 1px solid rgba(0,0,0,0.08);
+    border-right: 1px solid rgba(0,0,0,0.08);
+    transition: background 0.15s;
+  }
+  .au-resize-handle:hover,
+  .au-resize-handle:active {
+    background: rgba(0,0,0,0.07) !important;
+  }
+</style>
+
+<!-- ── Script ─────────────────────────────────────────────────────────────── -->
+<script>
+const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+// ── State ────────────────────────────────────────────────────────────────────
+let currentType     = 'B';
+let currentCat: string | null = null;
+let editingCatCode: string | null = null;
+let editingTrackId: string | null = null;
+let trackCache: Record<string, any[]> = {};
+let existingAudioPath = '';
+let existingBasePath  = '';
+let activeTab: 'audio' | 'lyrics' = 'audio';
+
+// Current track info (shared between audio + lyrics tabs)
+let currentTrackId:   string = '';
+let currentTrackName: string = '';
+
+type SingerRow = { versionId?: number; singer: string; audioFilePath: string; fileObj?: File | null };
+let singerRows: SingerRow[] = [];
+let pendingArchive: string[] = [];  // file paths to archive on successful save
+
+// Lyrics state
+type LangRow = { lang: string; lyrics: string | null; meaning: string | null; updated_at: string | null };
+let lyrLangRows: LangRow[] = [];
+let lyrCurrentLang = 'en';
+let lyrLoaded = false;  // whether lyrics have been fetched for currentTrackId
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const typeBtns         = document.querySelectorAll<HTMLButtonElement>('.au-type-btn');
+const catLoading       = document.getElementById('au-cat-loading')!;
+const catList          = document.getElementById('au-cat-list')!;
+const catForm          = document.getElementById('au-cat-form')!;
+const catCodeInput     = document.getElementById('au-cat-code') as HTMLInputElement;
+const catNameInput     = document.getElementById('au-cat-name') as HTMLInputElement;
+const catOrderInput    = document.getElementById('au-cat-order') as HTMLInputElement;
+const catFormError     = document.getElementById('au-cat-form-error')!;
+const newCatBtn        = document.getElementById('au-new-cat-btn')!;
+const catSaveBtn       = document.getElementById('au-cat-save-btn')!;
+const catCancelBtn     = document.getElementById('au-cat-cancel-btn')!;
+
+const tracksHeading    = document.getElementById('au-tracks-heading')!;
+const tracksEmpty      = document.getElementById('au-tracks-empty')!;
+const tracksLoading    = document.getElementById('au-tracks-loading')!;
+const tracksWrap       = document.getElementById('au-tracks-wrap')!;
+const tracksTbody      = document.getElementById('au-tracks-tbody')!;
+const newTrackBtn      = document.getElementById('au-new-track-btn')!;
+
+const editorEmpty      = document.getElementById('au-editor-empty')!;
+const editorCard       = document.getElementById('au-editor-card')!;
+const editorTrackId    = document.getElementById('au-editor-track-id')!;
+const editorTrackName  = document.getElementById('au-editor-track-name')!;
+const editorCancelBtn  = document.getElementById('au-editor-cancel-btn')!;
+
+const tabAudioBtn      = document.getElementById('au-tab-audio')!;
+const tabLyricsBtn     = document.getElementById('au-tab-lyrics')!;
+const panelAudio       = document.getElementById('au-panel-audio')!;
+const panelLyrics      = document.getElementById('au-panel-lyrics')!;
+
+const trackFormTitle   = document.getElementById('au-track-form-title')!;
+const trackFormError   = document.getElementById('au-track-form-error')!;
+const trkIdInput       = document.getElementById('au-trk-id') as HTMLInputElement;
+const trkNameInput     = document.getElementById('au-trk-name') as HTMLInputElement;
+const trkAudioFile     = document.getElementById('au-trk-audio-file') as HTMLInputElement;
+const trkBaseFile      = document.getElementById('au-trk-base-file') as HTMLInputElement;
+const trkAudioCurrent    = document.getElementById('au-trk-audio-current')!;
+const trkBaseCurrent     = document.getElementById('au-trk-base-current')!;
+const trkBaseCurrentPath = document.getElementById('au-trk-base-current-path')!;
+const trkBaseDeleteBtn   = document.getElementById('au-trk-base-delete')!;
+const singersList      = document.getElementById('au-singers-list')!;
+const addSingerBtn     = document.getElementById('au-add-singer-btn')!;
+const trackSaveBtn     = document.getElementById('au-track-save-btn')!;
+const trackCancelBtn   = document.getElementById('au-track-cancel-btn')!;
+
+const lyrLangTabs      = document.getElementById('lyr-lang-tabs')!;
+const lyrAddLangBtn    = document.getElementById('lyr-add-lang-btn')!;
+const lyrAddLangForm   = document.getElementById('lyr-add-lang-form')!;
+const lyrNewLangInput  = document.getElementById('lyr-new-lang') as HTMLInputElement;
+const lyrAddLangConfirm= document.getElementById('lyr-add-lang-confirm') as HTMLButtonElement;
+const lyrAddLangCancel = document.getElementById('lyr-add-lang-cancel') as HTMLButtonElement;
+const lyrLyricsTa      = document.getElementById('lyr-lyrics-ta') as HTMLTextAreaElement;
+const lyrMeaningTa     = document.getElementById('lyr-meaning-ta') as HTMLTextAreaElement;
+const lyrSaveBtn       = document.getElementById('lyr-save-btn') as HTMLButtonElement;
+const lyrSaveStatus    = document.getElementById('lyr-save-status')!;
+const lyrDeleteLangBtn = document.getElementById('lyr-delete-lang') as HTMLButtonElement;
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function showError(el: HTMLElement, msg: string) {
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function clearError(el: HTMLElement) {
+  el.textContent = '';
+  el.classList.add('hidden');
+}
+
+function setTypeActive(type: string) {
+  typeBtns.forEach(b => b.classList.toggle('active', b.dataset.type === type));
+}
+
+async function apiFetch(url: string, opts: RequestInit = {}) {
+  const r = await fetch(url, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.message ?? `HTTP ${r.status}`);
+  return data;
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab: 'audio' | 'lyrics') {
+  activeTab = tab;
+  const audioActive  = tab === 'audio';
+  tabAudioBtn.classList.toggle('bg-white',         audioActive);
+  tabAudioBtn.classList.toggle('text-brand-navy',  audioActive);
+  tabAudioBtn.classList.toggle('bg-brand-parchment', !audioActive);
+  tabAudioBtn.classList.toggle('text-brand-slate', !audioActive);
+  tabLyricsBtn.classList.toggle('bg-white',        !audioActive);
+  tabLyricsBtn.classList.toggle('text-brand-navy', !audioActive);
+  tabLyricsBtn.classList.toggle('bg-brand-parchment', audioActive);
+  tabLyricsBtn.classList.toggle('text-brand-slate', audioActive);
+  panelAudio.classList.toggle('hidden', !audioActive);
+  panelLyrics.classList.toggle('hidden', audioActive);
+  panelLyrics.classList.toggle('flex', !audioActive);
+
+  if (tab === 'lyrics' && currentTrackId && !lyrLoaded) {
+    loadLyricsForTrack(currentTrackId);
+  }
+}
+
+tabAudioBtn.addEventListener('click',  () => switchTab('audio'));
+tabLyricsBtn.addEventListener('click', () => switchTab('lyrics'));
+
+// ── Type tabs ─────────────────────────────────────────────────────────────────
+typeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentType = btn.dataset.type!;
+    currentCat  = null;
+    trackCache  = {};
+    setTypeActive(currentType);
+    hideCatForm();
+    closeEditor();
+    resetTracksPanel();
+    loadCategories();
+  });
+});
+
+// ── Categories ────────────────────────────────────────────────────────────────
+async function loadCategories() {
+  catLoading.classList.remove('hidden');
+  catList.classList.add('hidden');
+  try {
+    const cats = await apiFetch(`${apiBase}/api/admin/audio-categories.php?type=${currentType}`);
+    renderCategories(cats);
+  } catch (e: any) {
+    catLoading.textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderCategories(cats: any[]) {
+  catLoading.classList.add('hidden');
+  catList.innerHTML = '';
+  if (cats.length === 0) {
+    catList.innerHTML = '<li class="text-xs text-brand-slate text-center py-4">No categories yet.</li>';
+  } else {
+    cats.forEach(cat => {
+      const li = document.createElement('li');
+      li.className = 'au-cat-item flex items-center gap-1.5 px-3 py-2 cursor-pointer hover:bg-brand-navy/5 transition-colors';
+      li.dataset.code = cat.category_code;
+      li.innerHTML = `
+        <span class="flex-1 text-xs truncate">${cat.category_code} - ${cat.category_name}</span>
+        <span class="text-[10px] text-brand-slate shrink-0">${cat.track_count}</span>
+        <button class="au-edit-cat shrink-0 text-brand-slate/50 hover:text-brand-navy transition-colors"
+                data-code="${cat.category_code}" data-name="${cat.category_name}"
+                data-order="${cat.sort_order}" title="Edit">
+          <svg class="w-3 h-3 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0
+                     01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z"/>
+          </svg>
+        </button>
+        <button class="au-del-cat shrink-0 text-brand-slate/50 hover:text-red-600 transition-colors"
+                data-code="${cat.category_code}" data-count="${cat.track_count}" title="Delete">
+          <svg class="w-3 h-3 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022
+                     -.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0
+                     01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0
+                     00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0
+                     0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964
+                     51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667
+                     48.667 0 00-7.5 0"/>
+          </svg>
+        </button>
+      `;
+      li.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        selectCategory(cat.category_code, cat.category_name);
+      });
+      catList.appendChild(li);
+    });
+  }
+  catList.classList.remove('hidden');
+  if (currentCat) highlightCat(currentCat);
+}
+
+function highlightCat(code: string) {
+  document.querySelectorAll('.au-cat-item').forEach(el => {
+    el.classList.toggle('active', (el as HTMLElement).dataset.code === code);
+  });
+}
+
+function selectCategory(code: string, name: string) {
+  currentCat = code;
+  highlightCat(code);
+  closeEditor();
+  loadTracks(code, name);
+  newTrackBtn.classList.remove('hidden');
+}
+
+newCatBtn.addEventListener('click', () => {
+  editingCatCode = null;
+  catCodeInput.value    = '';
+  catNameInput.value    = '';
+  catOrderInput.value   = '0';
+  catCodeInput.disabled = false;
+  catForm.classList.remove('hidden');
+  catCodeInput.focus();
+});
+
+catCancelBtn.addEventListener('click', hideCatForm);
+function hideCatForm() { catForm.classList.add('hidden'); }
+
+catSaveBtn.addEventListener('click', saveCat);
+async function saveCat() {
+  const code  = catCodeInput.value.trim().toUpperCase();
+  const name  = catNameInput.value.trim();
+  const order = parseInt(catOrderInput.value) || 0;
+  if (!code || !name) { showError(catFormError, 'Code and name are required'); return; }
+  try {
+    if (editingCatCode) {
+      await apiFetch(`${apiBase}/api/admin/audio-categories.php`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category_code: editingCatCode, category_name: name, sort_order: order }),
+      });
+    } else {
+      await apiFetch(`${apiBase}/api/admin/audio-categories.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: currentType, category_code: code, category_name: name, sort_order: order }),
+      });
+    }
+    hideCatForm();
+    loadCategories();
+  } catch (e: any) { showError(catFormError, e.message); }
+}
+
+catList.addEventListener('click', async (e) => {
+  const editBtn = (e.target as HTMLElement).closest<HTMLElement>('.au-edit-cat');
+  const delBtn  = (e.target as HTMLElement).closest<HTMLElement>('.au-del-cat');
+  if (editBtn) {
+    editingCatCode        = editBtn.dataset.code!;
+    catCodeInput.value    = editBtn.dataset.code!;
+    catNameInput.value    = editBtn.dataset.name!;
+    catOrderInput.value   = editBtn.dataset.order!;
+    catCodeInput.disabled = true;
+    catForm.classList.remove('hidden');
+    catNameInput.focus();
+  }
+  if (delBtn) {
+    const count = parseInt(delBtn.dataset.count ?? '0');
+    if (count > 0) { alert(`Cannot delete: category has ${count} tracks. Remove all tracks first.`); return; }
+    if (!confirm(`Delete category ${delBtn.dataset.code}?`)) return;
+    try {
+      await apiFetch(`${apiBase}/api/admin/audio-categories.php`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category_code: delBtn.dataset.code }),
+      });
+      if (currentCat === delBtn.dataset.code) { currentCat = null; resetTracksPanel(); }
+      loadCategories();
+    } catch (e: any) { alert(e.message); }
+  }
+});
+
+// ── Tracks ────────────────────────────────────────────────────────────────────
+function resetTracksPanel() {
+  tracksEmpty.textContent = 'Select a category.';
+  tracksEmpty.classList.remove('hidden');
+  tracksLoading.classList.add('hidden');
+  tracksWrap.classList.add('hidden');
+  newTrackBtn.classList.add('hidden');
+  tracksHeading.textContent = 'Tracks';
+}
+
+async function loadTracks(catCode: string, catName: string) {
+  tracksHeading.textContent = `${catCode} - ${catName}`;
+  tracksEmpty.classList.add('hidden');
+  tracksLoading.classList.remove('hidden');
+  tracksWrap.classList.add('hidden');
+  try {
+    const tracks = await apiFetch(`${apiBase}/api/admin/audio-tracks.php?category=${catCode}`);
+    trackCache[catCode] = tracks;
+    renderTracks(tracks);
+  } catch (e: any) {
+    tracksLoading.textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderTracks(tracks: any[]) {
+  tracksLoading.classList.add('hidden');
+  tracksTbody.innerHTML = '';
+  if (tracks.length === 0) {
+    tracksEmpty.textContent = 'No tracks yet.';
+    tracksEmpty.classList.remove('hidden');
+    return;
+  }
+  tracks.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.className = 'au-track-row hover:bg-brand-parchment/60 cursor-pointer transition-colors';
+    tr.dataset.id = t.track_id;
+    tr.innerHTML = `
+      <td class="px-3 py-2 w-full">
+        <p class="font-mono text-[10px] text-brand-lotus font-semibold">${t.track_id}</p>
+        <p class="text-xs text-brand-navy">${t.track_name}</p>
+      </td>
+      <td class="px-2 py-2 text-right whitespace-nowrap">
+        <div class="flex gap-1 justify-end">
+          <button class="au-edit-track-btn btn-edit" data-id="${t.track_id}">Edit</button>
+          <button class="au-del-track btn-delete" data-id="${t.track_id}">Delete</button>
+        </div>
+      </td>
+    `;
+    tracksTbody.appendChild(tr);
+  });
+  tracksWrap.classList.remove('hidden');
+}
+
+tracksTbody.addEventListener('click', async (e) => {
+  const editBtn = (e.target as HTMLElement).closest<HTMLElement>('.au-edit-track-btn');
+  const delBtn  = (e.target as HTMLElement).closest<HTMLElement>('.au-del-track');
+  if (editBtn) openEditTrack(editBtn.dataset.id!);
+  if (delBtn)  deleteTrack(delBtn.dataset.id!);
+});
+
+newTrackBtn.addEventListener('click', openNewTrack);
+
+// ── Editor open/close ─────────────────────────────────────────────────────────
+function openEditor(trackId: string, trackName: string) {
+  currentTrackId   = trackId;
+  currentTrackName = trackName;
+  lyrLoaded        = false;
+  editorTrackId.textContent   = trackId;
+  editorTrackName.textContent = trackName;
+  editorEmpty.classList.add('hidden');
+  editorCard.classList.remove('hidden');
+  // highlight row
+  document.querySelectorAll('.au-track-row').forEach(el => {
+    el.classList.toggle('active', (el as HTMLElement).dataset.id === trackId);
+  });
+  // If lyrics tab is active, reload
+  if (activeTab === 'lyrics') {
+    loadLyricsForTrack(trackId);
+  }
+}
+
+function closeEditor() {
+  editorCard.classList.add('hidden');
+  editorEmpty.classList.remove('hidden');
+  currentTrackId   = '';
+  currentTrackName = '';
+  lyrLoaded        = false;
+  editingTrackId   = null;
+  document.querySelectorAll('.au-track-row').forEach(el => el.classList.remove('active'));
+}
+
+editorCancelBtn.addEventListener('click', closeEditor);
+trackCancelBtn.addEventListener('click',  closeEditor);
+
+// ── Track form ────────────────────────────────────────────────────────────────
+async function openNewTrack() {
+  editingTrackId    = null;
+  existingAudioPath = '';
+  existingBasePath  = '';
+  singerRows        = [];
+  pendingArchive    = [];
+  trackFormTitle.textContent = 'New Track';
+  trkIdInput.value    = '';
+  trkIdInput.readOnly = false;
+  trkIdInput.classList.remove('bg-brand-parchment/60');
+  trkNameInput.value  = '';
+  trkAudioFile.value  = '';
+  trkBaseFile.value   = '';
+  trkAudioCurrent.classList.add('hidden');
+  trkBaseCurrent.classList.add('hidden');
+  renderSingerRows();
+  openEditor('(new)', '');
+  editorTrackId.textContent   = 'New Track';
+  editorTrackName.textContent = '';
+  switchTab('audio');
+  // Auto-populate next sequence ID
+  try {
+    const r = await apiFetch(`${apiBase}/api/admin/audio-tracks.php?suggest_id=${currentCat}`);
+    trkIdInput.value = r.suggested_id;
+    editorTrackId.textContent = r.suggested_id;
+  } catch { /* leave blank */ }
+  trkNameInput.focus();
+}
+
+function openEditTrack(trackId: string) {
+  const tracks = currentCat ? (trackCache[currentCat] ?? []) : [];
+  const t = tracks.find((x: any) => x.track_id === trackId);
+  if (!t) return;
+
+  editingTrackId    = trackId;
+  existingAudioPath = t.audio_file_path ?? '';
+  existingBasePath  = t.base_track_path ?? '';
+  pendingArchive    = [];
+  singerRows = (t.singers ?? []).map((s: any) => ({
+    versionId:     s.version_id,
+    singer:        s.singer,
+    audioFilePath: s.audio_file_path,
+    fileObj:       null,
+  }));
+
+  trackFormTitle.textContent = `Edit - ${trackId}`;
+  trkIdInput.value    = trackId;
+  trkIdInput.readOnly = true;
+  trkIdInput.classList.add('bg-brand-parchment/60');
+  trkNameInput.value  = t.track_name;
+  trkAudioFile.value  = '';
+  trkBaseFile.value   = '';
+  trkAudioCurrent.textContent = existingAudioPath;
+  trkAudioCurrent.classList.remove('hidden');
+  if (existingBasePath) {
+    trkBaseCurrentPath.textContent = existingBasePath;
+    trkBaseCurrent.classList.remove('hidden');
+  } else {
+    trkBaseCurrent.classList.add('hidden');
+  }
+  renderSingerRows();
+  openEditor(trackId, t.track_name);
+  // stay on current tab
+}
+
+// ── Singer rows ───────────────────────────────────────────────────────────────
+// Base track delete
+trkBaseDeleteBtn.addEventListener('click', () => {
+  if (existingBasePath) pendingArchive.push(existingBasePath);
+  existingBasePath = '';
+  trkBaseCurrent.classList.add('hidden');
+  trkBaseCurrentPath.textContent = '';
+  trkBaseFile.value = '';
+});
+
+addSingerBtn.addEventListener('click', () => {
+  singerRows.push({ singer: '', audioFilePath: '', fileObj: null });
+  renderSingerRows();
+});
+
+function renderSingerRows() {
+  singersList.innerHTML = '';
+  singerRows.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-start p-3 bg-white border border-brand-tan rounded-lg';
+    div.innerHTML = `
+      <div class="flex-1 space-y-2">
+        <input type="text" placeholder="Singer name" value="${row.singer}"
+               class="au-input w-full au-singer-name text-xs" data-idx="${idx}" />
+        ${row.audioFilePath ? `<p class="text-xs text-brand-slate font-mono truncate">${row.audioFilePath}</p>` : ''}
+        <input type="file" accept=".mp3,audio/mpeg" class="au-file-input w-full au-singer-file" data-idx="${idx}" />
+      </div>
+      <button class="au-remove-singer mt-2 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors shrink-0" data-idx="${idx}" title="Delete singer version">
+        <svg class="w-3 h-3 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Delete
+      </button>
+    `;
+    singersList.appendChild(div);
+  });
+  singersList.querySelectorAll<HTMLInputElement>('.au-singer-name').forEach(inp => {
+    inp.addEventListener('input', () => { singerRows[parseInt(inp.dataset.idx!)].singer = inp.value; });
+  });
+  singersList.querySelectorAll<HTMLInputElement>('.au-singer-file').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx  = parseInt(inp.dataset.idx!);
+      const file = inp.files?.[0] ?? null;
+      singerRows[idx].fileObj = file;
+      // Auto-fill singer name from filename if field is empty
+      // Expected format: "B-71-Track Name - Singer Name.mp3"
+      if (file && !singerRows[idx].singer.trim()) {
+        const stem   = file.name.replace(/\.mp3$/i, '');
+        const dashAt = stem.lastIndexOf(' - ');
+        if (dashAt !== -1) {
+          const derived = stem.slice(dashAt + 3).trim();
+          if (derived) {
+            singerRows[idx].singer = derived;
+            const nameInput = singersList.querySelector<HTMLInputElement>(`.au-singer-name[data-idx="${idx}"]`);
+            if (nameInput) nameInput.value = derived;
+          }
+        }
+      }
+    });
+  });
+  singersList.querySelectorAll<HTMLButtonElement>('.au-remove-singer').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx!);
+      if (singerRows[idx].audioFilePath) pendingArchive.push(singerRows[idx].audioFilePath);
+      singerRows.splice(idx, 1);
+      renderSingerRows();
+    });
+  });
+}
+
+// ── Save track ────────────────────────────────────────────────────────────────
+trackSaveBtn.addEventListener('click', saveTrack);
+
+async function uploadMp3(file: File, uploadType: string, trackId: string,
+                          trackName: string, singer = ''): Promise<string> {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_type', uploadType);
+  fd.append('track_id', trackId);
+  fd.append('track_name', trackName);
+  fd.append('family', ({ B:'bhajan', S:'sloka', N:'sankirtan' } as any)[currentType] ?? 'bhajan');
+  fd.append('category', currentCat ?? '');
+  if (singer) fd.append('singer', singer);
+  const r = await apiFetch(`${apiBase}/api/admin/audio-upload.php`, { method: 'POST', body: fd });
+  return r.path;
+}
+
+async function archiveFile(path: string): Promise<string | null> {
+  if (!path) return null;
+  const r = await apiFetch(`${apiBase}/api/admin/audio-upload.php`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+  return r.archived_as ?? null;
+}
+
+async function saveTrack() {
+  const trackId   = trkIdInput.value.trim().toUpperCase();
+  const trackName = trkNameInput.value.trim();
+  if (!trackId || !trackName) { showError(trackFormError, 'Track ID and Track Name are required'); return; }
+  const isNew     = !editingTrackId;
+  const audioFile = trkAudioFile.files?.[0];
+  const baseFile  = trkBaseFile.files?.[0];
+  if (isNew && !audioFile) { showError(trackFormError, 'Main MP3 is required for a new track'); return; }
+
+  trackSaveBtn.textContent = 'Saving…';
+  trackSaveBtn.setAttribute('disabled', 'true');
+  clearError(trackFormError);
+
+  try {
+    // ── Track ID prefix check (all files must start with the track ID) ──────────
+    const idPrefix = trackId.toLowerCase() + '-';
+    function startsWithId(file: File): boolean {
+      return file.name.toLowerCase().startsWith(idPrefix);
+    }
+    if (audioFile && !startsWithId(audioFile)) {
+      showError(trackFormError, `Main MP3 filename must start with "${trackId}-" (got: ${audioFile.name})`);
+      trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
+    }
+    if (baseFile && !startsWithId(baseFile)) {
+      showError(trackFormError, `Base Track filename must start with "${trackId}-" (got: ${baseFile.name})`);
+      trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
+    }
+    for (const row of singerRows) {
+      if (row.fileObj && !startsWithId(row.fileObj)) {
+        showError(trackFormError, `Singer version filename must start with "${trackId}-" (got: ${row.fileObj.name})`);
+        trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
+      }
+    }
+
+    let audioPath = existingAudioPath;
+    let basePath  = existingBasePath || null;
+    if (audioFile) audioPath = await uploadMp3(audioFile, 'main', trackId, trackName);
+    if (baseFile)  basePath  = await uploadMp3(baseFile,  'base', trackId, trackName);
+
+    // Validate singer rows before uploading anything
+    for (const row of singerRows) {
+      const singerName = row.singer.trim();
+      if (row.fileObj && !singerName) {
+        showError(trackFormError, 'A singer version has a file selected but no singer name. Please enter a name for each singer.');
+        trackSaveBtn.textContent = 'Save Track';
+        trackSaveBtn.removeAttribute('disabled');
+        return;
+      }
+      if (singerName && !row.audioFilePath && !row.fileObj) {
+        showError(trackFormError, `Singer "${singerName}" has no MP3 file. Please choose a file or remove this singer.`);
+        trackSaveBtn.textContent = 'Save Track';
+        trackSaveBtn.removeAttribute('disabled');
+        return;
+      }
+    }
+
+    const finalSingers: { singer: string; audio_file_path: string }[] = [];
+    for (const row of singerRows) {
+      const singerName = row.singer.trim();
+      if (!singerName) continue;
+      let singerPath = row.audioFilePath;
+      if (row.fileObj) singerPath = await uploadMp3(row.fileObj, 'singer_version', trackId, trackName, singerName);
+      if (singerPath) finalSingers.push({ singer: singerName, audio_file_path: singerPath });
+    }
+
+    const payload: any = { track_id: trackId, track_name: trackName, category_code: currentCat,
+                            audio_file_path: audioPath, base_track_path: basePath, singers: finalSingers };
+    if (isNew) {
+      await apiFetch(`${apiBase}/api/admin/audio-tracks.php`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      });
+    } else {
+      await apiFetch(`${apiBase}/api/admin/audio-tracks.php`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      });
+    }
+
+    // Archive any removed files (base track or singer versions that were deleted)
+    const archiveErrors: string[] = [];
+    for (const path of pendingArchive) {
+      try { await archiveFile(path); }
+      catch { archiveErrors.push(path.split('/').pop() ?? path); }
+    }
+    pendingArchive = [];
+    if (archiveErrors.length) {
+      showError(trackFormError, `Track saved, but could not archive: ${archiveErrors.join(', ')}. The file may still be on disk.`);
+    }
+
+    delete trackCache[currentCat!];
+    await loadTracks(currentCat!, tracksHeading.textContent!);
+    // Re-open edit for the saved track
+    openEditTrack(trackId);
+
+  } catch (e: any) {
+    showError(trackFormError, e.message);
+  } finally {
+    trackSaveBtn.textContent = 'Save Track';
+    trackSaveBtn.removeAttribute('disabled');
+  }
+}
+
+// ── Delete track ──────────────────────────────────────────────────────────────
+async function deleteTrack(trackId: string) {
+  if (!confirm(`Delete track ${trackId} and archive its MP3 files?`)) return;
+  try {
+    const result = await apiFetch(`${apiBase}/api/admin/audio-tracks.php`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_id: trackId }),
+    });
+    for (const path of (result.files_to_archive ?? [])) {
+      try { await archiveFile(path); } catch { /* best-effort */ }
+    }
+    if (currentTrackId === trackId) closeEditor();
+    delete trackCache[currentCat!];
+    loadTracks(currentCat!, tracksHeading.textContent!);
+  } catch (e: any) { alert(e.message); }
+}
+
+// ── Lyrics ────────────────────────────────────────────────────────────────────
+async function loadLyricsForTrack(trackId: string) {
+  lyrLyricsTa.value  = '';
+  lyrMeaningTa.value = '';
+  lyrSaveStatus.textContent = '';
+  lyrLangTabs.innerHTML = '';
+  try {
+    const res = await fetch(`${apiBase}/api/admin/lyrics.php?track_id=${encodeURIComponent(trackId)}`, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    lyrLangRows = data.rows ?? [];
+  } catch {
+    lyrLangRows = [];
+  }
+  if (!lyrLangRows.find(r => r.lang === 'en')) {
+    lyrLangRows.unshift({ lang: 'en', lyrics: null, meaning: null, updated_at: null });
+  }
+  lyrLoaded = true;
+  lyrRenderTabs();
+  lyrActivateLang(lyrLangRows[0]?.lang ?? 'en');
+}
+
+function lyrRenderTabs() {
+  lyrLangTabs.innerHTML = '';
+  lyrLangRows.forEach(row => {
+    const btn = document.createElement('button');
+    const hasContent = row.lyrics || row.meaning;
+    btn.className = 'lyr-lang-tab px-3 py-1 rounded-full text-xs font-semibold transition-colors text-brand-slate hover:bg-white/70';
+    btn.dataset.lang = row.lang;
+    btn.textContent  = row.lang.toUpperCase();
+    if (hasContent) {
+      const dot = document.createElement('span');
+      dot.className = 'ml-1 inline-block w-1 h-1 rounded-full bg-green-500 align-middle';
+      btn.appendChild(dot);
+    }
+    btn.addEventListener('click', () => lyrActivateLang(row.lang));
+    lyrLangTabs.appendChild(btn);
+  });
+}
+
+function lyrActivateLang(lang: string) {
+  lyrCurrentLang = lang;
+  lyrLangTabs.querySelectorAll<HTMLButtonElement>('.lyr-lang-tab').forEach(btn => {
+    const active = btn.dataset.lang === lang;
+    btn.classList.toggle('bg-brand-navy', active);
+    btn.classList.toggle('text-white',    active);
+    btn.classList.toggle('text-brand-slate', !active);
+  });
+  const row = lyrLangRows.find(r => r.lang === lang);
+  lyrLyricsTa.value  = row?.lyrics  ?? '';
+  lyrMeaningTa.value = row?.meaning ?? '';
+  lyrSaveStatus.textContent = row?.updated_at ? `Last saved: ${row.updated_at}` : '';
+}
+
+lyrAddLangBtn.addEventListener('click', () => {
+  lyrAddLangForm.classList.remove('hidden');
+  lyrNewLangInput.value = '';
+  lyrNewLangInput.focus();
+});
+lyrAddLangCancel.addEventListener('click', () => lyrAddLangForm.classList.add('hidden'));
+lyrAddLangConfirm.addEventListener('click', () => {
+  const lang = lyrNewLangInput.value.trim().toLowerCase();
+  if (!/^[a-z]{2,10}$/.test(lang)) { lyrNewLangInput.classList.add('border-red-400'); return; }
+  lyrNewLangInput.classList.remove('border-red-400');
+  if (!lyrLangRows.find(r => r.lang === lang)) {
+    lyrLangRows.push({ lang, lyrics: null, meaning: null, updated_at: null });
+  }
+  lyrAddLangForm.classList.add('hidden');
+  lyrRenderTabs();
+  lyrActivateLang(lang);
+});
+
+lyrSaveBtn.addEventListener('click', async () => {
+  if (!currentTrackId || currentTrackId === '(new)') return;
+  const lyricsBody  = lyrLyricsTa.value;
+  const meaningBody = lyrMeaningTa.value;
+  lyrSaveBtn.disabled = true;
+  lyrSaveStatus.textContent = 'Saving…';
+  try {
+    const saves: Promise<Response>[] = [];
+    const existingRow = lyrLangRows.find(r => r.lang === lyrCurrentLang);
+    if (lyricsBody.trim() !== '' || existingRow?.lyrics !== null) {
+      saves.push(fetch(`${apiBase}/api/admin/lyrics.php`, {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ track_id: currentTrackId, lang: lyrCurrentLang, content_type: 'lyrics', body: lyricsBody }),
+      }));
+    }
+    if (meaningBody.trim() !== '') {
+      saves.push(fetch(`${apiBase}/api/admin/lyrics.php`, {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ track_id: currentTrackId, lang: lyrCurrentLang, content_type: 'meaning', body: meaningBody }),
+      }));
+    }
+    if (saves.length === 0) { lyrSaveStatus.textContent = 'Nothing to save.'; lyrSaveBtn.disabled = false; return; }
+    await Promise.all(saves);
+    const row = lyrLangRows.find(r => r.lang === lyrCurrentLang);
+    if (row) {
+      row.lyrics  = lyricsBody  || null;
+      row.meaning = meaningBody || null;
+      row.updated_at = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    }
+    lyrSaveStatus.textContent = 'Saved ✓';
+    lyrRenderTabs();
+    lyrActivateLang(lyrCurrentLang);
+  } catch {
+    lyrSaveStatus.textContent = 'Error saving.';
+  } finally {
+    lyrSaveBtn.disabled = false;
+  }
+});
+
+lyrDeleteLangBtn.addEventListener('click', async () => {
+  if (!currentTrackId || currentTrackId === '(new)' || !lyrCurrentLang) return;
+  if (!confirm(`Delete all "${lyrCurrentLang}" lyrics for this track?`)) return;
+  try {
+    const res = await fetch(`${apiBase}/api/admin/lyrics.php`, {
+      method: 'DELETE', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_id: currentTrackId, lang: lyrCurrentLang }),
+    });
+    if (!res.ok) throw new Error();
+    lyrLangRows = lyrLangRows.filter(r => r.lang !== lyrCurrentLang);
+    if (!lyrLangRows.find(r => r.lang === 'en')) {
+      lyrLangRows.unshift({ lang: 'en', lyrics: null, meaning: null, updated_at: null });
+    }
+    lyrRenderTabs();
+    lyrActivateLang(lyrLangRows[0]?.lang ?? 'en');
+  } catch {
+    lyrSaveStatus.textContent = 'Delete failed.';
+  }
+});
+
+// ── Resizable columns ─────────────────────────────────────────────────────────
+(function setupResize() {
+  const col1 = document.getElementById('au-col1') as HTMLElement;
+  const col2 = document.getElementById('au-col2') as HTMLElement;
+  const handles = document.querySelectorAll<HTMLElement>('.au-resize-handle');
+
+  handles.forEach(handle => {
+    let startX = 0;
+    let startW = 0;
+    const which = handle.dataset.handle;
+
+    handle.addEventListener('mousedown', (e: MouseEvent) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startW = which === '1' ? col1.offsetWidth : col2.offsetWidth;
+      handle.style.background = 'rgba(0,0,0,0.08)';
+
+      function onMove(e: MouseEvent) {
+        const delta = e.clientX - startX;
+        const newW  = Math.max(140, startW + delta);
+        if (which === '1') {
+          col1.style.width = newW + 'px';
+        } else {
+          col2.style.width = Math.max(180, newW) + 'px';
+        }
+      }
+      function onUp() {
+        handle.style.background = 'transparent';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Visual hover cue
+    handle.addEventListener('mouseenter', () => { handle.style.background = 'rgba(0,0,0,0.06)'; });
+    handle.addEventListener('mouseleave', () => { handle.style.background = 'transparent'; });
+  });
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setTypeActive('B');
+loadCategories();
+</script>
