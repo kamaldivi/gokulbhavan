@@ -6,6 +6,7 @@
  */
 import Base from "@layouts/Base.astro";
 import FeaturedVideos from "@components/FeaturedVideos.astro";
+import EventWidget from "@components/EventWidget.astro";
 ---
 
 <Base
@@ -87,12 +88,8 @@ import FeaturedVideos from "@components/FeaturedVideos.astro";
     </div>
   </section>
 
-  <!-- Sanga flyer -->
-  <section class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-    <img src="/assets/tamil_sanga_flyer_1.jpeg"
-         alt="கீதா அமுதம் — Tamil Sanga Flyer"
-         class="w-full rounded-2xl shadow-lg border border-brand-tan" />
-  </section>
+  <!-- Upcoming Events — Tamil page -->
+  <EventWidget placement="tamil" title="Upcoming Events" />
 
   <!-- Tamil video strip -->
   <div class="max-w-6xl mx-auto px-4 sm:px-6 border-t border-brand-tan">

@@ -1,0 +1,196 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Posts" activePath="/admin/posts">
+
+  <!-- Top bar -->
+  <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <div class="flex items-center gap-2 flex-wrap" id="posts-filter-tabs">
+      {['all','blog','event','published','draft','archived'].map(t => (
+        <button data-filter={t}
+                class={`post-tab text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors
+                        ${t === 'all'
+                          ? 'bg-brand-navy text-white border-brand-navy'
+                          : 'bg-white text-brand-slate border-brand-tan hover:border-brand-navy hover:text-brand-navy'}`}>
+          {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+        </button>
+      ))}
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="/admin/categories"
+         class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide px-3 py-2 rounded-lg border border-brand-tan bg-white text-brand-slate hover:border-brand-navy hover:text-brand-navy transition-colors">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5S15.01 22 17.5 22s4.5-2.01 4.5-4.5S19.99 13 17.5 13zm0 7a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>
+        Categories
+      </a>
+      <a href="/admin/post-edit?type=blog" class="btn-new inline-flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New Blog Post
+      </a>
+      <a href="/admin/post-edit?type=event" class="btn-new inline-flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        New Event
+      </a>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div id="posts-banner" class="hidden mb-4 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+
+  <!-- Loading -->
+  <div id="posts-loading" class="text-center py-16 text-brand-slate text-sm">Loading…</div>
+
+  <!-- List -->
+  <div id="posts-list" class="hidden space-y-2"></div>
+
+  <!-- Empty -->
+  <div id="posts-empty" class="hidden text-center py-16 text-brand-slate text-sm">No posts found.</div>
+
+</AdminShell>
+
+<script>
+  type Post = {
+    id: number;
+    post_type: 'blog' | 'event';
+    slug: string;
+    title: string;
+    status: 'draft' | 'published' | 'archived';
+    published_at: string | null;
+    event_date: string | null;
+    event_location: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  let posts: Post[] = [];
+  let activeFilter = 'all';
+
+  const loadingEl = document.getElementById('posts-loading')!;
+  const listEl    = document.getElementById('posts-list')!;
+  const emptyEl   = document.getElementById('posts-empty')!;
+  const bannerEl  = document.getElementById('posts-banner')!;
+
+  const TYPE_BADGES: Record<string, string> = {
+    blog:  'bg-brand-navy/10 text-brand-navy',
+    event: 'bg-brand-lotus/10 text-brand-lotus',
+  };
+
+  const STATUS_BADGES: Record<string, { label: string; cls: string }> = {
+    published: { label: 'Published', cls: 'bg-green-100 text-green-700' },
+    draft:     { label: 'Draft',     cls: 'bg-amber-100 text-amber-700' },
+    archived:  { label: 'Archived',  cls: 'bg-brand-tan text-brand-slate/60' },
+  };
+
+  // ── Load ──────────────────────────────────────────────────────
+  async function load() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/posts.php`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      posts = await res.json();
+    } catch {
+      loadingEl.textContent = 'Failed to load posts.';
+      return;
+    }
+    loadingEl.classList.add('hidden');
+    render();
+  }
+
+  // ── Render ────────────────────────────────────────────────────
+  function render() {
+    const filtered = posts.filter(p => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'blog' || activeFilter === 'event') return p.post_type === activeFilter;
+      return p.status === activeFilter;
+    });
+
+    listEl.innerHTML = '';
+    if (filtered.length === 0) {
+      emptyEl.classList.remove('hidden');
+      listEl.classList.add('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    listEl.classList.remove('hidden');
+
+    filtered.forEach(p => {
+      const st      = STATUS_BADGES[p.status] ?? STATUS_BADGES['draft'];
+      const typeCls = TYPE_BADGES[p.post_type] ?? 'bg-brand-tan text-brand-slate';
+      const when    = p.post_type === 'event' && p.event_date
+        ? p.event_date + (p.event_location ? ' · ' + p.event_location : '')
+        : p.published_at
+          ? 'Published ' + p.published_at.slice(0, 10)
+          : 'Created ' + p.created_at.slice(0, 10);
+
+      const card = document.createElement('div');
+      card.className = 'rounded-xl border border-brand-tan bg-white px-5 py-4 flex items-center justify-between gap-4';
+      card.innerHTML = `
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap mb-0.5">
+            <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${typeCls}">
+              ${esc(p.post_type)}
+            </span>
+            <h3 class="font-semibold text-brand-navy text-sm">${esc(p.title)}</h3>
+            <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${st.cls}">
+              ${st.label}
+            </span>
+          </div>
+          <p class="text-xs text-brand-slate/70">${esc(when)}</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <a href="/admin/post-edit?id=${p.id}" class="btn-edit">Edit</a>
+          <button class="btn-delete post-delete-btn" data-id="${p.id}">Delete</button>
+        </div>`;
+
+      card.querySelector<HTMLButtonElement>('.post-delete-btn')!
+        .addEventListener('click', () => deletePost(p.id, p.title));
+
+      listEl.appendChild(card);
+    });
+  }
+
+  // ── Filter tabs ───────────────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.post-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.dataset.filter!;
+      document.querySelectorAll('.post-tab').forEach(b => {
+        const active = (b as HTMLElement).dataset.filter === activeFilter;
+        b.className = `post-tab text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors
+          ${active
+            ? 'bg-brand-navy text-white border-brand-navy'
+            : 'bg-white text-brand-slate border-brand-tan hover:border-brand-navy hover:text-brand-navy'}`;
+      });
+      render();
+    });
+  });
+
+  // ── Delete ────────────────────────────────────────────────────
+  async function deletePost(id: number, title: string) {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    const res = await fetch(`${apiBase}/api/admin/posts.php?id=${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    if (res.ok) {
+      showBanner('Post deleted.', 'green');
+      await load();
+    } else {
+      showBanner('Delete failed. Please try again.', 'red');
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function showBanner(msg: string, color: 'green' | 'red') {
+    bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-4
+      ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
+    bannerEl.textContent = msg;
+    bannerEl.classList.remove('hidden');
+    setTimeout(() => bannerEl.classList.add('hidden'), 4000);
+  }
+
+  function esc(s: string) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  load();
+</script>

@@ -1,0 +1,290 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Blog Categories" activePath="/admin/categories">
+
+  <div id="cat-banner" class="hidden mb-5 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="font-display font-bold text-xl text-brand-navy">Blog Categories</h1>
+      <p class="text-xs text-brand-slate mt-0.5">Manage categories for blog posts and events. Drag sort_order to reorder tabs.</p>
+    </div>
+    <button id="cat-new-btn"
+            class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-slate text-white text-xs font-bold uppercase tracking-wide px-4 py-2.5 rounded-lg transition-colors">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      New Category
+    </button>
+  </div>
+
+  <!-- Form panel (hidden by default) -->
+  <div id="cat-form-panel" class="hidden mb-6 rounded-xl border border-brand-tan bg-white px-6 py-5">
+    <h2 id="cat-form-title" class="text-sm font-bold text-brand-navy mb-4">New Category</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">Name <span class="text-brand-lotus">*</span></label>
+        <input id="cat-f-name" type="text"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">Type</label>
+        <select id="cat-f-type"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus bg-white">
+          <option value="blog">Blog</option>
+          <option value="event">Event</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-3 pt-1">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="cat-f-sequential" class="w-4 h-4 rounded accent-brand-lotus" />
+          <span class="text-sm text-brand-slate font-medium">Sequential / Episodic</span>
+        </label>
+      </div>
+
+      <div id="cat-f-placement-wrap">
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">
+          Page Placement <span class="text-brand-slate/50 normal-case font-normal">(event categories only)</span>
+        </label>
+        <select id="cat-f-placement"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus bg-white">
+          <option value="">— none —</option>
+          <option value="home">Home Page</option>
+          <option value="tamil">Tamil Page</option>
+          <option value="programs">Programs Page</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">Sort Order</label>
+        <input id="cat-f-sort" type="number" value="0" min="0"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5">Description <span class="text-brand-slate/50 normal-case font-normal">(optional)</span></label>
+        <textarea id="cat-f-desc" rows="2"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-none"></textarea>
+      </div>
+
+    </div>
+    <div class="flex items-center gap-3 mt-4">
+      <button id="cat-f-save" class="inline-flex items-center gap-1.5 bg-brand-lotus hover:bg-pink-700 text-white text-xs font-bold uppercase tracking-wide px-5 py-2.5 rounded-lg transition-colors">Save</button>
+      <button id="cat-f-cancel" class="text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors">Cancel</button>
+    </div>
+    <input type="hidden" id="cat-f-id" value="" />
+  </div>
+
+  <!-- Category table -->
+  <div class="rounded-xl border border-brand-tan bg-white overflow-hidden">
+    <div id="cat-loading" class="py-12 text-center text-brand-slate/50 text-sm">Loading…</div>
+    <div id="cat-empty" class="hidden py-12 text-center text-brand-slate/50 text-sm">No categories yet.</div>
+    <table id="cat-table" class="hidden w-full text-sm">
+      <thead>
+        <tr class="border-b border-brand-tan bg-brand-parchment/60 text-left text-xs font-bold uppercase tracking-wider text-brand-slate">
+          <th class="px-5 py-3">Name</th>
+          <th class="px-5 py-3">Type</th>
+          <th class="px-5 py-3">Sequential</th>
+          <th class="px-5 py-3">Placement</th>
+          <th class="px-5 py-3 text-center">Sort</th>
+          <th class="px-5 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="cat-tbody"></tbody>
+    </table>
+  </div>
+
+</AdminShell>
+
+<script>
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+  const bannerEl    = document.getElementById('cat-banner')!;
+  const formPanel   = document.getElementById('cat-form-panel')!;
+  const formTitle   = document.getElementById('cat-form-title')!;
+  const nameEl      = document.getElementById('cat-f-name')    as HTMLInputElement;
+  const typeEl      = document.getElementById('cat-f-type')    as HTMLSelectElement;
+  const seqEl       = document.getElementById('cat-f-sequential') as HTMLInputElement;
+  const placWrap    = document.getElementById('cat-f-placement-wrap')!;
+  const placEl      = document.getElementById('cat-f-placement') as HTMLSelectElement;
+  const sortEl      = document.getElementById('cat-f-sort')    as HTMLInputElement;
+  const descEl      = document.getElementById('cat-f-desc')    as HTMLTextAreaElement;
+  const idEl        = document.getElementById('cat-f-id')      as HTMLInputElement;
+  const saveBtn     = document.getElementById('cat-f-save')!;
+  const cancelBtn   = document.getElementById('cat-f-cancel')!;
+  const loadingEl   = document.getElementById('cat-loading')!;
+  const emptyEl     = document.getElementById('cat-empty')!;
+  const tableEl     = document.getElementById('cat-table')!;
+  const tbody       = document.getElementById('cat-tbody')!;
+
+  type Category = {
+    id: number; name: string; slug: string; description: string | null;
+    post_type: string; is_sequential: number; placement: string | null; sort_order: number;
+  };
+
+  let categories: Category[] = [];
+
+  // Hide placement select when type is blog
+  typeEl.addEventListener('change', () => {
+    placWrap.style.opacity = typeEl.value === 'event' ? '1' : '0.4';
+    if (typeEl.value !== 'event') placEl.value = '';
+  });
+
+  // ── Load ──────────────────────────────────────────────────────
+  async function load() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/post-categories.php`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      categories = await res.json();
+    } catch {
+      showBanner('Failed to load categories.', 'red');
+      return;
+    } finally {
+      loadingEl.classList.add('hidden');
+    }
+
+    if (!categories.length) {
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    renderTable();
+  }
+
+  function renderTable() {
+    tableEl.classList.remove('hidden');
+    emptyEl.classList.add('hidden');
+    tbody.innerHTML = categories.map(c => `
+      <tr class="border-b border-brand-tan/50 hover:bg-brand-parchment/30 transition-colors" data-id="${c.id}">
+        <td class="px-5 py-3 font-semibold text-brand-navy">${esc(c.name)}</td>
+        <td class="px-5 py-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                       ${c.post_type === 'event' ? 'bg-amber-100 text-amber-800' : 'bg-brand-navy/10 text-brand-navy'}">
+            ${c.post_type === 'event' ? 'Event' : 'Blog'}
+          </span>
+        </td>
+        <td class="px-5 py-3">
+          ${c.is_sequential
+            ? '<span class="text-brand-lotus font-semibold text-xs">Yes</span>'
+            : '<span class="text-brand-slate/40 text-xs">No</span>'}
+        </td>
+        <td class="px-5 py-3 text-xs text-brand-slate">${c.placement ? esc(c.placement) : '—'}</td>
+        <td class="px-5 py-3 text-center text-xs text-brand-slate">${c.sort_order}</td>
+        <td class="px-5 py-3 text-right">
+          <button class="cat-edit-btn text-xs font-semibold text-brand-navy hover:text-brand-lotus transition-colors mr-3" data-id="${c.id}">Edit</button>
+          <button class="cat-del-btn text-xs font-semibold text-red-600 hover:text-red-800 transition-colors" data-id="${c.id}">Delete</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll<HTMLButtonElement>('.cat-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEdit(parseInt(btn.dataset.id!)));
+    });
+    tbody.querySelectorAll<HTMLButtonElement>('.cat-del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteCategory(parseInt(btn.dataset.id!)));
+    });
+  }
+
+  // ── New ───────────────────────────────────────────────────────
+  document.getElementById('cat-new-btn')!.addEventListener('click', () => {
+    idEl.value    = '';
+    nameEl.value  = '';
+    typeEl.value  = 'blog';
+    seqEl.checked = false;
+    placEl.value  = '';
+    sortEl.value  = '0';
+    descEl.value  = '';
+    placWrap.style.opacity = '0.4';
+    formTitle.textContent  = 'New Category';
+    formPanel.classList.remove('hidden');
+    nameEl.focus();
+  });
+
+  cancelBtn.addEventListener('click', () => formPanel.classList.add('hidden'));
+
+  // ── Edit ──────────────────────────────────────────────────────
+  function openEdit(id: number) {
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    idEl.value    = String(c.id);
+    nameEl.value  = c.name;
+    typeEl.value  = c.post_type;
+    seqEl.checked = !!c.is_sequential;
+    placEl.value  = c.placement ?? '';
+    sortEl.value  = String(c.sort_order);
+    descEl.value  = c.description ?? '';
+    placWrap.style.opacity = c.post_type === 'event' ? '1' : '0.4';
+    formTitle.textContent  = 'Edit Category';
+    formPanel.classList.remove('hidden');
+    nameEl.focus();
+  }
+
+  // ── Save ──────────────────────────────────────────────────────
+  saveBtn.addEventListener('click', async () => {
+    const name = nameEl.value.trim();
+    if (!name) { showBanner('Name is required.', 'red'); return; }
+
+    const id      = idEl.value ? parseInt(idEl.value) : null;
+    const payload = {
+      name,
+      post_type:     typeEl.value,
+      is_sequential: seqEl.checked ? 1 : 0,
+      placement:     placEl.value || null,
+      sort_order:    parseInt(sortEl.value) || 0,
+      description:   descEl.value.trim() || null,
+    };
+
+    try {
+      const url = id
+        ? `${apiBase}/api/admin/post-categories.php?id=${id}`
+        : `${apiBase}/api/admin/post-categories.php`;
+      const res = await fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Save failed');
+      formPanel.classList.add('hidden');
+      showBanner(id ? 'Category updated.' : 'Category created.', 'green');
+      await load();
+    } catch (e: any) {
+      showBanner(e.message ?? 'Save failed.', 'red');
+    }
+  });
+
+  // ── Delete ────────────────────────────────────────────────────
+  async function deleteCategory(id: number) {
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
+    if (!confirm(`Delete category "${cat.name}"? This cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`${apiBase}/api/admin/post-categories.php?id=${id}`, {
+        method: 'DELETE', credentials: 'same-origin',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Delete failed');
+      showBanner('Category deleted.', 'green');
+      await load();
+    } catch (e: any) {
+      showBanner(e.message ?? 'Delete failed.', 'red');
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function showBanner(msg: string, color: 'green' | 'red') {
+    bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-5
+      ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
+    bannerEl.textContent = msg;
+    bannerEl.classList.remove('hidden');
+    setTimeout(() => bannerEl.classList.add('hidden'), 5000);
+  }
+
+  function esc(s: string): string {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  load();
+</script>

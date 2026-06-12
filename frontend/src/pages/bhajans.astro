@@ -27,7 +27,7 @@ import PageHero from "@components/PageHero.astro";
            viewBox="0 0 24 24">
         <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
       </svg>
-      <input id="bh-search" type="text" placeholder="Search by title or ID…"
+      <input id="bh-search" type="text" placeholder="Search by Id, title or author…"
              autocorrect="off" autocapitalize="off" spellcheck="false"
              class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
       <button id="bh-search-clear"
@@ -109,6 +109,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
   type Track = {
     track_id: string;
     track_name: string;
+    author: string | null;
     category_code: string;
     display_name: string;
     audio_file_path: string;
@@ -124,6 +125,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     title:           string;   // table display: singer name on child rows, track title otherwise
     playerTitle?:    string;   // audio player / download: 'Track Title - Singer' on child rows
     subtitle:        string;   // '' or singer name on child rows
+    author:          string | null;  // only on group-head and simple rows, null on child rows
     audioPath:       string;
     downloadAllowed: number;
     mediaId:         string;
@@ -208,7 +210,8 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     filteredTracks = allTracks.filter(t => {
       // When a search query is active, ignore category — search all tracks
       const catMatch    = q !== '' || activeCat === '' || t.category_code === activeCat;
-      const searchMatch = q === '' || t.track_name.toLowerCase().includes(q) || t.track_id.toLowerCase().includes(q);
+      const searchMatch = q === '' || t.track_name.toLowerCase().includes(q) || t.track_id.toLowerCase().includes(q)
+                          || (t.author != null && t.author.toLowerCase().includes(q));
       return catMatch && searchMatch;
     });
 
@@ -249,8 +252,8 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
 
       if (hasExtras) {
         // Original track heads the group; base path stored inline, no separate row
-        rows.push({ displayId: track.track_id, title: track.track_name, subtitle: '',
-          audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+        rows.push({ displayId: track.track_id, title: track.track_name, author: track.author ?? null,
+          subtitle: '', audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
           mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
           displayName: track.display_name, isGroupHead: true, isChild: false,
           basePath: hasBase ? track.base_track_path : null, lyricsId: undefined });
@@ -258,15 +261,15 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
         singers.forEach((s, si) => {
           rows.push({ displayId: `${track.track_id}-${si + 1}`, title: s.singer,
             playerTitle: `${track.track_name} - ${s.singer}`, subtitle: '',
-            audioPath: s.audio_file_path, downloadAllowed: track.download_allowed,
+            author: null, audioPath: s.audio_file_path, downloadAllowed: track.download_allowed,
             mediaId: `${track.track_id}-${si + 1}`, lyricsPath: track.lyrics_file_path,
             displayName: s.singer, isGroupHead: false, isChild: true, basePath: null,
             lyricsId: track.track_id });
         });
       } else {
         // No extras — simple single row
-        rows.push({ displayId: track.track_id, title: track.track_name, subtitle: '',
-          audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+        rows.push({ displayId: track.track_id, title: track.track_name, author: track.author ?? null,
+          subtitle: '', audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
           mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
           displayName: track.display_name, isGroupHead: false, isChild: false,
           basePath: null, lyricsId: undefined });
@@ -291,7 +294,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
       // Inline base-track button (only on group-head rows that have a base)
       const baseBtn = row.basePath ? `
         <button class="bh-base-btn ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                       border border-brand-slate/25 text-brand-slate/50 hover:border-brand-navy
+                       border border-brand-slate/40 text-brand-slate/70 hover:border-brand-navy
                        hover:text-brand-navy text-[11px] font-medium transition-colors shrink-0"
                 data-base="${escHtml(row.basePath)}"
                 data-title="${escHtml(row.title)}"
@@ -310,7 +313,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
           </button>
         </td>
         <td class="py-2 pr-2">
-          <span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(row.displayId)}</span><span class="${row.isGroupHead ? 'font-bold' : row.isChild ? 'font-normal text-brand-navy/70' : 'font-semibold'} text-sm group-hover:text-brand-lotus transition-colors">${escHtml(row.title)}</span>${baseBtn}
+          <span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(row.displayId)}</span><span class="${row.isGroupHead ? 'font-bold' : row.isChild ? 'font-normal text-brand-navy/70' : 'font-semibold'} text-sm group-hover:text-brand-lotus transition-colors">${escHtml(row.title)}</span>${row.author ? `<span class="ml-1.5 text-xs text-brand-slate/80 font-normal">[${escHtml(row.author)}]</span>` : ''}${baseBtn}
         </td>
         <td class="py-1.5 text-right">
           <div class="inline-flex items-center justify-end gap-0.5">

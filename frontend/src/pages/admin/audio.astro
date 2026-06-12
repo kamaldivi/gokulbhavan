@@ -130,6 +130,11 @@ import AdminShell from "@layouts/AdminShell.astro";
         </div>
 
         <div>
+          <label class="au-label">Author <span class="font-normal text-brand-slate">(optional)</span></label>
+          <input id="au-trk-author" type="text" placeholder="e.g. Narottama Dasa Thakura" class="au-input w-full" />
+        </div>
+
+        <div>
           <label class="au-label">Main MP3</label>
           <div id="au-trk-audio-current" class="hidden mb-1 text-xs text-brand-slate font-mono truncate"></div>
           <input id="au-trk-audio-file" type="file" accept=".mp3,audio/mpeg" class="au-file-input w-full" />
@@ -345,6 +350,7 @@ const trackFormTitle   = document.getElementById('au-track-form-title')!;
 const trackFormError   = document.getElementById('au-track-form-error')!;
 const trkIdInput       = document.getElementById('au-trk-id') as HTMLInputElement;
 const trkNameInput     = document.getElementById('au-trk-name') as HTMLInputElement;
+const trkAuthorInput   = document.getElementById('au-trk-author') as HTMLInputElement;
 const trkAudioFile     = document.getElementById('au-trk-audio-file') as HTMLInputElement;
 const trkBaseFile      = document.getElementById('au-trk-base-file') as HTMLInputElement;
 const trkAudioCurrent    = document.getElementById('au-trk-audio-current')!;
@@ -672,7 +678,8 @@ async function openNewTrack() {
   trkIdInput.value    = '';
   trkIdInput.readOnly = false;
   trkIdInput.classList.remove('bg-brand-parchment/60');
-  trkNameInput.value  = '';
+  trkNameInput.value   = '';
+  trkAuthorInput.value = '';
   trkAudioFile.value  = '';
   trkBaseFile.value   = '';
   trkAudioCurrent.classList.add('hidden');
@@ -708,11 +715,12 @@ function openEditTrack(trackId: string) {
   }));
 
   trackFormTitle.textContent = `Edit - ${trackId}`;
-  trkIdInput.value    = trackId;
-  trkIdInput.readOnly = true;
+  trkIdInput.value     = trackId;
+  trkIdInput.readOnly  = true;
   trkIdInput.classList.add('bg-brand-parchment/60');
-  trkNameInput.value  = t.track_name;
-  trkAudioFile.value  = '';
+  trkNameInput.value   = t.track_name;
+  trkAuthorInput.value = t.author ?? '';
+  trkAudioFile.value   = '';
   trkBaseFile.value   = '';
   trkAudioCurrent.textContent = existingAudioPath;
   trkAudioCurrent.classList.remove('hidden');
@@ -889,7 +897,8 @@ async function saveTrack() {
       if (singerPath) finalSingers.push({ singer: singerName, audio_file_path: singerPath });
     }
 
-    const payload: any = { track_id: trackId, track_name: trackName, category_code: currentCat,
+    const author = trkAuthorInput.value.trim() || null;
+    const payload: any = { track_id: trackId, track_name: trackName, author, category_code: currentCat,
                             audio_file_path: audioPath, base_track_path: basePath, singers: finalSingers };
     if (isNew) {
       await apiFetch(`${apiBase}/api/admin/audio-tracks.php`, {

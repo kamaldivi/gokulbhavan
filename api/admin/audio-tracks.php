@@ -95,6 +95,7 @@ if ($method === 'GET') {
             SELECT
                 t.track_id,
                 t.track_name,
+                t.author,
                 t.category_code,
                 t.audio_file_path,
                 t.base_track_path,
@@ -148,6 +149,7 @@ $body = json_decode(file_get_contents('php://input'), true) ?? [];
 if ($method === 'POST') {
     $trackId   = strtoupper(trim($body['track_id']        ?? ''));
     $trackName = trim($body['track_name']                  ?? '');
+    $author    = trim($body['author']                      ?? '') ?: null;
     $catCode   = strtoupper(trim($body['category_code']   ?? ''));
     $audioPath = trim($body['audio_file_path']             ?? '');
     $basePath  = trim($body['base_track_path']             ?? '') ?: null;
@@ -166,12 +168,13 @@ if ($method === 'POST') {
 
         $pdo->prepare("
             INSERT INTO audio_track
-                (track_id, track_name, category_code, audio_file_path, base_track_path, lyrics_file_path)
+                (track_id, track_name, author, category_code, audio_file_path, base_track_path, lyrics_file_path)
             VALUES
-                (:id, :name, :cat, :audio, :base, :lyrics)
+                (:id, :name, :author, :cat, :audio, :base, :lyrics)
         ")->execute([
             ':id'     => $trackId,
             ':name'   => $trackName,
+            ':author' => $author,
             ':cat'    => $catCode,
             ':audio'  => $audioPath,
             ':base'   => $basePath,
@@ -212,6 +215,7 @@ if ($method === 'POST') {
 if ($method === 'PUT') {
     $trackId    = strtoupper(trim($body['track_id']       ?? ''));
     $trackName  = trim($body['track_name']                 ?? '');
+    $author     = array_key_exists('author', $body) ? (is_string($body['author']) ? (trim($body['author']) ?: null) : null) : false;
     $audioPath  = trim($body['audio_file_path'] ?? '') ?: null;
     $basePath   = array_key_exists('base_track_path',  $body) ? (is_string($body['base_track_path'])  ? (trim($body['base_track_path'])  ?: null) : null) : false;
     $lyricsPath = array_key_exists('lyrics_file_path', $body) ? (is_string($body['lyrics_file_path']) ? (trim($body['lyrics_file_path']) ?: null) : null) : false;
@@ -231,6 +235,7 @@ if ($method === 'PUT') {
         $sets   = [];
         $params = [':id' => $trackId];
         if ($trackName !== '')    { $sets[] = 'track_name = :name';          $params[':name']   = $trackName; }
+        if ($author !== false)    { $sets[] = 'author = :author';            $params[':author'] = $author; }
         if ($audioPath !== null)  { $sets[] = 'audio_file_path = :audio';    $params[':audio']  = $audioPath; }
         if ($basePath !== false)  { $sets[] = 'base_track_path = :base';     $params[':base']   = $basePath; }
         if ($lyricsPath !== false){ $sets[] = 'lyrics_file_path = :lyrics';  $params[':lyrics'] = $lyricsPath; }

@@ -1,0 +1,595 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base title="Blogs" activePath="/blogs"
+     description="Reflections, teachings, and inspiration from Gokul Bhavan Gaudiya Matha.">
+
+  <!-- ── Single post view (shown when ?slug= in URL) ───────────── -->
+  <div id="post-view" class="hidden">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+      <a id="post-back-link" href="/blogs"
+         class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors mb-6">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        Back
+      </a>
+
+      <!-- Series breadcrumb (sequential posts only) -->
+      <div id="post-series-badge" class="hidden mb-3 flex items-center gap-2">
+        <span id="post-series-name" class="text-xs font-bold uppercase tracking-widest text-brand-lotus"></span>
+        <span class="text-brand-slate/30">›</span>
+        <span id="post-episode-label" class="text-xs font-semibold text-brand-slate"></span>
+      </div>
+
+      <img id="post-cover" src="" alt="" class="hidden w-full rounded-2xl object-contain mb-6" />
+      <p id="post-meta" class="text-xs font-bold uppercase tracking-widest text-brand-lotus mb-2"></p>
+      <h1 id="post-title" class="font-display font-bold text-2xl sm:text-3xl text-brand-navy mb-4 leading-tight"></h1>
+      <p id="post-extract" class="hidden text-brand-slate text-base leading-relaxed mb-6 font-medium border-l-4 border-brand-lotus pl-4"></p>
+      <hr class="border-brand-tan mb-6" />
+      <div id="post-body" class="text-brand-slate leading-relaxed"></div>
+
+      <div id="post-media" class="hidden mt-10">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-4">Related Media</p>
+        <div id="post-media-list" class="space-y-6"></div>
+      </div>
+
+      <!-- Prev / Next navigation (sequential series) -->
+      <div id="post-nav" class="hidden mt-10 pt-6 border-t border-brand-tan flex items-center justify-between gap-4">
+        <a id="post-prev" href="#"
+           class="inline-flex items-center gap-2 text-sm font-semibold text-brand-navy hover:text-brand-lotus transition-colors">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          <span id="post-prev-label">Previous</span>
+        </a>
+        <a id="post-next" href="#"
+           class="inline-flex items-center gap-2 text-sm font-semibold text-brand-navy hover:text-brand-lotus transition-colors">
+          <span id="post-next-label">Next</span>
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Listing view (default) ────────────────────────────────── -->
+  <div id="listing-view">
+    <PageHero
+      title="Blogs"
+      description="Reflections, teachings, and inspiration from Gokul Bhavan."
+    />
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+      <!-- Category tabs — Bhajans style -->
+      <div id="bl-cat-tabs"
+           class="flex items-center gap-1 flex-wrap mb-6 bg-brand-parchment border border-brand-tan rounded-2xl p-1.5">
+        <div class="text-xs text-brand-slate/50 px-2 py-1 italic">Loading…</div>
+      </div>
+
+      <!-- Search bar (BK Blogs / date-sorted only) -->
+      <div id="bl-search-wrap" class="hidden relative mb-6">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-brand-slate pointer-events-none"
+             viewBox="0 0 24 24">
+          <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+        </svg>
+        <input id="blog-search" type="text" placeholder="Search posts by title…"
+               autocorrect="off" autocapitalize="off" spellcheck="false"
+               class="w-full pl-11 pr-10 py-3 rounded-xl border border-brand-tan bg-white text-sm text-brand-navy placeholder-brand-slate/50 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 transition" />
+        <button id="blog-search-clear"
+                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate hover:text-brand-navy text-lg leading-none">✕</button>
+      </div>
+      <p id="blog-search-summary" class="hidden text-xs font-bold uppercase tracking-widest text-brand-slate mb-5"></p>
+
+      <!-- Content area -->
+      <div id="bl-loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array(6).fill(null).map(() => (
+          <div class="rounded-2xl border border-brand-tan p-5 space-y-3 animate-pulse">
+            <div class="h-4 bg-brand-tan/60 rounded w-1/4"></div>
+            <div class="h-5 bg-brand-tan/60 rounded w-3/4"></div>
+            <div class="h-3 bg-brand-tan/40 rounded"></div>
+          </div>
+        ))}
+      </div>
+
+      <p id="bl-error" class="hidden text-sm text-red-600 py-8 text-center">Could not load posts.</p>
+
+      <!-- Grid (date-sorted categories) -->
+      <div id="bl-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+      <!-- Episode list (sequential categories) -->
+      <div id="bl-episodes" class="hidden space-y-3"></div>
+
+      <p id="bl-empty" class="hidden text-sm text-brand-slate py-10 text-center">No posts in this category yet.</p>
+
+      <!-- Show more (grid mode only) -->
+      <div id="bl-more-wrap" class="hidden mt-8 flex justify-center">
+        <button id="bl-more-btn"
+                class="inline-flex items-center gap-2 text-sm font-semibold text-brand-navy border border-brand-navy/30 hover:border-brand-navy px-6 py-2.5 rounded-full transition-colors">
+          Show more posts
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Video modal (for playlist media on post detail) -->
+  <div id="blog-video-modal"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+       role="dialog" aria-modal="true">
+    <div class="relative w-full max-w-4xl">
+      <button id="blog-modal-close"
+              class="absolute -top-10 right-0 text-white hover:text-brand-gold text-2xl font-bold leading-none">✕</button>
+      <div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl">
+        <iframe id="blog-modal-iframe" width="100%" height="100%"
+                src="" title="Video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <p id="blog-modal-title" class="text-white text-sm font-semibold mt-3 text-center px-4"></p>
+    </div>
+  </div>
+
+</Base>
+
+<style>
+  #post-body h2 { @apply text-xl font-bold text-brand-navy mt-6 mb-2; }
+  #post-body h3 { @apply text-lg font-semibold text-brand-navy mt-5 mb-2; }
+  #post-body p  { @apply mb-4; }
+  #post-body ul { @apply list-disc pl-5 mb-4 space-y-1; }
+  #post-body ol { @apply list-decimal pl-5 mb-4 space-y-1; }
+  #post-body p + ul, #post-body p + ol { margin-top: -0.5rem; }
+  #post-body blockquote { @apply border-l-4 border-brand-lotus pl-4 italic text-brand-slate/80 my-4; }
+  #post-body a      { @apply text-brand-lotus underline hover:text-brand-navy; }
+  #post-body strong { @apply font-semibold; }
+</style>
+
+<script>
+  const apiBase   = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  const urlParams = new URLSearchParams(window.location.search);
+  const slugParam = urlParams.get('slug');
+  const catParam  = urlParams.get('cat');   // active category slug from URL
+
+  // ── Video modal ───────────────────────────────────────────────
+  const modal      = document.getElementById('blog-video-modal')!;
+  const iframe     = document.getElementById('blog-modal-iframe') as HTMLIFrameElement;
+  const modalTitle = document.getElementById('blog-modal-title')!;
+
+  function openModal(videoId: string, title: string) {
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    modalTitle.textContent = title;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    iframe.src = '';
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('blog-modal-close')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
+
+  // ── Route ─────────────────────────────────────────────────────
+  if (slugParam) {
+    showPost(slugParam);
+  } else {
+    initListing();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // LISTING
+  // ════════════════════════════════════════════════════════════
+
+  type Category = { id: number; name: string; slug: string; is_sequential: number };
+  let blogCategories: Category[] = [];
+  let activeCat: Category | null = null;
+  let allPosts: any[] = [];
+  let filtered: any[] = [];
+  let shown = 0;
+  const PAGE_SIZE = 12;
+
+  const catTabsEl   = document.getElementById('bl-cat-tabs')!;
+  const searchWrap  = document.getElementById('bl-search-wrap')!;
+  const loadingEl   = document.getElementById('bl-loading')!;
+  const gridEl      = document.getElementById('bl-grid')!;
+  const episodesEl  = document.getElementById('bl-episodes')!;
+  const emptyEl     = document.getElementById('bl-empty')!;
+  const errorEl     = document.getElementById('bl-error')!;
+  const moreWrap    = document.getElementById('bl-more-wrap')!;
+
+  async function initListing() {
+    // Load blog categories
+    try {
+      const res = await fetch(`${apiBase}/api/post-categories.php?post_type=blog`);
+      if (res.ok) blogCategories = await res.json();
+    } catch {}
+
+    buildCategoryTabs();
+
+    // Activate initial category (from URL or first)
+    const initCat = blogCategories.find(c => c.slug === catParam) ?? blogCategories[0] ?? null;
+    if (initCat) selectCategory(initCat, false);
+  }
+
+  function buildCategoryTabs() {
+    catTabsEl.innerHTML = blogCategories.map(c => `
+      <button class="bl-cat-btn px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap"
+              data-slug="${esc(c.slug)}">${esc(c.name)}</button>`).join('');
+
+    catTabsEl.querySelectorAll<HTMLButtonElement>('.bl-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = blogCategories.find(c => c.slug === btn.dataset.slug);
+        if (cat) selectCategory(cat, true);
+      });
+    });
+  }
+
+  function setActiveTab(slug: string) {
+    catTabsEl.querySelectorAll<HTMLButtonElement>('.bl-cat-btn').forEach(btn => {
+      const active = btn.dataset.slug === slug;
+      btn.classList.toggle('bg-brand-navy', active);
+      btn.classList.toggle('text-white',    active);
+      btn.classList.toggle('text-brand-slate', !active);
+      btn.classList.toggle('hover:bg-white/70', !active);
+    });
+  }
+
+  async function selectCategory(cat: Category, pushState: boolean) {
+    activeCat = cat;
+    setActiveTab(cat.slug);
+
+    // Update URL
+    if (pushState) {
+      const p = new URLSearchParams(window.location.search);
+      p.set('cat', cat.slug);
+      history.pushState(null, '', `${window.location.pathname}?${p}`);
+    }
+
+    // Update search visibility
+    searchWrap.classList.toggle('hidden', !!cat.is_sequential);
+    document.getElementById('blog-search-summary')!.classList.add('hidden');
+    const searchEl = document.getElementById('blog-search') as HTMLInputElement | null;
+    if (searchEl) searchEl.value = '';
+
+    // Show loading
+    loadingEl.classList.remove('hidden');
+    gridEl.classList.add('hidden');
+    episodesEl.classList.add('hidden');
+    emptyEl.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    moreWrap.classList.add('hidden');
+
+    try {
+      const res  = await fetch(`${apiBase}/api/posts.php?type=blog&category_slug=${encodeURIComponent(cat.slug)}&per_page=200`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      allPosts = data.posts ?? [];
+    } catch {
+      loadingEl.classList.add('hidden');
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    loadingEl.classList.add('hidden');
+
+    if (!allPosts.length) {
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    if (cat.is_sequential) {
+      renderEpisodes();
+    } else {
+      filtered = allPosts;
+      shown    = 0;
+      renderGrid(true);
+      wireSearch();
+    }
+  }
+
+  // ── Grid view (date-sorted) ───────────────────────────────────
+  function renderGrid(reset: boolean) {
+    if (reset) { gridEl.innerHTML = ''; shown = 0; }
+
+    const slice = filtered.slice(shown, shown + PAGE_SIZE);
+    slice.forEach(p => gridEl.appendChild(buildCard(p)));
+    shown += slice.length;
+
+    gridEl.classList.remove('hidden');
+    episodesEl.classList.add('hidden');
+
+    const remaining = filtered.length - shown;
+    if (remaining > 0) {
+      moreWrap.classList.remove('hidden');
+      document.getElementById('bl-more-btn')!.textContent = `Show more posts (${remaining} remaining)`;
+    } else {
+      moreWrap.classList.add('hidden');
+    }
+
+    emptyEl.classList.toggle('hidden', filtered.length > 0);
+  }
+
+  document.getElementById('bl-more-btn')!.addEventListener('click', () => renderGrid(false));
+
+  function buildCard(p: any): HTMLAnchorElement {
+    const catSlug = activeCat?.slug ?? '';
+    const card    = document.createElement('a');
+    card.href      = `/blogs?slug=${encodeURIComponent(p.slug)}&cat=${encodeURIComponent(catSlug)}`;
+    card.className = 'group block rounded-2xl border border-brand-tan bg-white hover:shadow-md hover:border-brand-navy/30 transition-all overflow-hidden';
+
+    const dateStr = p.published_at
+      ? new Date(p.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+      : '';
+
+    if (p.cover_image_path) {
+      card.innerHTML = `
+        <div class="h-44 overflow-hidden">
+          <img src="${apiBase}/${esc(p.cover_image_path)}" alt="${esc(p.title)}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+        </div>
+        <div class="p-5">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-1">${esc(dateStr)}</p>
+          <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-2 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
+          ${p.extract ? `<p class="text-xs text-brand-slate/80 leading-relaxed line-clamp-3">${esc(p.extract)}</p>` : ''}
+        </div>`;
+    } else {
+      card.innerHTML = `
+        <div class="p-5">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-1">${esc(dateStr)}</p>
+          <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-2 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
+          ${p.extract ? `<p class="text-xs text-brand-slate/80 leading-relaxed">${esc(p.extract)}</p>` : ''}
+        </div>`;
+    }
+    return card;
+  }
+
+  // ── Episode list (sequential categories) ─────────────────────
+  function renderEpisodes() {
+    gridEl.classList.add('hidden');
+    episodesEl.classList.remove('hidden');
+    const catSlug = activeCat?.slug ?? '';
+
+    episodesEl.innerHTML = allPosts.map(p => {
+      const epNum = p.episode_number ? `Ep. ${p.episode_number}` : '';
+      return `
+        <a href="/blogs?slug=${encodeURIComponent(p.slug)}&cat=${encodeURIComponent(catSlug)}"
+           class="group flex items-start gap-4 rounded-xl border border-brand-tan bg-white hover:shadow-md hover:border-brand-navy/30 transition-all p-4">
+          ${epNum ? `<span class="shrink-0 w-12 text-center text-xs font-bold text-brand-navy/40 bg-brand-parchment rounded-lg py-2 mt-0.5">${esc(epNum)}</span>` : ''}
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-1 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
+            ${p.extract ? `<p class="text-xs text-brand-slate/70 leading-relaxed line-clamp-2">${esc(p.extract)}</p>` : ''}
+          </div>
+          ${p.cover_image_path ? `
+          <div class="shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-brand-tan">
+            <img src="${apiBase}/${esc(p.cover_image_path)}" alt=""
+                 class="w-full h-full object-cover" loading="lazy" />
+          </div>` : ''}
+        </a>`;
+    }).join('');
+  }
+
+  // ── Search (grid mode only) ───────────────────────────────────
+  function wireSearch() {
+    const searchEl  = document.getElementById('blog-search')       as HTMLInputElement;
+    const clearBtn  = document.getElementById('blog-search-clear')!;
+    const summaryEl = document.getElementById('blog-search-summary')!;
+
+    // Remove previous listeners by cloning
+    const newSearch = searchEl.cloneNode(true) as HTMLInputElement;
+    searchEl.parentNode!.replaceChild(newSearch, searchEl);
+    const newClear  = clearBtn.cloneNode(true) as HTMLButtonElement;
+    clearBtn.parentNode!.replaceChild(newClear, clearBtn);
+
+    function applySearch() {
+      const q = newSearch.value.trim().toLowerCase();
+      newClear.classList.toggle('hidden', q === '');
+      if (q === '') {
+        filtered = allPosts;
+        summaryEl.classList.add('hidden');
+      } else {
+        filtered = allPosts.filter(p => p.title.toLowerCase().includes(q));
+        summaryEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} for "${newSearch.value.trim()}"`;
+        summaryEl.classList.remove('hidden');
+      }
+      renderGrid(true);
+    }
+
+    newSearch.addEventListener('input', applySearch);
+    newClear.addEventListener('click', () => { newSearch.value = ''; applySearch(); newSearch.focus(); });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // SINGLE POST
+  // ════════════════════════════════════════════════════════════
+
+  async function showPost(slug: string) {
+    document.getElementById('listing-view')!.classList.add('hidden');
+    document.getElementById('post-view')!.classList.remove('hidden');
+
+    // Back link — return to the category tab if known
+    const backCat = urlParams.get('cat');
+    const backEl  = document.getElementById('post-back-link') as HTMLAnchorElement;
+    backEl.href   = backCat ? `/blogs?cat=${encodeURIComponent(backCat)}` : '/blogs';
+
+    try {
+      const res  = await fetch(`${apiBase}/api/posts.php?slug=${encodeURIComponent(slug)}`);
+      if (!res.ok) { showPostError(); return; }
+      const post = await res.json();
+
+      document.title = post.title + ' | Gokul Bhavan Gaudiya Matha';
+
+      if (post.cover_image_path) {
+        const img = document.getElementById('post-cover') as HTMLImageElement;
+        img.src = `${apiBase}/${post.cover_image_path}`;
+        img.alt = post.title;
+        img.classList.remove('hidden');
+      }
+
+      // Series breadcrumb for sequential categories
+      if (post.category_is_sequential && post.category_name) {
+        const badge = document.getElementById('post-series-badge')!;
+        document.getElementById('post-series-name')!.textContent = post.category_name;
+        document.getElementById('post-episode-label')!.textContent =
+          post.episode_number ? `Episode ${post.episode_number}` : '';
+        badge.classList.remove('hidden');
+        // Hide date meta for sequential — show episode instead
+        document.getElementById('post-meta')!.textContent = '';
+      } else {
+        const dateStr = post.published_at
+          ? new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          : '';
+        document.getElementById('post-meta')!.textContent = dateStr;
+      }
+
+      document.getElementById('post-title')!.textContent = post.title;
+
+      if (post.extract) {
+        const el = document.getElementById('post-extract')!;
+        el.textContent = post.extract;
+        el.classList.remove('hidden');
+      }
+
+      document.getElementById('post-body')!.innerHTML = post.body ?? '';
+
+      if (Array.isArray(post.media) && post.media.length > 0) {
+        await renderPostMedia(post.media);
+      }
+
+      // Prev / Next for sequential
+      if (post.category_is_sequential && post.category_slug) {
+        loadPrevNext(post.category_slug, post.episode_number, post.category_slug);
+      }
+
+    } catch { showPostError(); }
+  }
+
+  async function loadPrevNext(categorySlug: string, episodeNum: number | null, catSlugForLink: string) {
+    try {
+      const res  = await fetch(`${apiBase}/api/posts.php?type=blog&category_slug=${encodeURIComponent(categorySlug)}&per_page=200`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const posts: any[] = data.posts ?? [];
+      const idx   = posts.findIndex(p => p.episode_number === episodeNum);
+      if (idx < 0) return;
+
+      const prev = idx > 0 ? posts[idx - 1] : null;
+      const next = idx < posts.length - 1 ? posts[idx + 1] : null;
+
+      if (!prev && !next) return;
+
+      const navEl   = document.getElementById('post-nav')!;
+      const prevEl  = document.getElementById('post-prev') as HTMLAnchorElement;
+      const nextEl  = document.getElementById('post-next') as HTMLAnchorElement;
+      const prevLbl = document.getElementById('post-prev-label')!;
+      const nextLbl = document.getElementById('post-next-label')!;
+
+      if (prev) {
+        prevEl.href   = `/blogs?slug=${encodeURIComponent(prev.slug)}&cat=${encodeURIComponent(catSlugForLink)}`;
+        prevLbl.textContent = `Ep. ${prev.episode_number}: ${prev.title}`;
+      } else {
+        prevEl.classList.add('invisible');
+      }
+
+      if (next) {
+        nextEl.href   = `/blogs?slug=${encodeURIComponent(next.slug)}&cat=${encodeURIComponent(catSlugForLink)}`;
+        nextLbl.textContent = `Ep. ${next.episode_number}: ${next.title}`;
+      } else {
+        nextEl.classList.add('invisible');
+      }
+
+      navEl.classList.remove('hidden');
+    } catch {}
+  }
+
+  function showPostError() {
+    document.getElementById('post-view')!.innerHTML = `
+      <div class="max-w-3xl mx-auto px-4 py-16 text-center">
+        <p class="text-brand-slate mb-4">Post not found or unavailable.</p>
+        <a href="/blogs" class="text-brand-lotus font-semibold hover:underline">← Back to Blogs</a>
+      </div>`;
+  }
+
+  async function renderPostMedia(media: any[]) {
+    const container = document.getElementById('post-media')!;
+    const list      = document.getElementById('post-media-list')!;
+
+    for (const m of media) {
+      const el = document.createElement('div');
+
+      if (m.media_type === 'image') {
+        el.innerHTML = `
+          <img src="${apiBase}/${esc(m.media_ref)}" alt="${esc(m.caption ?? '')}"
+               class="w-full rounded-xl object-cover max-h-72" />
+          ${m.caption ? `<p class="text-xs text-brand-slate/70 mt-2 text-center">${esc(m.caption)}</p>` : ''}`;
+
+      } else if (m.media_type === 'youtube') {
+        const vid = extractYouTubeId(m.media_ref);
+        if (vid) {
+          el.innerHTML = `
+            <div class="aspect-video rounded-xl overflow-hidden">
+              <iframe class="w-full h-full" src="https://www.youtube.com/embed/${vid}"
+                      frameborder="0" allowfullscreen loading="lazy"></iframe>
+            </div>
+            ${m.caption ? `<p class="text-xs text-brand-slate/70 mt-2">${esc(m.caption)}</p>` : ''}`;
+        }
+
+      } else if (m.media_type === 'playlist') {
+        el.className = 'space-y-3';
+        if (m.caption) el.innerHTML = `<p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus">${esc(m.caption)}</p>`;
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
+        el.appendChild(gridDiv);
+        try {
+          const vres   = await fetch(`${apiBase}/api/videos.php?playlist_id=${encodeURIComponent(m.media_ref)}`);
+          const videos = vres.ok ? await vres.json() : [];
+          if (!videos.length) {
+            gridDiv.innerHTML = `<p class="text-xs text-brand-slate/60 col-span-3">No videos in this playlist.</p>`;
+          } else {
+            videos.forEach((v: any) => {
+              const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`;
+              const card  = document.createElement('div');
+              card.className = 'group rounded-xl border border-brand-tan bg-white overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition';
+              card.innerHTML = `
+                <div class="relative aspect-video bg-brand-tan">
+                  <img src="${thumb}" alt="${esc(v.title ?? '')}" class="w-full h-full object-cover" loading="lazy" />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+                    <svg class="w-12 h-12 fill-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+                <div class="p-3">
+                  <p class="font-semibold text-brand-navy text-xs leading-snug line-clamp-2">${esc(v.title ?? '')}</p>
+                </div>`;
+              card.addEventListener('click', () => openModal(v.video_id, v.title ?? ''));
+              gridDiv.appendChild(card);
+            });
+          }
+        } catch {
+          gridDiv.innerHTML = `<p class="text-xs text-red-500 col-span-3">Could not load playlist videos.</p>`;
+        }
+      } else {
+        const label = m.media_type === 'harikatha' ? 'Listen to Harikatha' : (m.caption || m.media_ref);
+        el.innerHTML = `
+          <a href="${esc(m.media_ref)}" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 text-brand-lotus hover:text-brand-navy font-semibold text-sm transition-colors">
+            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            ${esc(String(label))}
+          </a>`;
+      }
+      list.appendChild(el);
+    }
+    container.classList.remove('hidden');
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function extractYouTubeId(ref: string): string | null {
+    if (/^[\w-]{11}$/.test(ref)) return ref;
+    const m = ref.match(/(?:v=|\/embed\/|youtu\.be\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function esc(s: string): string {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>

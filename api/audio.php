@@ -76,7 +76,7 @@ try {
         $params[':category'] = $category;
     }
     if ($search !== '') {
-        $where[]           = 't.track_name LIKE :search';
+        $where[]           = '(t.track_name LIKE :search OR t.track_id LIKE :search OR t.author LIKE :search)';
         $params[':search'] = '%' . $search . '%';
     }
 
@@ -89,6 +89,7 @@ try {
             SELECT
                 t.track_id,
                 t.track_name,
+                t.author,
                 c.category_code,
                 c.category_name             AS display_name,
                 t.audio_file_path,
@@ -106,6 +107,7 @@ try {
             SELECT
                 t.track_id,
                 t.track_name,
+                t.author,
                 c.category_code,
                 c.category_name             AS display_name,
                 t.audio_file_path,

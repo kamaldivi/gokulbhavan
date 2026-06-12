@@ -6,6 +6,7 @@
  */
 import Base from "@layouts/Base.astro";
 import FeaturedVideos from "@components/FeaturedVideos.astro";
+import EventWidget from "@components/EventWidget.astro";
 ---
 
 <Base title="Home" activePath="/">
@@ -131,6 +132,9 @@ import FeaturedVideos from "@components/FeaturedVideos.astro";
     </div>
   </section>
   
+  <!-- Upcoming Events -->
+  <EventWidget placement="home" title="Upcoming Events" />
+
   <!-- Latest Videos strip -->
   <div class="max-w-6xl mx-auto px-4 sm:px-6 border-t border-brand-tan">
     <FeaturedVideos

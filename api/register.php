@@ -68,6 +68,23 @@ if (!in_array($language_pref, ['English', 'Tamil'], true)) {
     exit;
 }
 
+// ── Duplicate phone check ─────────────────────────────────────
+try {
+    $db = get_db();
+    $dup = $db->prepare("SELECT COUNT(*) FROM registration WHERE phone = :phone AND active = 1");
+    $dup->execute([':phone' => $phone]);
+    if ((int) $dup->fetchColumn() > 0) {
+        http_response_code(409);
+        echo json_encode(['message' => 'This phone number is already registered. If you need to update your details, please contact us directly.']);
+        exit;
+    }
+} catch (PDOException $e) {
+    http_response_code(500);
+    error_log('register.php duplicate check error: ' . $e->getMessage());
+    echo json_encode(['message' => 'Server error. Please try again later.']);
+    exit;
+}
+
 // ── Insert ────────────────────────────────────────────────────
 try {
     $db = get_db();

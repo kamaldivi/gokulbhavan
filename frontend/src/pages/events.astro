@@ -1,0 +1,370 @@
+---
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base title="Events" activePath="/events"
+     description="Upcoming and past events at Gokul Bhavan Gaudiya Matha — festivals, harikathās, and special gatherings.">
+
+  <!-- ── Single event view (shown when ?slug= in URL) ─────────── -->
+  <div id="event-view" class="hidden">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+      <a href="/events"
+         class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors mb-6">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        All Events
+      </a>
+
+      <!-- Event date / location band -->
+      <div id="event-header-band"
+           class="hidden rounded-2xl bg-brand-navy text-white px-6 py-5 mb-6 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 fill-white/70 shrink-0" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+          <div>
+            <p id="event-date-display" class="font-semibold text-sm"></p>
+            <p id="event-location-display" class="hidden text-xs text-white/70 mt-0.5"></p>
+          </div>
+        </div>
+      </div>
+
+      <img id="event-cover" src="" alt="" class="hidden w-full rounded-2xl object-contain mb-6" />
+      <h1 id="event-title" class="font-display font-bold text-2xl sm:text-3xl text-brand-navy mb-4 leading-tight"></h1>
+      <p id="event-extract" class="hidden text-brand-slate text-base leading-relaxed mb-6 font-medium border-l-4 border-brand-lotus pl-4"></p>
+      <hr class="border-brand-tan mb-6" />
+      <div id="event-body" class="text-brand-slate leading-relaxed"></div>
+
+      <div id="event-media" class="hidden mt-10">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-4">Related Media</p>
+        <div id="event-media-list" class="space-y-6"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Listing view ───────────────────────────────────────────── -->
+  <div id="listing-view">
+    <PageHero
+      title="Events"
+      description="Festivals, Harikathās, and special gatherings at Gokul Bhavan."
+    />
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 space-y-12">
+
+      <div id="events-loading" class="space-y-3">
+        {Array(3).fill(null).map(() => (
+          <div class="h-20 rounded-xl bg-brand-tan/40 animate-pulse"></div>
+        ))}
+      </div>
+
+      <p id="events-error" class="hidden text-sm text-red-600 py-8 text-center">
+        Could not load events. Please try again later.
+      </p>
+
+      <section id="sec-upcoming" class="hidden">
+        <div class="mb-4">
+          <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-0.5">Coming Up</p>
+          <h2 class="font-display font-bold text-xl text-brand-navy">Upcoming Events</h2>
+        </div>
+        <div id="list-upcoming" class="space-y-3"></div>
+      </section>
+
+      <section id="sec-past" class="hidden">
+        <div class="mb-4">
+          <p class="text-[11px] font-bold uppercase tracking-widest text-brand-slate/60 mb-0.5">Archive</p>
+          <h2 class="font-display font-bold text-xl text-brand-navy">Past Events</h2>
+        </div>
+        <div id="list-past" class="space-y-3"></div>
+      </section>
+
+      <p id="events-empty" class="hidden text-sm text-brand-slate py-8 text-center">No events yet.</p>
+
+    </div>
+  </div>
+
+  <!-- ── Video modal (for playlist media on event detail) ──────── -->
+  <div id="ev-video-modal"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+       role="dialog" aria-modal="true">
+    <div class="relative w-full max-w-4xl">
+      <button id="ev-modal-close"
+              class="absolute -top-10 right-0 text-white hover:text-brand-gold text-2xl font-bold leading-none">✕</button>
+      <div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl">
+        <iframe id="ev-modal-iframe" width="100%" height="100%"
+                src="" title="Video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <p id="ev-modal-title" class="text-white text-sm font-semibold mt-3 text-center px-4"></p>
+    </div>
+  </div>
+
+</Base>
+
+<style>
+  #event-body h2 { @apply text-xl font-bold text-brand-navy mt-6 mb-2; }
+  #event-body h3 { @apply text-lg font-semibold text-brand-navy mt-5 mb-2; }
+  #event-body p  { @apply mb-4; }
+  #event-body ul { @apply list-disc pl-5 mb-4 space-y-1; }
+  #event-body ol { @apply list-decimal pl-5 mb-4 space-y-1; }
+  #event-body p + ul, #event-body p + ol { margin-top: -0.5rem; }
+  #event-body blockquote { @apply border-l-4 border-brand-lotus pl-4 italic text-brand-slate/80 my-4; }
+  #event-body a      { @apply text-brand-lotus underline hover:text-brand-navy; }
+  #event-body strong { @apply font-semibold; }
+</style>
+
+<script>
+  const apiBase  = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug      = urlParams.get('slug');
+
+  // ── Video modal ───────────────────────────────────────────────
+  const modal      = document.getElementById('ev-video-modal')!;
+  const iframe     = document.getElementById('ev-modal-iframe') as HTMLIFrameElement;
+  const modalTitle = document.getElementById('ev-modal-title')!;
+
+  function openModal(videoId: string, title: string) {
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    modalTitle.textContent = title;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    iframe.src = '';
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('ev-modal-close')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── Route ─────────────────────────────────────────────────────
+  if (slug) {
+    showEvent(slug);
+  } else {
+    showListing();
+  }
+
+  // ── Single event ──────────────────────────────────────────────
+  async function showEvent(slug: string) {
+    document.getElementById('listing-view')!.classList.add('hidden');
+    document.getElementById('event-view')!.classList.remove('hidden');
+
+    try {
+      const res   = await fetch(`${apiBase}/api/posts.php?slug=${encodeURIComponent(slug)}`);
+      if (!res.ok) { showEventError(); return; }
+      const event = await res.json();
+
+      document.title = event.title + ' | Gokul Bhavan Gaudiya Matha';
+
+      if (event.event_date) {
+        const fmt = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('en-US',
+          { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const dateDp = document.getElementById('event-date-display')!;
+        dateDp.textContent = (event.event_end_date && event.event_end_date !== event.event_date)
+          ? `${fmt(event.event_date)} – ${fmt(event.event_end_date)}`
+          : fmt(event.event_date);
+
+        if (event.event_location) {
+          const locDp = document.getElementById('event-location-display')!;
+          locDp.textContent = event.event_location;
+          locDp.classList.remove('hidden');
+        }
+        document.getElementById('event-header-band')!.classList.remove('hidden');
+      }
+
+      if (event.cover_image_path) {
+        const img = document.getElementById('event-cover') as HTMLImageElement;
+        img.src = `${apiBase}/${event.cover_image_path}`;
+        img.alt = event.title;
+        img.classList.remove('hidden');
+      }
+
+      document.getElementById('event-title')!.textContent = event.title;
+
+      if (event.extract) {
+        const el = document.getElementById('event-extract')!;
+        el.textContent = event.extract;
+        el.classList.remove('hidden');
+      }
+
+      document.getElementById('event-body')!.innerHTML = event.body ?? '';
+
+      if (Array.isArray(event.media) && event.media.length > 0) {
+        await renderMedia(event.media);
+      }
+
+    } catch { showEventError(); }
+  }
+
+  function showEventError() {
+    document.getElementById('event-view')!.innerHTML = `
+      <div class="max-w-3xl mx-auto px-4 py-16 text-center">
+        <p class="text-brand-slate mb-4">Event not found or unavailable.</p>
+        <a href="/events" class="text-brand-lotus font-semibold hover:underline">← All Events</a>
+      </div>`;
+  }
+
+  async function renderMedia(media: any[]) {
+    const container = document.getElementById('event-media')!;
+    const list      = document.getElementById('event-media-list')!;
+
+    for (const m of media) {
+      const el = document.createElement('div');
+
+      if (m.media_type === 'image') {
+        el.innerHTML = `
+          <img src="${apiBase}/${m.media_ref}" alt="${esc(m.caption ?? '')}"
+               class="w-full rounded-xl object-cover max-h-72" />
+          ${m.caption ? `<p class="text-xs text-brand-slate/70 mt-2 text-center">${esc(m.caption)}</p>` : ''}`;
+
+      } else if (m.media_type === 'youtube') {
+        const vid = extractYouTubeId(m.media_ref);
+        if (vid) {
+          el.innerHTML = `
+            <div class="aspect-video rounded-xl overflow-hidden">
+              <iframe class="w-full h-full" src="https://www.youtube.com/embed/${vid}"
+                      frameborder="0" allowfullscreen loading="lazy"></iframe>
+            </div>
+            ${m.caption ? `<p class="text-xs text-brand-slate/70 mt-2">${esc(m.caption)}</p>` : ''}`;
+        }
+
+      } else if (m.media_type === 'playlist') {
+        el.className = 'space-y-3';
+        if (m.caption) {
+          el.innerHTML = `<p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus">${esc(m.caption)}</p>`;
+        }
+        const gridEl = document.createElement('div');
+        gridEl.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
+        el.appendChild(gridEl);
+
+        try {
+          const vres   = await fetch(`${apiBase}/api/videos.php?playlist_id=${encodeURIComponent(m.media_ref)}`);
+          const videos = vres.ok ? await vres.json() : [];
+          if (videos.length === 0) {
+            gridEl.innerHTML = `<p class="text-xs text-brand-slate/60 col-span-3">No videos in this playlist.</p>`;
+          } else {
+            videos.forEach((v: any) => {
+              const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg`;
+              const card  = document.createElement('div');
+              card.className = 'group rounded-xl border border-brand-tan bg-white overflow-hidden cursor-pointer hover:border-brand-navy hover:shadow-md transition';
+              card.innerHTML = `
+                <div class="relative aspect-video bg-brand-tan">
+                  <img src="${thumb}" alt="${esc(v.title ?? '')}" class="w-full h-full object-cover" loading="lazy" />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition">
+                    <svg class="w-12 h-12 fill-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+                <div class="p-3">
+                  <p class="font-semibold text-brand-navy text-xs leading-snug line-clamp-2">${esc(v.title ?? '')}</p>
+                  <p class="text-[10px] text-brand-slate mt-1">${esc(v.category ?? '')}</p>
+                </div>`;
+              card.addEventListener('click', () => openModal(v.video_id, v.title ?? ''));
+              gridEl.appendChild(card);
+            });
+          }
+        } catch {
+          gridEl.innerHTML = `<p class="text-xs text-red-500 col-span-3">Could not load playlist videos.</p>`;
+        }
+
+      } else {
+        const label = m.media_type === 'harikatha' ? 'Listen to Harikatha' : (m.caption || m.media_ref);
+        el.innerHTML = `
+          <a href="${esc(m.media_ref)}" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 text-brand-lotus hover:text-brand-navy font-semibold text-sm transition-colors">
+            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            ${esc(String(label))}
+          </a>`;
+      }
+
+      list.appendChild(el);
+    }
+
+    container.classList.remove('hidden');
+  }
+
+  // ── Listing ───────────────────────────────────────────────────
+  async function showListing() {
+    try {
+      const [upRes, allRes] = await Promise.all([
+        fetch(`${apiBase}/api/posts.php?type=event&upcoming=1&per_page=50`),
+        fetch(`${apiBase}/api/posts.php?type=event&per_page=50`),
+      ]);
+      const upData  = upRes.ok  ? await upRes.json()  : { posts: [] };
+      const allData = allRes.ok ? await allRes.json() : { posts: [] };
+
+      document.getElementById('events-loading')!.classList.add('hidden');
+
+      const today    = new Date().toISOString().slice(0, 10);
+      const upcoming = (upData.posts  ?? []).filter((p: any) => p.event_date >= today);
+      const past     = (allData.posts ?? []).filter((p: any) => !p.event_date || p.event_date < today);
+
+      if (upcoming.length === 0 && past.length === 0) {
+        document.getElementById('events-empty')!.classList.remove('hidden');
+        return;
+      }
+      if (upcoming.length > 0) {
+        renderEventList(upcoming, 'list-upcoming');
+        document.getElementById('sec-upcoming')!.classList.remove('hidden');
+      }
+      if (past.length > 0) {
+        renderEventList(past, 'list-past');
+        document.getElementById('sec-past')!.classList.remove('hidden');
+      }
+    } catch {
+      document.getElementById('events-loading')!.classList.add('hidden');
+      document.getElementById('events-error')!.classList.remove('hidden');
+    }
+  }
+
+  function renderEventList(events: any[], containerId: string) {
+    const container = document.getElementById(containerId)!;
+    const today     = new Date().toISOString().slice(0, 10);
+
+    events.forEach(e => {
+      const isPast  = e.event_date && e.event_date < today;
+      const dateStr = e.event_date
+        ? new Date(e.event_date + 'T00:00:00').toLocaleDateString('en-US',
+            { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+        : '';
+
+      const card = document.createElement('a');
+      card.href      = `/events?slug=${encodeURIComponent(e.slug)}`;
+      card.className = `group flex items-center gap-4 rounded-xl border border-brand-tan bg-white px-5 py-4 hover:shadow-md hover:border-brand-navy/30 transition-all ${isPast ? 'opacity-75' : ''}`;
+
+      const coverHtml = e.cover_image_path
+        ? `<img src="${apiBase}/${e.cover_image_path}" alt="${esc(e.title)}"
+               class="w-16 h-16 rounded-xl object-cover shrink-0" loading="lazy" />`
+        : `<div class="w-16 h-16 rounded-xl bg-brand-parchment flex items-center justify-center shrink-0">
+             <svg class="w-6 h-6 fill-brand-tan" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5C3.9 4 3 4.9 3 6v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+           </div>`;
+
+      card.innerHTML = `
+        ${coverHtml}
+        <div class="flex-1 min-w-0">
+          <h3 class="font-semibold text-brand-navy text-sm group-hover:text-brand-lotus transition-colors mb-0.5 leading-snug">
+            ${esc(e.title)}
+          </h3>
+          <p class="text-xs text-brand-slate/70">
+            ${dateStr ? esc(dateStr) : ''}${e.event_location ? ' · ' + esc(e.event_location) : ''}
+          </p>
+          ${e.extract ? `<p class="text-xs text-brand-slate/60 mt-1 leading-relaxed line-clamp-2">${esc(e.extract)}</p>` : ''}
+        </div>
+        <svg class="w-4 h-4 fill-brand-slate/30 group-hover:fill-brand-navy transition-colors shrink-0" viewBox="0 0 24 24">
+          <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+        </svg>`;
+
+      container.appendChild(card);
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function extractYouTubeId(ref: string): string | null {
+    if (/^[\w-]{11}$/.test(ref)) return ref;
+    const m = ref.match(/(?:v=|\/embed\/|youtu\.be\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function esc(s: string): string {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>

@@ -1,0 +1,914 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Post Editor" activePath="/admin/posts">
+
+  <!-- Banner -->
+  <div id="pe-banner" class="hidden mb-5 rounded-lg px-4 py-3 text-sm text-center font-semibold"></div>
+
+  <!-- Header row -->
+  <div class="flex items-center justify-between mb-6">
+    <a href="/admin/posts" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Back to Posts
+    </a>
+    <div class="flex items-center gap-3">
+      <span id="pe-saving" class="hidden text-xs text-brand-slate">Saving…</span>
+      <button id="pe-save-btn" class="btn-save">Save Post</button>
+    </div>
+  </div>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- ── Post Type + Status ──────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white px-6 py-5 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-brand-slate mb-2">Post Type</p>
+          <div class="flex rounded-lg border border-brand-tan overflow-hidden text-xs font-bold">
+            <button type="button" id="type-blog"
+                    class="flex-1 py-2 bg-brand-navy text-white transition-colors">Blog</button>
+            <button type="button" id="type-event"
+                    class="flex-1 py-2 bg-white text-brand-slate hover:bg-brand-parchment transition-colors">Event</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-2" for="pe-status">
+            Status
+          </label>
+          <select id="pe-status"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus bg-white">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-2" for="pe-published-at">
+            Publish Date <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+          </label>
+          <input id="pe-published-at" type="date"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+
+      </div>
+
+      <!-- Category + Episode (always shown for blog; event fields below) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-category">
+            Category <span class="text-brand-lotus">*</span>
+          </label>
+          <select id="pe-category"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus bg-white">
+            <option value="">— select category —</option>
+          </select>
+        </div>
+        <div id="pe-episode-wrap" class="hidden">
+          <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-episode-number">
+            Episode Number
+          </label>
+          <input id="pe-episode-number" type="number" min="1" max="999" placeholder="1"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+        </div>
+      </div>
+
+      <!-- Event fields (shown when type=event) -->
+      <div id="event-fields" class="hidden space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-event-date">
+              Event Date
+            </label>
+            <input id="pe-event-date" type="date"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-event-end-date">
+              End Date <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+            </label>
+            <input id="pe-event-end-date" type="date"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-event-location">
+              Location <span class="text-brand-slate/50 normal-case font-normal">(optional)</span>
+            </label>
+            <input id="pe-event-location" type="text" placeholder="e.g. Zoom / New York"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Title + Slug ───────────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white px-6 py-5 space-y-4">
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-title">
+          Title <span class="text-brand-lotus">*</span>
+        </label>
+        <input id="pe-title" type="text" required
+               class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-slug">
+          Slug <span class="text-brand-slate/50 normal-case font-normal">(auto-generated from title; edit if needed)</span>
+        </label>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-brand-slate/50 shrink-0">/blogs/</span>
+          <input id="pe-slug" type="text"
+                 class="flex-1 px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus font-mono" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-brand-slate mb-1.5" for="pe-extract">
+          Extract <span class="text-brand-slate/50 normal-case font-normal">(short summary shown in listings)</span>
+        </label>
+        <textarea id="pe-extract" rows="3"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-brand-tan focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"></textarea>
+      </div>
+
+    </div>
+
+    <!-- ── Cover Image ────────────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white px-6 py-5">
+      <p class="text-xs font-bold uppercase tracking-wider text-brand-slate mb-3">Cover Image</p>
+      <div class="flex items-start gap-4">
+        <div id="cover-preview" class="hidden w-32 h-20 rounded-lg overflow-hidden border border-brand-tan shrink-0">
+          <img id="cover-img" src="" alt="Cover" class="w-full h-full object-cover" />
+        </div>
+        <div class="flex-1 space-y-2">
+          <div id="cover-upload-zone"
+               class="border-2 border-dashed border-brand-tan rounded-lg px-4 py-6 text-center cursor-pointer hover:border-brand-navy transition-colors">
+            <p class="text-xs text-brand-slate" id="cover-upload-label">
+              Click to upload a cover image · Landscape only · min 800×400 px · recommended 1200×630 px · JPEG / WebP / PNG · max 5 MB
+            </p>
+            <p id="cover-needs-save" class="hidden text-xs text-amber-600 mt-1">
+              Save the post first to enable image upload.
+            </p>
+          </div>
+          <input id="cover-file-input" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" />
+          <button id="cover-remove-btn" class="hidden text-xs text-red-600 hover:text-red-800 font-semibold transition-colors">
+            Remove cover image
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Body ──────────────────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white px-6 py-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-slate">Body</p>
+        <button id="llm-prompt-toggle" type="button"
+                class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-slate/60 hover:text-brand-navy transition-colors">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
+          LLM Formatting Prompt
+          <svg id="llm-prompt-chevron" class="w-3 h-3 fill-current transition-transform" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+      </div>
+
+      <!-- LLM prompt panel (collapsed by default) -->
+      <div id="llm-prompt-panel" class="hidden mb-4 rounded-lg border border-brand-navy/20 bg-brand-navy/5 overflow-hidden">
+        <div class="px-4 py-3 border-b border-brand-navy/10 flex items-center justify-between gap-3">
+          <p class="text-[11px] text-brand-navy/70 font-medium leading-snug">
+            Copy this prompt, paste it into any LLM (ChatGPT, Claude, etc.), then add your raw text at the end.
+            The output can be pasted directly into <strong>HTML Source</strong> mode or the visual editor.
+          </p>
+          <button id="llm-prompt-copy" type="button"
+                  class="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-navy border border-brand-navy/30 hover:border-brand-navy px-3 py-1.5 rounded-md transition-colors whitespace-nowrap">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11z"/></svg>
+            Copy Prompt
+          </button>
+        </div>
+        <pre id="llm-prompt-text"
+             class="px-4 py-3 text-[11px] text-brand-navy/80 font-mono leading-relaxed whitespace-pre-wrap select-all overflow-x-auto">Format the following text as clean HTML for a devotional website.
+
+ALLOWED TAGS — use only these:
+  &lt;h2&gt;, &lt;h3&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;blockquote&gt;, &lt;a href="..."&gt;
+
+FORBIDDEN — do not use under any circumstances:
+  &lt;div&gt;, &lt;span&gt;, &lt;table&gt;, &lt;br&gt;, inline styles, CSS classes, or any other tags
+
+STRUCTURE:
+  - Use &lt;h2&gt; for major sections, &lt;h3&gt; for sub-sections
+  - Use &lt;ul&gt; for unordered lists, &lt;ol&gt; for numbered/sequential lists
+  - Use &lt;blockquote&gt; for scripture verses, quotes, or highlighted excerpts
+  - Place list-introductory sentences (e.g. "These include:") in the same &lt;p&gt; as
+    any following sentence — do not isolate them as a standalone &lt;p&gt; before a list
+
+SPACING:
+  - Write tags on consecutive lines — no blank lines between HTML elements
+  - Do not add any whitespace-only lines anywhere in the output
+
+TEXT CORRECTIONS:
+  - Fix spelling, grammar, and punctuation
+  - Apply correct IAST diacritical marks to all Sanskrit and Bengali terms.
+    Always correct these common errors:
+      Krishna / Krsna  → Kṛṣṇa       Radha / Rada     → Rādhā
+      maya             → māyā         dhama / dham     → dhāma
+      sadhana          → sādhana      sadhu            → sādhu
+      sanga / sangha   → saṅga        seva             → sevā
+      Srimad           → Śrīmad       Bhagavatam       → Bhāgavatam
+      Gita             → Gītā         kirtan / kirtana → kīrtana
+      Vaishnava        → Vaiṣṇava     Gaudiya          → Gauḍīya
+      acharya          → ācārya       sastra / shastra → śāstra
+      nama             → nāma         Mahaprabhu       → Mahāprabhu
+
+OUTPUT:
+  - Output HTML only — no explanations, no markdown, no code fences
+  - Begin the response immediately with the first HTML tag
+
+Text to format:
+</pre>
+      </div>
+
+      <!-- Mode toggle -->
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] text-brand-slate/50">Visual editor</p>
+        <button id="pe-source-toggle" type="button"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate border border-brand-tan hover:border-brand-navy hover:text-brand-navy px-3 py-1 rounded-md transition-colors">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+          HTML Source
+        </button>
+      </div>
+
+      <!-- Visual mode: Quill -->
+      <div id="pe-body-wrapper" class="rounded-lg border border-brand-tan overflow-hidden">
+        <div id="pe-body-editor" class="min-h-[300px] text-sm"></div>
+      </div>
+
+      <!-- Source mode: raw HTML textarea (hidden by default) -->
+      <div id="pe-source-wrapper" class="hidden">
+        <div class="rounded-t-lg bg-amber-50 border border-amber-200 px-3 py-2 flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 fill-amber-500 shrink-0" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          <p class="text-xs text-amber-700 font-medium">
+            Switching back to Visual will let Quill re-parse the HTML — complex tags may be simplified. Save directly from Source mode to preserve HTML as-is.
+          </p>
+        </div>
+        <textarea id="pe-body-source"
+                  class="w-full rounded-b-lg border border-t-0 border-brand-tan px-4 py-3 text-xs font-mono leading-relaxed min-h-[300px] focus:outline-none focus:ring-2 focus:ring-brand-lotus resize-y"
+                  placeholder="Paste or type HTML here…"></textarea>
+      </div>
+    </div>
+
+    <!-- ── Media Attachments ──────────────────────────────────── -->
+    <div class="rounded-xl border border-brand-tan bg-white px-6 py-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-slate">Media Attachments</p>
+        <button id="add-media-btn" type="button"
+                class="inline-flex items-center gap-1 text-xs font-semibold text-brand-navy border border-brand-navy/30 hover:border-brand-navy px-3 py-1.5 rounded-md transition-colors">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add Media
+        </button>
+      </div>
+      <div id="media-rows" class="space-y-3"></div>
+      <p id="media-empty" class="text-xs text-brand-slate/50 text-center py-4">No media attached.</p>
+
+      <!-- Playlist typeahead data (hidden) -->
+      <div id="playlist-data" class="hidden"></div>
+    </div>
+
+  </div>
+
+</AdminShell>
+
+<style>
+  /* Strip Quill Snow's default outer borders — our wrapper div provides them */
+  #pe-body-wrapper .ql-toolbar.ql-snow  { border: none; border-bottom: 1px solid #e5e0d8; background: #faf8f4; }
+  #pe-body-wrapper .ql-container.ql-snow { border: none; }
+  #pe-body-wrapper .ql-editor { min-height: 300px; font-size: 0.875rem; }
+  #pe-body-wrapper .ql-toolbar.ql-snow .ql-formats button,
+  #pe-body-wrapper .ql-toolbar.ql-snow .ql-formats .ql-picker { color: #334155; }
+  #pe-body-wrapper .ql-toolbar.ql-snow .ql-formats button:hover { color: #c084a0; }
+</style>
+
+<!-- Quill Snow CSS (loaded inline via JS to avoid hoisting issues) -->
+<script is:inline>
+  (function() {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.quilljs.com/1.3.7/quill.snow.css';
+    document.head.appendChild(link);
+  })();
+</script>
+
+<script>
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+  // ── State ─────────────────────────────────────────────────────
+  let postId: number | null = null;
+  let isEvent = false;
+  let quill: any = null;
+  let sourceMode = false;
+  let playlists:  { playlist_id: string; playlist_name: string; category_name: string }[] = [];
+  let categories: { id: number; name: string; slug: string; post_type: string; is_sequential: number; placement: string | null }[] = [];
+  let mediaItems: MediaItem[] = [];
+
+  type MediaItem = {
+    _key: string;
+    media_type: 'image' | 'youtube' | 'playlist' | 'harikatha' | 'link';
+    media_ref: string;
+    caption: string;
+    sort_order: number;
+  };
+
+  // ── DOM refs ──────────────────────────────────────────────────
+  const bannerEl       = document.getElementById('pe-banner')!;
+  const savingEl       = document.getElementById('pe-saving')!;
+  const titleEl        = document.getElementById('pe-title')    as HTMLInputElement;
+  const slugEl         = document.getElementById('pe-slug')     as HTMLInputElement;
+  const extractEl      = document.getElementById('pe-extract')  as HTMLTextAreaElement;
+  const statusEl       = document.getElementById('pe-status')   as HTMLSelectElement;
+  const publishedAtEl  = document.getElementById('pe-published-at')   as HTMLInputElement;
+  const categoryEl     = document.getElementById('pe-category')       as HTMLSelectElement;
+  const episodeWrapEl  = document.getElementById('pe-episode-wrap')!;
+  const episodeNumEl   = document.getElementById('pe-episode-number') as HTMLInputElement;
+  const eventFieldsEl  = document.getElementById('event-fields')!;
+  const eventDateEl    = document.getElementById('pe-event-date')     as HTMLInputElement;
+  const eventEndEl     = document.getElementById('pe-event-end-date') as HTMLInputElement;
+  const eventLocEl     = document.getElementById('pe-event-location') as HTMLInputElement;
+
+  const coverPreviewEl  = document.getElementById('cover-preview')!;
+  const coverImgEl      = document.getElementById('cover-img')     as HTMLImageElement;
+  const coverUploadZone = document.getElementById('cover-upload-zone')!;
+  const coverUploadLbl  = document.getElementById('cover-upload-label')!;
+  const coverNeedsSave  = document.getElementById('cover-needs-save')!;
+  const coverFileInput  = document.getElementById('cover-file-input') as HTMLInputElement;
+  const coverRemoveBtn  = document.getElementById('cover-remove-btn')!;
+
+  const mediaRowsEl   = document.getElementById('media-rows')!;
+  const mediaEmptyEl  = document.getElementById('media-empty')!;
+
+  // ── URL params ────────────────────────────────────────────────
+  const params    = new URLSearchParams(window.location.search);
+  const editId    = params.get('id') ? parseInt(params.get('id')!) : null;
+  const typeParam = params.get('type') ?? 'blog';
+
+  // ── Init ──────────────────────────────────────────────────────
+  async function init() {
+    await loadQuill();
+    await Promise.all([loadPlaylists(), loadCategories()]);
+
+    if (editId) {
+      await loadPost(editId);
+    } else {
+      setType(typeParam === 'event');
+    }
+
+    // Auto-generate slug from title (debounced, only when slug is untouched or matches previous title)
+    let lastAutoSlug = '';
+    titleEl.addEventListener('input', () => {
+      const auto = toSlug(titleEl.value);
+      if (slugEl.value === '' || slugEl.value === lastAutoSlug) {
+        slugEl.value  = auto;
+        lastAutoSlug  = auto;
+      }
+    });
+  }
+
+  // ── Load Quill from CDN ───────────────────────────────────────
+  function loadQuill(): Promise<void> {
+    if ((window as any).Quill) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s   = document.createElement('script');
+      s.src     = 'https://cdn.quilljs.com/1.3.7/quill.js';
+      s.onload  = () => {
+        // Pass the toolbar as an array — Quill renders its own SVG icons correctly
+        quill = new (window as any).Quill('#pe-body-editor', {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ header: 2 }, { header: 3 }],
+              [{ list: 'ordered' }, { list: 'bullet' }],
+              ['blockquote', 'link'],
+              ['clean'],
+            ],
+          },
+        });
+        resolve();
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  // ── Load post for editing ─────────────────────────────────────
+  async function loadPost(id: number) {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/posts.php?id=${id}`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      const p = await res.json();
+
+      postId = p.id;
+      setType(p.post_type === 'event');
+      titleEl.value     = p.title       ?? '';
+      slugEl.value      = p.slug        ?? '';
+      extractEl.value   = p.extract     ?? '';
+      statusEl.value    = p.status      ?? 'draft';
+      // published_at from DB is "YYYY-MM-DD HH:MM:SS" — take the date part
+      publishedAtEl.value = p.published_at ? p.published_at.slice(0, 10) : '';
+      eventDateEl.value = p.event_date  ?? '';
+      eventEndEl.value  = p.event_end_date  ?? '';
+      eventLocEl.value  = p.event_location  ?? '';
+
+      // Category + episode
+      if (p.category_id) populateCategoryDropdown(p.category_id);
+      if (p.episode_number) episodeNumEl.value = String(p.episode_number);
+
+      if (p.body && quill) {
+        quill.clipboard.dangerouslyPasteHTML(p.body);
+      }
+
+      if (p.cover_image_path) {
+        setCoverPath(p.cover_image_path);
+      }
+
+      // Load media items
+      if (Array.isArray(p.media)) {
+        p.media.forEach((m: any) => addMediaRow(m.media_type, m.media_ref, m.caption ?? '', m.sort_order));
+      }
+
+      enableCoverUpload();
+
+    } catch {
+      showBanner('Failed to load post. Please try again.', 'red');
+    }
+  }
+
+  // ── Playlists ─────────────────────────────────────────────────
+  async function loadPlaylists() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/video-library.php?playlists=1`, { credentials: 'same-origin' });
+      if (res.ok) playlists = await res.json();
+    } catch {}
+  }
+
+  // ── Categories ────────────────────────────────────────────────
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/post-categories.php`, { credentials: 'same-origin' });
+      if (res.ok) categories = await res.json();
+    } catch {}
+    populateCategoryDropdown();
+  }
+
+  function populateCategoryDropdown(selectedId?: number) {
+    const forType = isEvent ? 'event' : 'blog';
+    const filtered = categories.filter(c => c.post_type === forType);
+    categoryEl.innerHTML = '<option value="">— select category —</option>' +
+      filtered.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    updateEpisodeField();
+  }
+
+  function updateEpisodeField() {
+    const selId = parseInt(categoryEl.value);
+    const cat   = categories.find(c => c.id === selId);
+    episodeWrapEl.classList.toggle('hidden', !(cat?.is_sequential));
+  }
+
+  categoryEl.addEventListener('change', updateEpisodeField);
+
+  // ── Post type toggle ──────────────────────────────────────────
+  function setType(event: boolean) {
+    isEvent = event;
+    eventFieldsEl.classList.toggle('hidden', !event);
+    const blogBtn  = document.getElementById('type-blog')!;
+    const eventBtn = document.getElementById('type-event')!;
+    blogBtn.className  = `flex-1 py-2 transition-colors ${!event ? 'bg-brand-navy text-white' : 'bg-white text-brand-slate hover:bg-brand-parchment'}`;
+    eventBtn.className = `flex-1 py-2 transition-colors ${event  ? 'bg-brand-navy text-white' : 'bg-white text-brand-slate hover:bg-brand-parchment'}`;
+    populateCategoryDropdown(); // refresh dropdown for new type
+  }
+  document.getElementById('type-blog')!.addEventListener('click',  () => setType(false));
+  document.getElementById('type-event')!.addEventListener('click', () => setType(true));
+
+  // Auto-fill publish date with today when switching to "published" (only if currently blank)
+  statusEl.addEventListener('change', () => {
+    if (statusEl.value === 'published' && !publishedAtEl.value) {
+      publishedAtEl.value = new Date().toISOString().slice(0, 10);
+    }
+  });
+
+  // ── Cover image ───────────────────────────────────────────────
+  let coverPath: string | null = null;
+
+  function setCoverPath(path: string | null) {
+    coverPath = path;
+    if (path) {
+      const base   = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+      coverImgEl.src = `${base}/${path}`;
+      coverPreviewEl.classList.remove('hidden');
+      coverUploadLbl.textContent = 'Click to replace cover image';
+      coverRemoveBtn.classList.remove('hidden');
+    } else {
+      coverPreviewEl.classList.add('hidden');
+      coverRemoveBtn.classList.add('hidden');
+      coverUploadLbl.textContent = 'Click to upload a cover image · Landscape only · min 800×400 px · recommended 1200×630 px · JPEG / WebP / PNG · max 5 MB';
+    }
+  }
+
+  function enableCoverUpload() {
+    coverNeedsSave.classList.add('hidden');
+    coverUploadZone.classList.remove('opacity-50', 'cursor-not-allowed');
+    coverUploadZone.classList.add('cursor-pointer');
+  }
+
+  function disableCoverUpload() {
+    coverNeedsSave.classList.remove('hidden');
+    coverUploadZone.classList.add('opacity-50', 'cursor-not-allowed');
+    coverUploadZone.classList.remove('cursor-pointer');
+  }
+
+  coverUploadZone.addEventListener('click', () => {
+    if (!postId) return; // guarded by disableCoverUpload
+    coverFileInput.click();
+  });
+
+  coverFileInput.addEventListener('change', async () => {
+    const file = coverFileInput.files?.[0];
+    if (!file || !postId) return;
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('post_id', String(postId));
+    fd.append('slot', 'cover');
+    fd.append('slug', slugEl.value.trim());
+
+    coverUploadLbl.textContent = 'Uploading…';
+    try {
+      const res = await fetch(`${apiBase}/api/admin/post-upload.php`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Upload failed');
+      setCoverPath(data.path);
+      showBanner('Cover image uploaded.', 'green');
+    } catch (e: any) {
+      showBanner(e.message ?? 'Upload failed.', 'red');
+      coverUploadLbl.textContent = 'Click to upload a cover image · Landscape only · min 800×400 px · recommended 1200×630 px';
+    }
+    coverFileInput.value = '';
+  });
+
+  coverRemoveBtn.addEventListener('click', () => {
+    setCoverPath(null);
+  });
+
+  // New posts: disable cover upload until saved
+  if (!editId) disableCoverUpload();
+
+  // ── Media rows ────────────────────────────────────────────────
+  const MEDIA_LABELS: Record<string, string> = {
+    youtube:   'YouTube Video URL or ID',
+    playlist:  'Playlist name',
+    harikatha: 'Harikatha URL',
+    link:      'URL',
+    image:     'Image',
+  };
+
+  function addMediaRow(
+    type: string = 'youtube',
+    ref: string  = '',
+    caption: string = '',
+    order: number = mediaItems.length
+  ) {
+    const key = `media-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    mediaItems.push({ _key: key, media_type: type as any, media_ref: ref, caption, sort_order: order });
+
+    const row = document.createElement('div');
+    row.dataset.key = key;
+    row.className   = 'flex items-start gap-3 p-3 rounded-lg border border-brand-tan bg-brand-parchment/30';
+
+    row.innerHTML = `
+      <div class="flex-1 grid grid-cols-1 sm:grid-cols-[180px_1fr_1fr] gap-2">
+        <select class="media-type-sel px-2 py-1.5 text-xs rounded-md border border-brand-tan focus:outline-none focus:ring-1 focus:ring-brand-lotus bg-white">
+          <option value="youtube"   ${type==='youtube'   ? 'selected':''}>YouTube</option>
+          <option value="playlist"  ${type==='playlist'  ? 'selected':''}>Playlist</option>
+          <option value="harikatha" ${type==='harikatha' ? 'selected':''}>Harikatha</option>
+          <option value="link"      ${type==='link'      ? 'selected':''}>Link</option>
+          <option value="image"     ${type==='image'     ? 'selected':''}>Image</option>
+        </select>
+        <div class="media-ref-container relative">
+          <!-- ref input or upload zone injected by buildRefInput() -->
+        </div>
+        <input class="media-caption-input px-2 py-1.5 text-xs rounded-md border border-brand-tan focus:outline-none focus:ring-1 focus:ring-brand-lotus"
+               type="text" placeholder="Caption (optional)" value="${esc(caption)}" />
+      </div>
+      <button class="media-delete-btn shrink-0 mt-1 text-brand-slate/50 hover:text-red-600 transition-colors" aria-label="Remove">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>`;
+
+    const typeSel   = row.querySelector<HTMLSelectElement>('.media-type-sel')!;
+    const refCont   = row.querySelector<HTMLDivElement>('.media-ref-container')!;
+    const captionIn = row.querySelector<HTMLInputElement>('.media-caption-input')!;
+    const delBtn    = row.querySelector<HTMLButtonElement>('.media-delete-btn')!;
+
+    buildRefInput(refCont, typeSel.value, ref, key);
+
+    typeSel.addEventListener('change', () => {
+      updateMediaItem(key, 'media_type', typeSel.value);
+      updateMediaItem(key, 'media_ref', '');
+      buildRefInput(refCont, typeSel.value, '', key);
+    });
+
+    captionIn.addEventListener('input', () => updateMediaItem(key, 'caption', captionIn.value));
+
+    delBtn.addEventListener('click', () => {
+      mediaItems = mediaItems.filter(m => m._key !== key);
+      row.remove();
+      renderMediaEmpty();
+    });
+
+    mediaRowsEl.appendChild(row);
+    renderMediaEmpty();
+  }
+
+  function buildRefInput(container: HTMLDivElement, type: string, value: string, key: string) {
+    container.innerHTML = '';
+
+    if (type === 'image') {
+      if (!postId) {
+        container.innerHTML = `<p class="text-[11px] text-amber-600 pt-1.5">Save post first to upload images.</p>`;
+        return;
+      }
+      const label = document.createElement('label');
+      label.className = 'flex items-center gap-2 cursor-pointer';
+      label.innerHTML = `
+        <span class="text-xs text-brand-slate truncate max-w-[140px]">${value ? value.split('/').pop() : 'Choose image…'}</span>
+        <span class="text-xs font-semibold text-brand-navy border border-brand-navy/30 hover:border-brand-navy px-2 py-1 rounded transition-colors">Browse</span>`;
+      const fi = document.createElement('input');
+      fi.type   = 'file';
+      fi.accept = 'image/jpeg,image/png,image/webp';
+      fi.className = 'hidden';
+      fi.addEventListener('change', async () => {
+        const file = fi.files?.[0];
+        if (!file || !postId) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('post_id', String(postId));
+        fd.append('slot', 'media');
+        label.querySelector('span')!.textContent = 'Uploading…';
+        try {
+          const res  = await fetch(`${apiBase}/api/admin/post-upload.php`, { method: 'POST', body: fd, credentials: 'same-origin' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+          updateMediaItem(key, 'media_ref', data.path);
+          label.querySelector('span')!.textContent = data.path.split('/').pop();
+          showBanner('Image uploaded.', 'green');
+        } catch (e: any) {
+          showBanner(e.message ?? 'Upload failed.', 'red');
+          label.querySelector('span')!.textContent = 'Choose image…';
+        }
+      });
+      label.appendChild(fi);
+      container.appendChild(label);
+      return;
+    }
+
+    if (type === 'playlist') {
+      // Typeahead input
+      const wrapper = document.createElement('div');
+      wrapper.className = 'relative';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'w-full px-2 py-1.5 text-xs rounded-md border border-brand-tan focus:outline-none focus:ring-1 focus:ring-brand-lotus';
+      inp.placeholder = 'Search playlist…';
+      inp.autocomplete = 'off';
+
+      // Find display name for existing value
+      if (value) {
+        const found = playlists.find(p => p.playlist_id === value);
+        inp.value        = found ? found.playlist_name : value;
+        inp.dataset.id   = value;
+      }
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'hidden absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-brand-tan rounded-lg shadow-lg max-h-40 overflow-y-auto';
+
+      inp.addEventListener('input', () => {
+        const q = inp.value.toLowerCase();
+        const matches = playlists.filter(p =>
+          p.playlist_name.toLowerCase().includes(q) ||
+          p.category_name.toLowerCase().includes(q)
+        ).slice(0, 10);
+        dropdown.innerHTML = matches.map(p =>
+          `<button type="button" class="w-full text-left px-3 py-2 text-xs hover:bg-brand-parchment" data-id="${p.playlist_id}" data-name="${esc(p.playlist_name)}">
+             <span class="font-semibold">${esc(p.playlist_name)}</span>
+             <span class="text-brand-slate/60 ml-1">${esc(p.category_name)}</span>
+           </button>`
+        ).join('');
+        dropdown.classList.toggle('hidden', matches.length === 0);
+      });
+
+      dropdown.addEventListener('mousedown', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-id]');
+        if (!btn) return;
+        e.preventDefault();
+        inp.value      = btn.dataset.name!;
+        inp.dataset.id = btn.dataset.id!;
+        updateMediaItem(key, 'media_ref', btn.dataset.id!);
+        dropdown.classList.add('hidden');
+      });
+
+      inp.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 150));
+
+      wrapper.appendChild(inp);
+      wrapper.appendChild(dropdown);
+      container.appendChild(wrapper);
+      return;
+    }
+
+    // Default: text/URL input
+    const inp = document.createElement('input');
+    inp.type      = 'text';
+    inp.className = 'w-full px-2 py-1.5 text-xs rounded-md border border-brand-tan focus:outline-none focus:ring-1 focus:ring-brand-lotus';
+    inp.placeholder = MEDIA_LABELS[type] ?? 'URL';
+    inp.value       = value;
+    inp.addEventListener('input', () => updateMediaItem(key, 'media_ref', inp.value));
+    container.appendChild(inp);
+  }
+
+  function updateMediaItem(key: string, field: string, value: any) {
+    const item = mediaItems.find(m => m._key === key);
+    if (item) (item as any)[field] = value;
+  }
+
+  function renderMediaEmpty() {
+    mediaEmptyEl.classList.toggle('hidden', mediaItems.length > 0);
+  }
+
+  document.getElementById('add-media-btn')!.addEventListener('click', () => addMediaRow());
+
+  // ── LLM prompt panel ─────────────────────────────────────────
+  const llmToggleBtn  = document.getElementById('llm-prompt-toggle')!;
+  const llmPanel      = document.getElementById('llm-prompt-panel')!;
+  const llmChevron    = document.getElementById('llm-prompt-chevron')!;
+  const llmCopyBtn    = document.getElementById('llm-prompt-copy')!;
+  const llmPromptText = document.getElementById('llm-prompt-text')!;
+
+  llmToggleBtn.addEventListener('click', () => {
+    const open = !llmPanel.classList.contains('hidden');
+    llmPanel.classList.toggle('hidden', open);
+    llmChevron.style.transform = open ? '' : 'rotate(180deg)';
+  });
+
+  llmCopyBtn.addEventListener('click', () => {
+    // Get raw text (unescaped) from the pre element
+    const raw = llmPromptText.textContent ?? '';
+    navigator.clipboard.writeText(raw).then(() => {
+      const orig = llmCopyBtn.innerHTML;
+      llmCopyBtn.innerHTML = `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!`;
+      llmCopyBtn.classList.add('text-green-700', 'border-green-400');
+      setTimeout(() => {
+        llmCopyBtn.innerHTML = orig;
+        llmCopyBtn.classList.remove('text-green-700', 'border-green-400');
+      }, 2500);
+    });
+  });
+
+  // ── Source / Visual toggle ─────────────────────────────────────
+  const sourceToggleBtn  = document.getElementById('pe-source-toggle')!;
+  const bodyWrapper      = document.getElementById('pe-body-wrapper')!;
+  const sourceWrapper    = document.getElementById('pe-source-wrapper')!;
+  const sourceTextarea   = document.getElementById('pe-body-source') as HTMLTextAreaElement;
+  const bodyModeLabel    = sourceToggleBtn.previousElementSibling as HTMLElement;
+
+  sourceToggleBtn.addEventListener('click', () => {
+    if (!sourceMode) {
+      // Visual → Source: copy Quill HTML into textarea
+      sourceTextarea.value = quill ? quill.root.innerHTML : '';
+      bodyWrapper.classList.add('hidden');
+      sourceWrapper.classList.remove('hidden');
+      sourceToggleBtn.innerHTML = `
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        Visual Editor`;
+      bodyModeLabel.textContent = 'HTML source';
+      sourceMode = true;
+    } else {
+      // Source → Visual: import textarea HTML into Quill via clipboard API (preserves lists)
+      if (quill) quill.clipboard.dangerouslyPasteHTML(sourceTextarea.value);
+      sourceWrapper.classList.add('hidden');
+      bodyWrapper.classList.remove('hidden');
+      sourceToggleBtn.innerHTML = `
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+        HTML Source`;
+      bodyModeLabel.textContent = 'Visual editor';
+      sourceMode = false;
+    }
+  });
+
+  // ── Save ──────────────────────────────────────────────────────
+  document.getElementById('pe-save-btn')!.addEventListener('click', save);
+
+  async function save() {
+    const title = titleEl.value.trim();
+    if (!title) {
+      showBanner('Title is required.', 'red');
+      titleEl.focus();
+      return;
+    }
+
+    const slug   = slugEl.value.trim();
+    const status = statusEl.value;
+
+    const catId = parseInt(categoryEl.value) || null;
+    const epNum = episodeNumEl.value ? parseInt(episodeNumEl.value) : null;
+
+    const payload: Record<string, any> = {
+      post_type:        isEvent ? 'event' : 'blog',
+      title,
+      slug:             slug || undefined,
+      extract:          extractEl.value.trim()  || null,
+      body:             sourceMode ? sourceTextarea.value : (quill ? quill.root.innerHTML : null),
+      cover_image_path: coverPath ?? null,
+      status,
+      published_at:     publishedAtEl.value || null,
+      category_id:      catId,
+      episode_number:   epNum,
+      media: mediaItems
+        .filter(m => m.media_ref.trim() !== '')
+        .map((m, i) => ({ ...m, sort_order: i })),
+    };
+
+    if (isEvent) {
+      payload.event_date     = eventDateEl.value  || null;
+      payload.event_end_date = eventEndEl.value   || null;
+      payload.event_location = eventLocEl.value.trim() || null;
+    } else {
+      payload.event_date     = null;
+      payload.event_end_date = null;
+      payload.event_location = null;
+    }
+
+    savingEl.classList.remove('hidden');
+    try {
+      const isNew = !postId;
+      const url   = postId
+        ? `${apiBase}/api/admin/posts.php?id=${postId}`
+        : `${apiBase}/api/admin/posts.php`;
+      const res   = await fetch(url, {
+        method:  postId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Save failed');
+
+      if (isNew) {
+        // Redirect to edit page with new ID
+        window.location.href = `/admin/post-edit?id=${data.id}`;
+        return;
+      }
+
+      // Update slug field in case it was auto-generated
+      if (data.slug) slugEl.value = data.slug;
+
+      showBanner('Post saved.', 'green');
+      enableCoverUpload();
+
+      // Re-enable image media row upload buttons now that postId is set
+      if (!postId && data.id) {
+        postId = data.id;
+      }
+
+    } catch (e: any) {
+      showBanner(e.message ?? 'Save failed. Please try again.', 'red');
+    } finally {
+      savingEl.classList.add('hidden');
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function toSlug(title: string): string {
+    return title.toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 200);
+  }
+
+  function showBanner(msg: string, color: 'green' | 'red') {
+    bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-5
+      ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
+    bannerEl.textContent = msg;
+    bannerEl.classList.remove('hidden');
+    setTimeout(() => bannerEl.classList.add('hidden'), 5000);
+  }
+
+  function esc(s: string): string {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  init();
+</script>

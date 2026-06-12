@@ -71,6 +71,13 @@ import Base from "@layouts/Base.astro";
 </Base>
 
 <script>
+  // If already authenticated, skip login and go straight to dashboard
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+  fetch(`${apiBase}/api/auth/session-status.php`)
+    .then(r => r.json())
+    .then(data => { if (data.authenticated) window.location.href = '/admin/dashboard'; })
+    .catch(() => { /* not authenticated — stay on login page */ });
+
   // Show error/session messages from URL params
   const params = new URLSearchParams(window.location.search);
 

@@ -121,6 +121,45 @@ CREATE TABLE `lyrics` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `post`
+--
+
+CREATE TABLE `post` (
+  `id`               int(11) NOT NULL,
+  `post_type`        enum('blog','event') NOT NULL,
+  `slug`             varchar(300) NOT NULL,
+  `title`            varchar(300) NOT NULL,
+  `extract`          text DEFAULT NULL,
+  `body`             mediumtext DEFAULT NULL,
+  `cover_image_path` varchar(400) DEFAULT NULL,
+  `status`           enum('draft','published','archived') NOT NULL DEFAULT 'draft',
+  `published_at`     datetime DEFAULT NULL,
+  `event_date`       date DEFAULT NULL,
+  `event_end_date`   date DEFAULT NULL,
+  `event_location`   varchar(300) DEFAULT NULL,
+  `event_placement`  set('home','tamil','programs') DEFAULT NULL,
+  `created_at`       datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at`       datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Blog posts and event postings';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `post_media`
+--
+
+CREATE TABLE `post_media` (
+  `id`         int(11) NOT NULL,
+  `post_id`    int(11) NOT NULL,
+  `media_type` enum('image','youtube','playlist','harikatha','link') NOT NULL,
+  `media_ref`  varchar(500) NOT NULL,
+  `caption`    varchar(300) DEFAULT NULL,
+  `sort_order` smallint(6) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Media attachments for blog/event posts';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `program`
 --
 
@@ -314,6 +353,23 @@ ALTER TABLE `lyrics`
   ADD KEY `idx_track` (`track_id`);
 
 --
+-- Indexes for table `post`
+--
+ALTER TABLE `post`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_slug` (`slug`),
+  ADD KEY `idx_type_status` (`post_type`, `status`),
+  ADD KEY `idx_published_at` (`published_at`),
+  ADD KEY `idx_event_date` (`event_date`);
+
+--
+-- Indexes for table `post_media`
+--
+ALTER TABLE `post_media`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_post_id` (`post_id`);
+
+--
 -- Indexes for table `program`
 --
 ALTER TABLE `program`
@@ -399,6 +455,18 @@ ALTER TABLE `lyrics`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `post`
+--
+ALTER TABLE `post`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `post_media`
+--
+ALTER TABLE `post_media`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `program`
 --
 ALTER TABLE `program`
@@ -431,6 +499,12 @@ ALTER TABLE `video_category`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `post_media`
+--
+ALTER TABLE `post_media`
+  ADD CONSTRAINT `fk_post_media_post` FOREIGN KEY (`post_id`) REFERENCES `post` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `audio_singer_version`
