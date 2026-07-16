@@ -10,11 +10,22 @@ import PageHero from "@components/PageHero.astro";
   <div id="post-view" class="hidden">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
 
-      <a id="post-back-link" href="/blogs"
-         class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors mb-6">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Back
-      </a>
+      <div class="flex items-center justify-between mb-6">
+        <a id="post-back-link" href="/blogs"
+           class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-slate hover:text-brand-navy transition-colors">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Back
+        </a>
+        <button id="post-share-btn"
+                class="inline-flex items-center gap-1.5 text-brand-slate border border-brand-tan hover:border-brand-navy hover:text-brand-navy text-xs font-semibold px-3 py-2 rounded-full transition-colors"
+                data-share-url="" data-share-title=""
+                title="Share this post">
+          <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+            <path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"/>
+          </svg>
+          Share
+        </button>
+      </div>
 
       <!-- Series breadcrumb (sequential posts only) -->
       <div id="post-series-badge" class="hidden mb-3 flex items-center gap-2">
@@ -323,6 +334,10 @@ import PageHero from "@components/PageHero.astro";
       ? new Date(p.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
       : '';
 
+    const blurb = p.extract
+      ? esc(p.extract)
+      : (p.body_snippet ? esc(bodySnippet(p.body_snippet)) : '');
+
     if (p.cover_image_path) {
       card.innerHTML = `
         <div class="h-44 overflow-hidden">
@@ -332,14 +347,14 @@ import PageHero from "@components/PageHero.astro";
         <div class="p-5">
           <p class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-1">${esc(dateStr)}</p>
           <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-2 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
-          ${p.extract ? `<p class="text-xs text-brand-slate/80 leading-relaxed line-clamp-3">${esc(p.extract)}</p>` : ''}
+          ${blurb ? `<p class="text-xs text-brand-slate/80 leading-relaxed line-clamp-3">${blurb}</p>` : ''}
         </div>`;
     } else {
       card.innerHTML = `
         <div class="p-5">
           <p class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus mb-1">${esc(dateStr)}</p>
           <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-2 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
-          ${p.extract ? `<p class="text-xs text-brand-slate/80 leading-relaxed">${esc(p.extract)}</p>` : ''}
+          ${blurb ? `<p class="text-xs text-brand-slate/80 leading-relaxed">${blurb}</p>` : ''}
         </div>`;
     }
     return card;
@@ -353,13 +368,16 @@ import PageHero from "@components/PageHero.astro";
 
     episodesEl.innerHTML = allPosts.map(p => {
       const epNum = p.episode_number ? `Ep. ${p.episode_number}` : '';
+      const blurb = p.extract
+        ? esc(p.extract)
+        : (p.body_snippet ? esc(bodySnippet(p.body_snippet)) : '');
       return `
         <a href="/blogs?slug=${encodeURIComponent(p.slug)}&cat=${encodeURIComponent(catSlug)}"
            class="group flex items-start gap-4 rounded-xl border border-brand-tan bg-white hover:shadow-md hover:border-brand-navy/30 transition-all p-4">
           ${epNum ? `<span class="shrink-0 w-12 text-center text-xs font-bold text-brand-navy/40 bg-brand-parchment rounded-lg py-2 mt-0.5">${esc(epNum)}</span>` : ''}
           <div class="flex-1 min-w-0">
             <h3 class="font-display font-bold text-brand-navy text-sm leading-snug mb-1 group-hover:text-brand-lotus transition-colors">${esc(p.title)}</h3>
-            ${p.extract ? `<p class="text-xs text-brand-slate/70 leading-relaxed line-clamp-2">${esc(p.extract)}</p>` : ''}
+            ${blurb ? `<p class="text-xs text-brand-slate/70 leading-relaxed line-clamp-2">${blurb}</p>` : ''}
           </div>
           ${p.cover_image_path ? `
           <div class="shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-brand-tan">
@@ -444,6 +462,10 @@ import PageHero from "@components/PageHero.astro";
       }
 
       document.getElementById('post-title')!.textContent = post.title;
+
+      const shareBtn = document.getElementById('post-share-btn') as HTMLButtonElement;
+      shareBtn.dataset.shareUrl   = `/share/blog.php?id=${post.id}`;
+      shareBtn.dataset.shareTitle = post.title;
 
       if (post.extract) {
         const el = document.getElementById('post-extract')!;
@@ -583,6 +605,13 @@ import PageHero from "@components/PageHero.astro";
   }
 
   // ── Helpers ───────────────────────────────────────────────────
+  function bodySnippet(html: string, maxLen = 150): string {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const text = (tmp.textContent || tmp.innerText || '').trim().replace(/\s+/g, ' ');
+    return text.length > maxLen ? text.slice(0, maxLen).trimEnd() + '…' : text;
+  }
+
   function extractYouTubeId(ref: string): string | null {
     if (/^[\w-]{11}$/.test(ref)) return ref;
     const m = ref.match(/(?:v=|\/embed\/|youtu\.be\/)([\w-]{11})/);

@@ -5,6 +5,7 @@
  */
 import Base from "@layouts/Base.astro";
 import PageHero from "@components/PageHero.astro";
+import BhajansNav from "@components/BhajansNav.astro";
 ---
 
 <Base
@@ -17,6 +18,7 @@ import PageHero from "@components/PageHero.astro";
     title="Bhajans"
     description="Search by title or ID, or browse by category - then listen uninterrupted with the Play All feature. Lyrics open automatically in the player for every bhajan."
   />
+  <BhajansNav activePath="/bhajans" />
 
   <!-- Page body -->
   <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -127,6 +129,7 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
     subtitle:        string;   // '' or singer name on child rows
     author:          string | null;  // only on group-head and simple rows, null on child rows
     audioPath:       string;
+    hasAudio:        boolean;  // false when audio_file_path is absent — lyrics-only row
     downloadAllowed: number;
     mediaId:         string;
     lyricsPath:      string | null;
@@ -239,21 +242,23 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
 
     tracksEl.classList.remove('hidden');
     emptyEl.classList.add('hidden');
-    countEl.textContent = `${filteredTracks.length} tracks`;
-    playAllBtn.classList.remove('hidden');
+    countEl.textContent = `${filteredTracks.length} track${filteredTracks.length !== 1 ? 's' : ''}`;
+    playAllBtn.classList.toggle('hidden', playableRows.length === 0);
 
     // ── Build flat row list ────────────────────────────────
     const rows: Row[] = [];
 
     for (const track of filteredTracks) {
-      const singers = track.singers ?? [];
-      const hasBase = !!track.base_track_path;
-      const hasExtras = singers.length > 0 || hasBase;
+      const singers      = track.singers ?? [];
+      const hasBase      = !!track.base_track_path;
+      const hasExtras    = singers.length > 0 || hasBase;
+      const trackHasAudio = !!(track.audio_file_path && track.audio_file_path.trim());
 
       if (hasExtras) {
         // Original track heads the group; base path stored inline, no separate row
         rows.push({ displayId: track.track_id, title: track.track_name, author: track.author ?? null,
-          subtitle: '', audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+          subtitle: '', audioPath: track.audio_file_path ?? '', hasAudio: trackHasAudio,
+          downloadAllowed: track.download_allowed,
           mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
           displayName: track.display_name, isGroupHead: true, isChild: false,
           basePath: hasBase ? track.base_track_path : null, lyricsId: undefined });
@@ -261,7 +266,9 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
         singers.forEach((s, si) => {
           rows.push({ displayId: `${track.track_id}-${si + 1}`, title: s.singer,
             playerTitle: `${track.track_name} - ${s.singer}`, subtitle: '',
-            author: null, audioPath: s.audio_file_path, downloadAllowed: track.download_allowed,
+            author: null, audioPath: s.audio_file_path ?? '',
+            hasAudio: !!(s.audio_file_path && s.audio_file_path.trim()),
+            downloadAllowed: track.download_allowed,
             mediaId: `${track.track_id}-${si + 1}`, lyricsPath: track.lyrics_file_path,
             displayName: s.singer, isGroupHead: false, isChild: true, basePath: null,
             lyricsId: track.track_id });
@@ -269,20 +276,21 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
       } else {
         // No extras — simple single row
         rows.push({ displayId: track.track_id, title: track.track_name, author: track.author ?? null,
-          subtitle: '', audioPath: track.audio_file_path, downloadAllowed: track.download_allowed,
+          subtitle: '', audioPath: track.audio_file_path ?? '', hasAudio: trackHasAudio,
+          downloadAllowed: track.download_allowed,
           mediaId: track.track_id, lyricsPath: track.lyrics_file_path,
           displayName: track.display_name, isGroupHead: false, isChild: false,
           basePath: null, lyricsId: undefined });
       }
     }
 
-    // All rows have audio — every row is playable
-    playableRows = rows;
+    // Only audio rows go into the play queue
+    playableRows = rows.filter(r => r.hasAudio);
 
     // ── Render rows ──────────────────────────────────────────
     rows.forEach(row => {
-      const queueIdx = playableRows.indexOf(row);
-      const saved    = isInAnyPlaylist(row.mediaId);
+      const playableIdx = row.hasAudio ? playableRows.indexOf(row) : -1;
+      const saved       = row.hasAudio && isInAnyPlaylist(row.mediaId);
 
       const tr = document.createElement('tr');
       tr.className = [
@@ -304,47 +312,71 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
           base
         </button>` : '';
 
+      // First cell: play button (audio rows) or lyrics icon (audio-less rows)
+      const actionCell = row.hasAudio
+        ? `<button class="bh-play-btn w-7 h-7 flex items-center justify-center
+                          text-brand-lotus hover:text-pink-700 transition-colors shrink-0"
+                   data-qidx="${playableIdx}" aria-label="Play ${escHtml(row.title)}" title="Play">
+             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+           </button>`
+        : `<button class="bh-lyrics-btn w-7 h-7 flex items-center justify-center
+                          text-brand-slate/50 hover:text-brand-navy transition-colors shrink-0"
+                   data-mid="${escHtml(row.mediaId)}"
+                   data-title="${escHtml(row.title)}"
+                   data-dname="${escHtml(row.displayName)}"
+                   data-lyrics="${row.lyricsPath ? escHtml(row.lyricsPath) : ''}"
+                   data-lyricsid="${row.lyricsId ? escHtml(row.lyricsId) : ''}"
+                   aria-label="View lyrics for ${escHtml(row.title)}" title="Lyrics only">
+             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+               <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-4 9H7v-2h2v2zm0-4H7v-2h2v2zm4 4h-2v-2h2v2zm0-4h-2v-2h2v2zm4 4h-2v-2h2v2z"/>
+             </svg>
+           </button>`;
+
+      // Right-side action buttons — only for rows with audio
+      const rightBtns = row.hasAudio ? `
+        ${row.downloadAllowed ? `
+        <a class="bh-dl-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                  bg-brand-slate/15 hover:bg-brand-slate text-brand-slate hover:text-white transition-colors"
+           href="/${escHtml(row.audioPath)}" download="${escHtml((row.lyricsId ?? row.displayId) + '-' + (row.playerTitle ?? row.title))}.mp3" title="Download">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
+          </svg>
+        </a>` : ''}
+        <button class="bh-save-btn inline-flex items-center justify-center w-7 h-7 rounded-full
+                       transition-colors ${saved ? 'bg-brand-lotus text-white hover:bg-pink-700' : 'bg-brand-slate/15 text-brand-slate hover:bg-brand-slate hover:text-white'}"
+                data-mid="${escHtml(row.mediaId)}"
+                data-audio="${escHtml(row.audioPath)}"
+                data-title="${escHtml(row.playerTitle ?? row.title)}"
+                data-dname="${escHtml(row.displayName)}"
+                data-lyrics="${row.lyricsPath ? escHtml(row.lyricsPath) : ''}"
+                data-dl="${row.downloadAllowed}"
+                title="${saved ? 'Saved to playlist' : 'Save to playlist'}">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            ${saved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+                    : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+          </svg>
+        </button>` : '';
+
       tr.innerHTML = `
         <td class="py-1.5 pr-2${row.isChild ? ' pl-6' : ''}">
-          <button class="bh-play-btn w-7 h-7 flex items-center justify-center
-                         text-brand-lotus hover:text-pink-700 transition-colors shrink-0"
-                  data-qidx="${queueIdx}" aria-label="Play ${escHtml(row.title)}" title="Play">
-            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </button>
+          ${actionCell}
         </td>
         <td class="py-2 pr-2">
-          <span class="text-xs font-mono text-brand-navy font-semibold mr-1.5">${escHtml(row.displayId)}</span><span class="${row.isGroupHead ? 'font-bold' : row.isChild ? 'font-normal text-brand-navy/70' : 'font-semibold'} text-sm group-hover:text-brand-lotus transition-colors">${escHtml(row.title)}</span>${row.author ? `<span class="ml-1.5 text-xs text-brand-slate/80 font-normal">[${escHtml(row.author)}]</span>` : ''}${baseBtn}
+          <span class="text-xs font-mono ${row.hasAudio ? 'text-brand-navy' : 'text-brand-slate/60'} font-semibold mr-1.5">${escHtml(row.displayId)}</span><span class="${row.isGroupHead ? 'font-bold' : row.isChild ? 'font-normal text-brand-navy/70' : 'font-semibold'} ${row.hasAudio ? '' : 'text-brand-navy/50 italic'} text-sm group-hover:text-brand-lotus transition-colors">${escHtml(row.title)}</span>${row.author ? `<span class="ml-1.5 text-xs text-brand-slate/80 font-normal">[${escHtml(row.author)}]</span>` : ''}${!row.hasAudio ? `<span class="ml-2 text-[10px] font-semibold uppercase tracking-wide text-brand-slate/40">lyrics only</span>` : ''}${baseBtn}
         </td>
         <td class="py-1.5 text-right">
           <div class="inline-flex items-center justify-end gap-0.5">
-            ${row.downloadAllowed ? `
-            <a class="bh-dl-btn inline-flex items-center justify-center w-7 h-7 rounded-full
-                      bg-brand-slate/15 hover:bg-brand-slate text-brand-slate hover:text-white transition-colors"
-               href="/${escHtml(row.audioPath)}" download="${escHtml((row.lyricsId ?? row.displayId) + '-' + (row.playerTitle ?? row.title))}.mp3" title="Download">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5v-2z"/>
-              </svg>
-            </a>` : ''}
-            <button class="bh-save-btn inline-flex items-center justify-center w-7 h-7 rounded-full
-                           transition-colors ${saved ? 'bg-brand-lotus text-white hover:bg-pink-700' : 'bg-brand-slate/15 text-brand-slate hover:bg-brand-slate hover:text-white'}"
-                    data-mid="${escHtml(row.mediaId)}"
-                    data-audio="${escHtml(row.audioPath)}"
-                    data-title="${escHtml(row.playerTitle ?? row.title)}"
-                    data-dname="${escHtml(row.displayName)}"
-                    data-lyrics="${row.lyricsPath ? escHtml(row.lyricsPath) : ''}"
-                    data-dl="${row.downloadAllowed}"
-                    title="${saved ? 'Saved to playlist' : 'Save to playlist'}">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                ${saved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
-                        : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-              </svg>
-            </button>
+            ${rightBtns}
           </div>
         </td>`;
 
       tr.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest('.bh-play-btn, .bh-dl-btn, .bh-save-btn, .bh-base-btn')) return;
-        playFromQueue(queueIdx);
+        if ((e.target as HTMLElement).closest('.bh-play-btn, .bh-dl-btn, .bh-save-btn, .bh-base-btn, .bh-lyrics-btn')) return;
+        if (row.hasAudio) {
+          playFromQueue(playableIdx);
+        } else {
+          openLyricsOnly(row);
+        }
       });
 
       tbody.appendChild(tr);
@@ -355,6 +387,24 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         playFromQueue(parseInt(btn.dataset.qidx ?? '0'));
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.bh-lyrics-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const player = (window as any).__audioPlayer;
+        if (!player) return;
+        player.play({
+          track_id:         btn.dataset.mid!,
+          track_name:       btn.dataset.title!,
+          display_name:     btn.dataset.dname!,
+          audio_file_path:  '',
+          lyrics_file_path: btn.dataset.lyrics || null,
+          download_allowed: 0,
+          type:             'B' as const,
+          lyrics_id:        btn.dataset.lyricsid || undefined,
+        });
       });
     });
 
@@ -412,6 +462,21 @@ import { isInAnyPlaylist } from '@lib/playlist-store';
   window.addEventListener('playlist-changed', refreshBookmarkStates);
 
   /* ── Play ───────────────────────────────────────────────── */
+  function openLyricsOnly(row: Row) {
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    player.play({
+      track_id:         row.mediaId,
+      track_name:       row.playerTitle ?? row.title,
+      display_name:     row.displayName,
+      audio_file_path:  '',
+      lyrics_file_path: row.lyricsPath,
+      download_allowed: 0,
+      type:             'B' as const,
+      lyrics_id:        row.lyricsId,
+    });
+  }
+
   function playFromQueue(startIdx: number) {
     const player = (window as any).__audioPlayer;
     if (!player) return;

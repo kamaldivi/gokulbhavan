@@ -41,10 +41,11 @@ try {
         $stmt = $db->prepare("
             SELECT id, title, description,
                    day_of_week, time_est,
-                   zoom_url, youtube_live_url, video_playlist,
+                   video_playlist,
                    teacher, platform, duration_min,
                    language, site_id,
-                   start_date, end_date, event_date, event_time
+                   start_date, end_date, event_date, event_time,
+                   cover_image_path
             FROM program
             WHERE site_id = :site_id $dateFilter
             ORDER BY order_num ASC, FIELD(day_of_week,
@@ -56,10 +57,11 @@ try {
         $stmt = $db->query("
             SELECT id, title, description,
                    day_of_week, time_est,
-                   zoom_url, youtube_live_url, video_playlist,
+                   video_playlist,
                    teacher, platform, duration_min,
                    language, site_id,
-                   start_date, end_date, event_date, event_time
+                   start_date, end_date, event_date, event_time,
+                   cover_image_path
             FROM program
             WHERE 1=1 $dateFilter
             ORDER BY order_num ASC, FIELD(day_of_week,
@@ -73,6 +75,8 @@ try {
     // Convert EST to other time zones for each row.
     // Skip conversion for one-off / completed programs that have no day_of_week.
     foreach ($rows as &$row) {
+        $row['zoom_url']         = defined('ZOOM_URL')    ? ZOOM_URL    : null;
+        $row['youtube_live_url'] = defined('YOUTUBE_URL') ? YOUTUBE_URL : null;
         if ($row['time_est'] && $row['day_of_week']) {
             [$row['time_ist'],     $row['day_ist']]     = deriveDateTime($row['time_est'], $row['day_of_week'], 'Asia/Kolkata');
             [$row['time_cst'],     $row['day_cst']]     = deriveDateTime($row['time_est'], $row['day_of_week'], 'America/Chicago');

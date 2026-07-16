@@ -3,6 +3,7 @@
  * Shared footer — 4-col grid + donate modal.
  * Background matches the nav bar (brand-slate).
  */
+import { ZOOM_URL, YOUTUBE_URL } from '@lib/site-links';
 ---
 
 <!-- Donate Modal -->
@@ -91,7 +92,7 @@
         <h3 class="font-display font-bold text-white text-xs uppercase tracking-widest mb-4">Connect</h3>
         <ul class="space-y-3 text-sm">
           <li>
-            <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+            <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer"
                class="flex items-center gap-3 hover:text-white transition-colors">
               <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
@@ -100,7 +101,7 @@
             </a>
           </li>
           <li>
-            <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09" target="_blank" rel="noopener noreferrer"
+            <a href={ZOOM_URL} target="_blank" rel="noopener noreferrer"
                class="flex items-center gap-3 hover:text-white transition-colors">
               <span class="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/></svg>

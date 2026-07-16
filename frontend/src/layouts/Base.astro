@@ -52,5 +52,167 @@ const {
     <AudioPlayer />
     <PlaylistPicker />
     <MyPlaylistDrawer />
+
+    <!-- ── Global share handler ───────────────────────────────────────
+         Any element with data-share-url triggers this.
+         Shows a small popover with:
+           • "Share…"     — native OS share sheet (WhatsApp, Messages, etc.)
+                            only shown when navigator.share is available
+           • "Copy Link"  — always copies URL to clipboard with "Copied!" feedback
+    ──────────────────────────────────────────────────────────────── -->
+
+    <!-- Share popover (single instance, repositioned per click) -->
+    <div id="gb-share-pop"
+         class="hidden fixed z-[400] bg-white rounded-xl shadow-xl border border-brand-tan
+                min-w-[160px] overflow-hidden"
+         role="menu">
+      <button id="gb-share-native"
+              class="hidden w-full text-left px-4 py-3 text-sm font-semibold text-brand-navy
+                     hover:bg-brand-tan/50 flex items-center gap-2.5 transition-colors"
+              role="menuitem">
+        <svg class="w-4 h-4 fill-current shrink-0 text-brand-lotus" viewBox="0 0 24 24">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 0-6 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81A2.99 2.99 0 0 0 6 9a3 3 0 0 0 0 6c.82 0 1.54-.32 2.08-.83l7.04 4.14c-.05.21-.08.43-.08.65a2.92 2.92 0 0 0 2.96 2.96 2.92 2.92 0 0 0 2.96-2.96A2.92 2.92 0 0 0 18 16.08z"/>
+        </svg>
+        Share…
+      </button>
+      <button id="gb-share-copy"
+              class="w-full text-left px-4 py-3 text-sm font-semibold text-brand-navy
+                     hover:bg-brand-tan/50 flex items-center gap-2.5 transition-colors"
+              role="menuitem">
+        <svg id="gb-copy-icon" class="w-4 h-4 fill-current shrink-0 text-brand-lotus" viewBox="0 0 24 24">
+          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+        <span id="gb-copy-label">Copy Link</span>
+      </button>
+    </div>
+
+    <script>
+    (function () {
+      const pop         = document.getElementById('gb-share-pop')!;
+      const nativeBtn   = document.getElementById('gb-share-native')!;
+      const copyBtn     = document.getElementById('gb-share-copy')!;
+      const copyIcon    = document.getElementById('gb-copy-icon')!;
+      const copyLabel   = document.getElementById('gb-copy-label')!;
+
+      let currentUrl    = '';
+      let currentTitle  = '';
+      let currentText   = '';
+
+      const checkSvgPath = 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z';
+
+      function closePopover() {
+        pop.classList.add('hidden');
+      }
+
+      function openPopover(anchor: HTMLElement, url: string, title: string, text: string) {
+        currentUrl   = url;
+        currentTitle = title;
+        currentText  = text;
+
+        // Reset copy button state
+        copyIcon.innerHTML  = '<path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>';
+        copyLabel.textContent = 'Copy Link';
+        copyIcon.classList.remove('text-green-600');
+        copyIcon.classList.add('text-brand-lotus');
+
+        // Show or hide native share option
+        if (navigator.share) {
+          nativeBtn.classList.remove('hidden');
+          // Add divider via border only when both buttons shown
+          copyBtn.classList.add('border-t', 'border-brand-tan/70');
+        } else {
+          nativeBtn.classList.add('hidden');
+          copyBtn.classList.remove('border-t', 'border-brand-tan/70');
+        }
+
+        // Position near the anchor button
+        pop.classList.remove('hidden');
+        const rect    = anchor.getBoundingClientRect();
+        const popW    = pop.offsetWidth  || 180;
+        const popH    = pop.offsetHeight || 90;
+        const margin  = 8;
+        const vw      = window.innerWidth;
+        const vh      = window.innerHeight;
+
+        // fixed positioning — coordinates are relative to viewport, no scroll offset needed
+        let top  = rect.bottom + margin;
+        let left = rect.left;
+
+        // Flip above if not enough space below
+        if (rect.bottom + popH + margin > vh) {
+          top = rect.top - popH - margin;
+        }
+        // Keep within right edge
+        if (left + popW > vw - margin) {
+          left = vw - popW - margin;
+        }
+
+        pop.style.top  = top  + 'px';
+        pop.style.left = left + 'px';
+      }
+
+      // ── Button actions ─────────────────────────────────────────
+      nativeBtn.addEventListener('click', async () => {
+        closePopover();
+        try {
+          await navigator.share({ title: currentTitle, text: currentText, url: currentUrl });
+        } catch (err: any) {
+          // AbortError = user dismissed — ignore
+        }
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(currentUrl);
+        } catch {
+          // clipboard API blocked — try execCommand fallback
+          const ta = document.createElement('textarea');
+          ta.value = currentUrl;
+          ta.style.position = 'fixed';
+          ta.style.opacity  = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        // Copied feedback
+        copyIcon.innerHTML = `<path d="${checkSvgPath}"/>`;
+        copyIcon.classList.remove('text-brand-lotus');
+        copyIcon.classList.add('text-green-600');
+        copyLabel.textContent = 'Copied!';
+        setTimeout(closePopover, 1200);
+      });
+
+      // ── Open on data-share-url click ───────────────────────────
+      document.addEventListener('click', (e: MouseEvent) => {
+        const btn = (e.target as Element).closest<HTMLElement>('[data-share-url]');
+
+        if (!btn) {
+          // Click outside popover — close it
+          if (!pop.contains(e.target as Node)) closePopover();
+          return;
+        }
+
+        // If clicking the same button while open, toggle closed
+        if (!pop.classList.contains('hidden') && pop.dataset.anchor === btn.dataset.shareUrl) {
+          closePopover();
+          return;
+        }
+
+        const path  = btn.dataset.shareUrl!;
+        const title = btn.dataset.shareTitle ?? 'Gokul Bhavan';
+        const text  = btn.dataset.shareText  ?? '';
+        const url   = window.location.origin + path;
+
+        pop.dataset.anchor = path;
+        openPopover(btn, url, title, text);
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') closePopover();
+      });
+    })();
+    </script>
   </body>
 </html>

@@ -95,13 +95,15 @@ if ($method === 'GET') {
             SELECT
                 t.track_id,
                 t.track_name,
-                t.author,
+                t.author_id,
+                a.author_name AS author,
                 t.category_code,
                 t.audio_file_path,
                 t.base_track_path,
                 t.lyrics_file_path,
                 1 AS download_allowed
             FROM audio_track t
+            LEFT JOIN audio_author a ON a.id = t.author_id
             WHERE t.category_code = :cat
             ORDER BY t.track_id ASC
         ");
@@ -149,16 +151,17 @@ $body = json_decode(file_get_contents('php://input'), true) ?? [];
 if ($method === 'POST') {
     $trackId   = strtoupper(trim($body['track_id']        ?? ''));
     $trackName = trim($body['track_name']                  ?? '');
-    $author    = trim($body['author']                      ?? '') ?: null;
+    $authorId  = (isset($body['author_id']) && $body['author_id'] !== '' && $body['author_id'] !== null)
+                     ? (int) $body['author_id'] : null;
     $catCode   = strtoupper(trim($body['category_code']   ?? ''));
-    $audioPath = trim($body['audio_file_path']             ?? '');
+    $audioPath = trim($body['audio_file_path']             ?? '') ?: null;
     $basePath  = trim($body['base_track_path']             ?? '') ?: null;
     $lyricsPath= trim($body['lyrics_file_path']            ?? '') ?: null;
     $singers   = $body['singers']                          ?? [];
 
-    if ($trackId === '' || $trackName === '' || $catCode === '' || $audioPath === '') {
+    if ($trackId === '' || $trackName === '' || $catCode === '') {
         http_response_code(400);
-        echo json_encode(['message' => 'track_id, track_name, category_code, and audio_file_path are required']);
+        echo json_encode(['message' => 'track_id, track_name, and category_code are required']);
         exit;
     }
 
@@ -168,17 +171,17 @@ if ($method === 'POST') {
 
         $pdo->prepare("
             INSERT INTO audio_track
-                (track_id, track_name, author, category_code, audio_file_path, base_track_path, lyrics_file_path)
+                (track_id, track_name, author_id, category_code, audio_file_path, base_track_path, lyrics_file_path)
             VALUES
-                (:id, :name, :author, :cat, :audio, :base, :lyrics)
+                (:id, :name, :author_id, :cat, :audio, :base, :lyrics)
         ")->execute([
-            ':id'     => $trackId,
-            ':name'   => $trackName,
-            ':author' => $author,
-            ':cat'    => $catCode,
-            ':audio'  => $audioPath,
-            ':base'   => $basePath,
-            ':lyrics' => $lyricsPath,
+            ':id'        => $trackId,
+            ':name'      => $trackName,
+            ':author_id' => $authorId,
+            ':cat'       => $catCode,
+            ':audio'     => $audioPath,
+            ':base'      => $basePath,
+            ':lyrics'    => $lyricsPath,
         ]);
 
         if (!empty($singers)) {
@@ -200,12 +203,14 @@ if ($method === 'POST') {
 
     } catch (PDOException $e) {
         $pdo->rollBack();
-        if ($e->getCode() === '23000') {
+        $mysqlCode = $e->errorInfo[1] ?? 0;
+        if ($mysqlCode === 1062) {
             http_response_code(409);
             echo json_encode(['message' => "Track ID '$trackId' already exists"]);
         } else {
             http_response_code(500);
-            echo json_encode(['message' => 'Database error']);
+            error_log('audio-tracks POST error: ' . $e->getMessage());
+            echo json_encode(['message' => 'Database error: ' . $e->getMessage()]);
         }
     }
     exit;
@@ -215,7 +220,9 @@ if ($method === 'POST') {
 if ($method === 'PUT') {
     $trackId    = strtoupper(trim($body['track_id']       ?? ''));
     $trackName  = trim($body['track_name']                 ?? '');
-    $author     = array_key_exists('author', $body) ? (is_string($body['author']) ? (trim($body['author']) ?: null) : null) : false;
+    $authorId   = array_key_exists('author_id', $body)
+                      ? (($body['author_id'] !== null && $body['author_id'] !== '') ? (int) $body['author_id'] : null)
+                      : false;
     $audioPath  = trim($body['audio_file_path'] ?? '') ?: null;
     $basePath   = array_key_exists('base_track_path',  $body) ? (is_string($body['base_track_path'])  ? (trim($body['base_track_path'])  ?: null) : null) : false;
     $lyricsPath = array_key_exists('lyrics_file_path', $body) ? (is_string($body['lyrics_file_path']) ? (trim($body['lyrics_file_path']) ?: null) : null) : false;
@@ -235,7 +242,7 @@ if ($method === 'PUT') {
         $sets   = [];
         $params = [':id' => $trackId];
         if ($trackName !== '')    { $sets[] = 'track_name = :name';          $params[':name']   = $trackName; }
-        if ($author !== false)    { $sets[] = 'author = :author';            $params[':author'] = $author; }
+        if ($authorId !== false)  { $sets[] = 'author_id = :author_id';      $params[':author_id'] = $authorId; }
         if ($audioPath !== null)  { $sets[] = 'audio_file_path = :audio';    $params[':audio']  = $audioPath; }
         if ($basePath !== false)  { $sets[] = 'base_track_path = :base';     $params[':base']   = $basePath; }
         if ($lyricsPath !== false){ $sets[] = 'lyrics_file_path = :lyrics';  $params[':lyrics'] = $lyricsPath; }

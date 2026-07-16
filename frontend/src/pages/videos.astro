@@ -44,7 +44,7 @@ import PageHero from "@components/PageHero.astro";
       </div>
 
       <!-- Playlist dropdown + view toggle row -->
-      <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div id="playlist-row" class="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div class="flex items-center gap-3">
           <label for="playlist-select"
                  class="text-xs font-bold uppercase tracking-widest text-brand-slate shrink-0">
@@ -179,6 +179,7 @@ const viewGrid        = document.getElementById("view-grid")!;
 const viewList        = document.getElementById("view-list")!;
 const sortTitleBtn    = document.getElementById("sort-title")!;
 const sortDateBtn     = document.getElementById("sort-date")!;
+const playlistRow     = document.getElementById("playlist-row")!;
 
 // ── Video card HTML ────────────────────────────────────────
 function videoCard(v: Video, isListView = false): string {
@@ -242,8 +243,13 @@ function renderBrowse() {
 }
 
 // ── Render category tabs ───────────────────────────────────
+const ALL_KEY = "__all__";
+
 function renderCategoryTabs() {
-  categoryTabs.innerHTML = menuData.map(cat => `
+  const allTab = `<button class="cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          data-category="${ALL_KEY}">All Videos</button>`;
+
+  categoryTabs.innerHTML = allTab + menuData.map(cat => `
     <button class="cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
             data-category="${cat.category}">
       ${cat.category}
@@ -253,7 +259,12 @@ function renderCategoryTabs() {
     btn.addEventListener("click", () => {
       activeCategory = btn.dataset.category!;
       setActiveCategory(activeCategory);
-      populatePlaylists(activeCategory);
+      if (activeCategory === ALL_KEY) {
+        loadAllVideos();
+      } else {
+        playlistRow.classList.remove("hidden");
+        populatePlaylists(activeCategory);
+      }
     });
   });
 }
@@ -266,6 +277,17 @@ function setActiveCategory(key: string) {
     btn.classList.toggle("text-brand-slate", !active);
     btn.classList.toggle("hover:text-brand-navy", !active);
   });
+}
+
+// ── All Videos mode ────────────────────────────────────────
+function loadAllVideos() {
+  playlistRow.classList.add("hidden");
+  activePlaylistId = "";
+  browseVideos = [...allVideos].sort((a, b) => {
+    if (sortMode === "title") return a.title.localeCompare(b.title);
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+  renderBrowse();
 }
 
 // ── Populate playlist dropdown and load first playlist ─────
@@ -381,7 +403,8 @@ function setSortMode(mode: "title" | "date") {
   sortDateBtn.classList.toggle("bg-brand-navy",    !titleActive);
   sortDateBtn.classList.toggle("text-white",        !titleActive);
   sortDateBtn.classList.toggle("text-brand-slate",  titleActive);
-  if (activePlaylistId) loadPlaylist(activePlaylistId);
+  if (activeCategory === ALL_KEY) loadAllVideos();
+  else if (activePlaylistId) loadPlaylist(activePlaylistId);
 }
 sortTitleBtn.addEventListener("click", () => setSortMode("title"));
 sortDateBtn.addEventListener("click",  () => setSortMode("date"));
@@ -434,14 +457,11 @@ async function load() {
 
     renderCategoryTabs();
 
-    // Default to first category → triggers playlist load for its first playlist
-    if (menuData.length > 0) {
-      activeCategory = menuData[0].category;
-      setActiveCategory(activeCategory);
-      await populatePlaylists(activeCategory);
-    }
-
-    setSortMode("title");
+    // Default to "All Videos" tab, sorted newest-first
+    activeCategory = ALL_KEY;
+    setActiveCategory(ALL_KEY);
+    sortMode = "date";
+    setSortMode("date");  // updates button visuals + triggers loadAllVideos via the ALL_KEY branch
     setViewMode("grid");
 
   } catch (err) {

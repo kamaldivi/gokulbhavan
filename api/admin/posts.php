@@ -137,7 +137,7 @@ try {
                         c.name AS category_name, c.slug AS category_slug
                  FROM post p
                  LEFT JOIN post_category c ON c.id = p.category_id
-                 ORDER BY p.created_at DESC"
+                 ORDER BY COALESCE(p.published_at, p.created_at) DESC"
             )->fetchAll();
 
             foreach ($rows as &$r) {

@@ -1,0 +1,221 @@
+"""
+import_slokas.py
+───────────────
+Reads data/sloka_data.csv and generates data/import_slokas.sql.
+Run the SQL file against dbs15655922 via phpMyAdmin AFTER running
+migrate_add_sloka_tables.sql.
+
+Usage:
+    cd /path/to/gokulbhavan
+    python3 scripts/import_slokas.py
+
+Output:
+    data/import_slokas.sql   — ready to import via phpMyAdmin
+
+Cleaning applied:
+  • All fields: strip leading/trailing whitespace
+  • sloka_text: strip leading/trailing whitespace from each line;
+                normalise CRLF → LF
+  • search_title: first non-empty line of sloka_text,
+                  diacritics stripped to plain ASCII
+  • slokamrtam_ref: empty string → NULL
+  • title: empty string → NULL
+  • scripture_ref: empty string → NULL
+  • word_by_word: empty string → NULL
+  • translation: empty string → NULL
+"""
+
+import csv
+import unicodedata
+from pathlib import Path
+from typing import Optional
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+ROOT        = Path(__file__).parent.parent
+CSV_PATH    = ROOT / 'data' / 'sloka_data.csv'
+OUTPUT_SQL  = ROOT / 'data' / 'import_slokas.sql'
+
+# ── Category name → code mapping ───────────────────────────────────────────────
+# Keys are the raw category strings from the CSV (after strip()).
+CATEGORY_MAP: dict[str, str] = {
+    'Maṅgalācaraṇa':              'MANGAL',
+    'Guru-tattva':                 'GURU',
+    'Sādhana-bhakti-tattva':      'SADHANA',
+    'Nāma-tattva':                 'NAMA',
+    'Abhidheya-tattva':           'ABHIDHEYA',
+    'Bhagavat-tattva':            'BHAGAVAT',
+    'Krṣṇa-tattva':               'KRISHNA',
+    'Kṛṣṇa-tattva':               'KRISHNA',   # alternate spelling in CSV
+    'Gaura-tattva':               'GAURA',
+    'Nityānanda-tattva':          'NITYANANDA',
+    'Jīva-tattva':                'JIVA',
+    'Śakti-tattva':               'SHAKTI',
+    'Acintya-bhedābheda-tattva':  'ACINTYA',
+    'Vaiṣṇava-tattva':            'VAISHNAVA',
+    'Pramāṇa-tattva':             'PRAMANA',
+    'Varṇāśrama-dharma-tattva':   'VARNASRAMA',
+    'Bhāva-bhakti':               'BHAVA',
+    'Prayojana-tattva – Prema':   'PREMA',
+    'Bhagavat-rasa-tattva':       'RASA',
+    'Vipralambha Rasa':           'VIPRALAMBHA',
+    'Sambhoga Rasa':              'SAMBHOGA',
+    'Rādhā-tattva':               'RADHA',
+    'Rādhā Dāsyam':               'RADHA-DASYA',
+    'Madhureṇa Samāpayet':        'MADHURENA',
+    'Other Ślokas':               'OTHER',
+}
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def strip_diacritics(text: str) -> str:
+    """Convert transliterated Sanskrit to plain ASCII (ā→a, ś→s, ṭ→t …)."""
+    nfd = unicodedata.normalize('NFD', text)
+    # Keep only ASCII printable chars; drop combining diacritical marks
+    return ''.join(
+        c for c in nfd
+        if unicodedata.category(c) != 'Mn' and ord(c) < 128
+    )
+
+
+def clean(value: Optional[str]) -> Optional[str]:
+    """Strip leading/trailing whitespace; return None for empty strings."""
+    if value is None:
+        return None
+    v = value.strip()
+    return v if v else None
+
+
+def clean_sloka_text(value: Optional[str]) -> Optional[str]:
+    """
+    Normalise sloka_text:
+      1. Strip whole-field whitespace.
+      2. Normalise CRLF → LF.
+      3. Strip leading/trailing whitespace from every line.
+    """
+    v = clean(value)
+    if not v:
+        return None
+    v = v.replace('\r\n', '\n').replace('\r', '\n')
+    lines = [line.strip() for line in v.splitlines()]
+    return '\n'.join(lines)
+
+
+def make_search_title(sloka_text: Optional[str]) -> Optional[str]:
+    """First non-empty line of sloka_text with diacritics stripped."""
+    if not sloka_text:
+        return None
+    for line in sloka_text.splitlines():
+        line = line.strip()
+        if line:
+            return strip_diacritics(line)
+    return None
+
+
+def sql_escape(value: str) -> str:
+    """Escape a string value for use inside single quotes in SQL."""
+    value = value.replace('\\', '\\\\')
+    value = value.replace("'", "''")
+    return value
+
+
+def sql_val(value: Optional[str]) -> str:
+    """Return SQL literal: NULL or 'escaped string'."""
+    if value is None:
+        return 'NULL'
+    return f"'{sql_escape(value)}'"
+
+
+def map_category(raw: Optional[str]) -> str:
+    """Map a raw CSV category string to its category_code."""
+    if not raw:
+        return 'OTHER'
+    stripped = raw.strip()
+    code = CATEGORY_MAP.get(stripped)
+    if code is None:
+        # Fallback: warn and use OTHER
+        print(f"  [WARN] Unknown category: {stripped!r} → OTHER")
+        return 'OTHER'
+    return code
+
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    rows_ok    = 0
+    rows_skip  = 0
+    cat_warn   = 0
+    lines_out: list[str] = []
+
+    lines_out.append('-- import_slokas.sql — generated by scripts/import_slokas.py')
+    lines_out.append('-- Import AFTER migrate_add_sloka_tables.sql has been run.')
+    lines_out.append('-- Idempotent: uses INSERT IGNORE so re-running is safe.')
+    lines_out.append('')
+    lines_out.append('SET NAMES utf8mb4;')
+    lines_out.append('SET foreign_key_checks = 0;')
+    lines_out.append('')
+    lines_out.append(
+        'INSERT IGNORE INTO `sloka` '
+        '(`id`, `category_code`, `slokamrtam_ref`, `title`, `search_title`, '
+        '`sloka_text`, `scripture_ref`, `word_by_word`, `translation`) VALUES'
+    )
+
+    value_lines: list[str] = []
+
+    with open(CSV_PATH, newline='', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            # ── Parse id ──────────────────────────────────────────────
+            raw_id = clean(row.get('id', ''))
+            if not raw_id or not raw_id.isdigit():
+                rows_skip += 1
+                print(f"  [SKIP] Row missing id: {dict(row)}")
+                continue
+            sloka_id = int(raw_id)
+
+            # ── Category ──────────────────────────────────────────────
+            raw_cat = row.get('category', '')
+            code = map_category(raw_cat)
+            if code == 'OTHER' and clean(raw_cat) not in (None, 'Other Ślokas'):
+                cat_warn += 1
+
+            # ── sloka_text (required) ──────────────────────────────────
+            sloka_text = clean_sloka_text(row.get('sloka_text', ''))
+            if not sloka_text:
+                rows_skip += 1
+                print(f"  [SKIP] Row {sloka_id}: empty sloka_text")
+                continue
+
+            # ── Other fields ───────────────────────────────────────────
+            slokamrtam_ref = clean(row.get('slokamrtam_reference', ''))
+            title          = clean(row.get('sloka_title', ''))
+            scripture_ref  = clean(row.get('scripture_reference', ''))
+            word_by_word   = clean(row.get('word_by_word_meaning', ''))
+            translation    = clean(row.get('translation', ''))
+            search_title   = make_search_title(sloka_text)
+
+            value_lines.append(
+                f'  ({sloka_id}, {sql_val(code)}, {sql_val(slokamrtam_ref)}, '
+                f'{sql_val(title)}, {sql_val(search_title)}, '
+                f'{sql_val(sloka_text)}, {sql_val(scripture_ref)}, '
+                f'{sql_val(word_by_word)}, {sql_val(translation)})'
+            )
+            rows_ok += 1
+
+    # Join all value rows with commas, terminated by semicolon
+    lines_out.append(',\n'.join(value_lines) + ';')
+    lines_out.append('')
+    lines_out.append('SET foreign_key_checks = 1;')
+    lines_out.append(f'-- Done: {rows_ok} slokas inserted, {rows_skip} skipped.')
+
+    OUTPUT_SQL.write_text('\n'.join(lines_out), encoding='utf-8')
+
+    print(f'\nDone.')
+    print(f'  Inserted : {rows_ok}')
+    print(f'  Skipped  : {rows_skip}')
+    print(f'  Cat warns: {cat_warn}')
+    print(f'  Output   : {OUTPUT_SQL}')
+
+
+if __name__ == '__main__':
+    main()

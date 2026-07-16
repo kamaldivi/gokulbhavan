@@ -43,6 +43,17 @@ CREATE TABLE `announcement` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `audio_author`
+--
+
+CREATE TABLE `audio_author` (
+  `id` int(11) NOT NULL,
+  `author_name` varchar(200) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Canonical list of audio track authors';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `audio_category`
 --
 
@@ -79,8 +90,9 @@ CREATE TABLE `audio_track` (
   `category_code` varchar(20) NOT NULL,
   `track_name` varchar(300) NOT NULL,
   `singer` varchar(150) DEFAULT NULL,
+  `author_id` int(11) DEFAULT NULL,
   `track_num` smallint(6) DEFAULT NULL,
-  `audio_file_path` varchar(400) NOT NULL,
+  `audio_file_path` varchar(400) DEFAULT NULL,
   `lyrics_file_path` varchar(400) DEFAULT NULL,
   `base_track_path` varchar(400) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -170,6 +182,7 @@ CREATE TABLE `program` (
   `day_of_week` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
   `time_est` varchar(20) DEFAULT NULL,
   `zoom_url` varchar(300) DEFAULT NULL,
+  `zoom_passcode` varchar(50) DEFAULT NULL,
   `youtube_live_url` varchar(300) DEFAULT NULL,
   `video_playlist` varchar(255) DEFAULT NULL,
   `teacher` varchar(150) DEFAULT NULL,
@@ -181,7 +194,8 @@ CREATE TABLE `program` (
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `event_date` date DEFAULT NULL,
-  `event_time` time DEFAULT NULL
+  `event_time` time DEFAULT NULL,
+  `cover_image_path` varchar(400) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Weekly recurring program schedules for the gokulbhavan.org website';
 
 -- --------------------------------------------------------
@@ -308,6 +322,103 @@ CREATE TABLE `video_playlist_map` (
   `playlist_id` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sloka_category`
+--
+
+CREATE TABLE `sloka_category` (
+  `id`            int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_code` varchar(20)  NOT NULL,
+  `category_name` varchar(200) NOT NULL COMMENT 'Full transliterated name with diacritics',
+  `image_path`    varchar(400) DEFAULT NULL,
+  `sort_order`    smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_cat_code` (`category_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Sloka categories — standalone, not linked to audio_category';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `scripture`
+--
+
+CREATE TABLE `scripture` (
+  `id`          int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        varchar(300)     NOT NULL COMMENT 'Full canonical name, e.g. Śrīmad-Bhāgavatam',
+  `short_title` varchar(30)      DEFAULT NULL COMMENT 'Abbreviation, e.g. SB, BG — nullable until curated',
+  `image_path`  varchar(400)     DEFAULT NULL,
+  `sort_order`  smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Scripture / source text reference lookup';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sloka`
+--
+
+CREATE TABLE `sloka` (
+  `id`              int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_code`   varchar(20)      NOT NULL,
+  `slokamrtam_ref`  varchar(20)      DEFAULT NULL  COMMENT 'Chapter.verse in Slokamrtam book, e.g. 1.2',
+  `title`           varchar(300)     DEFAULT NULL  COMMENT 'Contextual book title (often NULL)',
+  `search_title`    varchar(300)     DEFAULT NULL  COMMENT 'First line of sloka_text, diacritics stripped',
+  `sloka_text`      text             NOT NULL      COMMENT 'Full transliterated Sanskrit, multiline',
+  `scripture_id`    int(10) UNSIGNED DEFAULT NULL  COMMENT 'FK to scripture — NULL until curated',
+  `scripture_ref`   varchar(300)     DEFAULT NULL  COMMENT 'Raw citation string, e.g. BRS 1.1.11',
+  `word_by_word`    mediumtext       DEFAULT NULL,
+  `translation`     mediumtext       DEFAULT NULL,
+  `commentary`      mediumtext       DEFAULT NULL  COMMENT 'Commentary by Gurudev or other acharyas',
+  `audio_file_path` varchar(400)     DEFAULT NULL  COMMENT 'Populated when audio recording exists',
+  `created_at`      datetime         NOT NULL DEFAULT current_timestamp(),
+  `updated_at`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_category`  (`category_code`),
+  KEY `idx_scripture` (`scripture_id`),
+  KEY `idx_search`    (`search_title`(100)),
+  CONSTRAINT `fk_sloka_cat` FOREIGN KEY (`category_code`) REFERENCES `sloka_category` (`category_code`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_sloka_scr` FOREIGN KEY (`scripture_id`)  REFERENCES `scripture` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Sanskrit slokas — text, word-by-word, translation, optional audio';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `daily_highlight`
+--
+
+CREATE TABLE `daily_highlight` (
+  `content_type` enum('bhajan','sloka','sankirtan','video') NOT NULL,
+  `ref_id`        varchar(100) NOT NULL COMMENT 'track_id for audio types, video_id for video',
+  `selected_date` date NOT NULL,
+  PRIMARY KEY (`content_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Current daily curated selection — one row per content type';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `highlight_history`
+--
+
+CREATE TABLE `highlight_history` (
+  `id`           int(11) NOT NULL AUTO_INCREMENT,
+  `content_type` enum('bhajan','sloka','sankirtan','video') NOT NULL,
+  `ref_id`       varchar(100) NOT NULL,
+  `shown_on`     date NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_type_date` (`content_type`, `shown_on`),
+  KEY `idx_type_date` (`content_type`, `shown_on`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='History of daily highlight selections for 7-day non-repetition window';
+
+-- --------------------------------------------------------
+
 --
 -- Indexes for dumped tables
 --
@@ -317,6 +428,13 @@ CREATE TABLE `video_playlist_map` (
 --
 ALTER TABLE `announcement`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `audio_author`
+--
+ALTER TABLE `audio_author`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_author_name` (`author_name`);
 
 --
 -- Indexes for table `audio_category`
@@ -336,7 +454,8 @@ ALTER TABLE `audio_singer_version`
 --
 ALTER TABLE `audio_track`
   ADD PRIMARY KEY (`track_id`),
-  ADD KEY `idx_category_code` (`category_code`);
+  ADD KEY `idx_category_code` (`category_code`),
+  ADD KEY `idx_author_id` (`author_id`);
 
 --
 -- Indexes for table `global`
@@ -437,6 +556,12 @@ ALTER TABLE `announcement`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `audio_author`
+--
+ALTER TABLE `audio_author`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `audio_singer_version`
 --
 ALTER TABLE `audio_singer_version`
@@ -491,6 +616,12 @@ ALTER TABLE `sanga`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `highlight_history`
+--
+ALTER TABLE `highlight_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `video_category`
 --
 ALTER TABLE `video_category`
@@ -516,7 +647,8 @@ ALTER TABLE `audio_singer_version`
 -- Constraints for table `audio_track`
 --
 ALTER TABLE `audio_track`
-  ADD CONSTRAINT `audio_track_ibfk_1` FOREIGN KEY (`category_code`) REFERENCES `audio_category` (`category_code`);
+  ADD CONSTRAINT `audio_track_ibfk_1` FOREIGN KEY (`category_code`) REFERENCES `audio_category` (`category_code`),
+  ADD CONSTRAINT `fk_audio_track_author` FOREIGN KEY (`author_id`) REFERENCES `audio_author` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `video_playlist`

@@ -76,7 +76,7 @@ try {
         $params[':category'] = $category;
     }
     if ($search !== '') {
-        $where[]           = '(t.track_name LIKE :search OR t.track_id LIKE :search OR t.author LIKE :search)';
+        $where[]           = '(t.track_name LIKE :search OR t.track_id LIKE :search OR a.author_name LIKE :search)';
         $params[':search'] = '%' . $search . '%';
     }
 
@@ -89,7 +89,7 @@ try {
             SELECT
                 t.track_id,
                 t.track_name,
-                t.author,
+                a.author_name               AS author,
                 c.category_code,
                 c.category_name             AS display_name,
                 t.audio_file_path,
@@ -99,6 +99,7 @@ try {
                 1                           AS download_allowed
             FROM audio_track t
             JOIN audio_category c ON c.category_code = t.category_code
+            LEFT JOIN audio_author a ON a.id = t.author_id
             $whereClause
             ORDER BY t.track_num ASC
         ";
@@ -107,7 +108,7 @@ try {
             SELECT
                 t.track_id,
                 t.track_name,
-                t.author,
+                a.author_name               AS author,
                 c.category_code,
                 c.category_name             AS display_name,
                 t.audio_file_path,
@@ -116,6 +117,7 @@ try {
                 1                           AS download_allowed
             FROM audio_track t
             JOIN audio_category c ON c.category_code = t.category_code
+            LEFT JOIN audio_author a ON a.id = t.author_id
             $whereClause
             ORDER BY c.category_code ASC, t.track_id ASC
         ";

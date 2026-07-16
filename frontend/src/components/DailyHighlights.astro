@@ -1,0 +1,407 @@
+---
+/**
+ * DailyHighlights.astro
+ *
+ * Shows 4 daily curated content cards (Bhajan, Śloka, Nāma Saṅkīrtana, Video)
+ * pulled from /api/daily-highlights.php. The selection rotates at 3am and
+ * avoids repeats within the past 7 days per content type.
+ *
+ * Placed between the Hero banner and "News & Highlights" on the home page.
+ */
+---
+
+<section class="max-w-6xl mx-auto px-4 sm:px-6 py-10 border-b border-brand-tan">
+
+  <div class="text-center mb-8 relative">
+    <p class="text-[11px] font-bold uppercase tracking-widest text-brand-lotus mb-2">Daily</p>
+    <h2 class="font-display font-bold text-3xl text-brand-navy">Today's Sadhana</h2>
+    <button id="dh-copy-btn"
+      class="absolute right-0 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5
+             text-xs font-semibold text-brand-slate hover:text-brand-navy
+             border border-brand-tan hover:border-brand-navy
+             bg-white px-3 py-1.5 rounded-full transition-colors"
+      title="Copy Today's Sadhana info">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </svg>
+      Copy Info
+    </button>
+  </div>
+
+  <!-- Loading skeletons -->
+  <div id="dh-loading"
+       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    {Array(4).fill(null).map(() => (
+      <div class="rounded-2xl border border-brand-tan bg-brand-tan/40 animate-pulse min-h-[190px]"></div>
+    ))}
+  </div>
+
+  <!-- Cards (hidden until loaded) -->
+  <div id="dh-grid"
+       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+       style="display:none">
+  </div>
+
+  <!-- Error state -->
+  <p id="dh-error"
+     class="text-center text-sm text-brand-slate py-8"
+     style="display:none">
+    Could not load today's selections.
+  </p>
+
+</section>
+
+<!-- ── Śloka Modal ─────────────────────────────────────────────────────────── -->
+<div id="dh-sloka-modal"
+     class="hidden fixed inset-0 z-[250] flex items-center justify-center bg-black/70 px-4"
+     role="dialog" aria-modal="true" aria-labelledby="dh-sloka-title">
+
+  <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl
+              max-h-[80vh] flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-start justify-between px-6 py-4 border-b border-brand-tan shrink-0">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-0.5">Śloka</p>
+        <h3 id="dh-sloka-title"
+            class="font-display font-bold text-lg text-brand-navy leading-snug"></h3>
+      </div>
+      <button id="dh-sloka-close"
+              title="Close"
+              class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full ml-4
+                     text-brand-slate hover:text-brand-navy hover:bg-brand-tan transition-colors">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="overflow-y-auto p-6 space-y-4 shrink min-h-0">
+      <div id="dh-sloka-lyrics"
+           class="font-mono text-sm text-brand-navy whitespace-pre-wrap leading-relaxed"></div>
+      <div id="dh-sloka-meaning-wrap" class="hidden">
+        <div class="border-t border-brand-tan pt-4">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-2">
+            Meaning
+          </p>
+          <div id="dh-sloka-meaning"
+               class="font-mono text-sm text-brand-slate whitespace-pre-wrap leading-relaxed"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+(function () {
+
+  /* ── Sloka modal refs ───────────────────────────────────────── */
+  const slokaModal       = document.getElementById('dh-sloka-modal')!;
+  const slokaTitleEl     = document.getElementById('dh-sloka-title')!;
+  const slokaLyricsEl    = document.getElementById('dh-sloka-lyrics')!;
+  const slokaMeaningWrap = document.getElementById('dh-sloka-meaning-wrap')!;
+  const slokaMeaningEl   = document.getElementById('dh-sloka-meaning')!;
+  const slokaCloseBtn    = document.getElementById('dh-sloka-close')!;
+
+  let _slokaData:    { track_name: string; lyrics: string; meaning: string } | null = null;
+  let _highlightData: any = null;
+
+  function openSlokaModal() {
+    if (!_slokaData) return;
+    slokaTitleEl.textContent  = _slokaData.track_name;
+    slokaLyricsEl.textContent = _slokaData.lyrics || '';
+    if (_slokaData.meaning) {
+      slokaMeaningEl.textContent = _slokaData.meaning;
+      slokaMeaningWrap.classList.remove('hidden');
+    } else {
+      slokaMeaningWrap.classList.add('hidden');
+    }
+    slokaModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSlokaModal() {
+    slokaModal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  slokaCloseBtn.addEventListener('click', closeSlokaModal);
+  slokaModal.addEventListener('click', (e) => { if (e.target === slokaModal) closeSlokaModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !slokaModal.classList.contains('hidden')) closeSlokaModal();
+  });
+
+  /* ── Helpers ────────────────────────────────────────────────── */
+  function esc(s: string): string {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Card HTML builders ─────────────────────────────────────── */
+  function bhajanCard(b: any): string {
+    const meta = [b.singer, b.author].filter(Boolean).join(' · ');
+    return `
+      <button class="dh-card text-left w-full rounded-2xl border border-brand-tan bg-white
+                     hover:border-brand-lotus hover:shadow-md transition-all
+                     flex flex-col p-5 gap-3 min-h-[190px]"
+              data-type="bhajan">
+        <span class="inline-flex items-center gap-1.5 bg-brand-lotus/10 text-brand-lotus
+                     text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full self-start">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+            <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/>
+          </svg>
+          Bhajan
+        </span>
+        <div class="flex-1">
+          <p class="font-display font-bold text-brand-navy text-base leading-snug line-clamp-2">
+            ${esc(b.track_id)}  ${esc(b.track_name)}
+          </p>
+          ${meta ? `<p class="text-xs text-brand-slate mt-1.5 line-clamp-1">${esc(meta)}</p>` : ''}
+        </div>
+        <div class="flex items-center gap-2 text-brand-lotus text-xs font-semibold">
+          <div class="w-7 h-7 rounded-full bg-brand-lotus flex items-center justify-center shrink-0">
+            <svg class="w-3.5 h-3.5 fill-white ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          Play Bhajan
+        </div>
+      </button>`;
+  }
+
+  function slokaCard(s: any): string {
+    const hasAudio = !!s.audio_file_path;
+    return `
+      <div class="dh-card text-left w-full rounded-2xl border border-amber-200 bg-amber-50
+                  hover:border-amber-400 hover:shadow-md transition-all
+                  flex flex-col p-5 gap-3 min-h-[190px] cursor-pointer"
+           data-type="sloka">
+        <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700
+                     text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full self-start">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+            <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-1 16H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V8h10v2z"/>
+          </svg>
+          Śloka
+        </span>
+        <div class="flex-1">
+          <p class="text-[11px] font-semibold text-amber-600 mb-1 line-clamp-1">
+            ${esc(s.display_name)} (${esc(s.track_id)})
+          </p>
+          <p class="font-display font-bold text-amber-900 text-base leading-snug line-clamp-2">
+            ${esc(s.track_name)}
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          ${hasAudio ? `
+          <button class="dh-sloka-play inline-flex items-center gap-1.5
+                         bg-amber-600 hover:bg-amber-700 text-white
+                         text-xs font-bold px-3 py-1.5 rounded-full transition-colors shrink-0"
+                  data-action="sloka-play">
+            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Play
+          </button>` : ''}
+          <div class="flex items-center gap-1.5 text-amber-700 text-xs font-semibold">
+            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+              <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+            </svg>
+            Read Śloka &amp; Meaning
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function sankirtanCard(n: any): string {
+    const num = parseInt(n.track_id.replace('N-', ''), 10);
+    return `
+      <button class="dh-card text-left w-full rounded-2xl border border-teal-200 bg-teal-50
+                     hover:border-teal-400 hover:shadow-md transition-all
+                     flex flex-col p-5 gap-3 min-h-[190px]"
+              data-type="sankirtan">
+        <span class="inline-flex items-center gap-1.5 bg-teal-100 text-teal-700
+                     text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full self-start">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zm-1 14v-4H8l4-8v4h3l-4 8z"/>
+          </svg>
+          Nāma Saṅkīrtana
+        </span>
+        <div class="flex-1">
+          <p class="text-[11px] font-bold text-teal-500 uppercase tracking-widest mb-1">
+            Tune #${num}
+          </p>
+          <p class="font-display font-bold text-teal-900 text-base leading-snug line-clamp-2">
+            ${esc(n.track_name)}
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-teal-700 text-xs font-semibold">
+          <div class="w-7 h-7 rounded-full bg-teal-600 flex items-center justify-center shrink-0">
+            <svg class="w-3.5 h-3.5 fill-white ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          Play
+        </div>
+      </button>`;
+  }
+
+  function videoCard(v: any): string {
+    const thumb = v.thumbnail_url || `https://i.ytimg.com/vi/${esc(v.video_id)}/mqdefault.jpg`;
+    return `
+      <button class="dh-card text-left w-full rounded-2xl border border-brand-tan bg-white
+                     hover:border-brand-navy hover:shadow-md transition-all
+                     flex flex-col overflow-hidden min-h-[190px]"
+              data-type="video" data-id="${esc(v.video_id)}" data-title="${esc(v.title)}">
+        <div class="relative w-full aspect-video bg-brand-tan overflow-hidden shrink-0">
+          <img src="${esc(thumb)}" alt="${esc(v.title)}"
+               class="w-full h-full object-cover" loading="lazy" />
+          <div class="absolute inset-0 bg-black/25 flex items-center justify-center">
+            <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+              <svg class="w-5 h-5 fill-brand-navy ml-0.5" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <span class="absolute top-2 left-2 inline-flex items-center gap-1
+                       bg-brand-navy/80 text-white text-[10px] font-bold
+                       uppercase tracking-widest px-2 py-0.5 rounded-full">
+            <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+              <path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/>
+            </svg>
+            Video
+          </span>
+        </div>
+        <div class="p-4 flex-1">
+          <p class="font-semibold text-brand-navy text-sm leading-snug line-clamp-2">
+            ${esc(v.title)}
+          </p>
+        </div>
+      </button>`;
+  }
+
+  /* ── Copy Info button ──────────────────────────────────────── */
+  const copyBtn = document.getElementById('dh-copy-btn')!;
+  copyBtn.addEventListener('click', async () => {
+    const dateLabel = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const d = _highlightData;
+    const lines: string[] = [];
+    lines.push(`*Daily Sadhana for ${dateLabel}*`);
+    lines.push('');
+    lines.push('Please click to view/play:');
+    lines.push('https://gokulbhavan.org/share/daily-selections.php');
+    lines.push('');
+    if (d?.bhajan)    lines.push(`1) Bhajan [${d.bhajan.track_id}] ${d.bhajan.track_name}`);
+    if (d?.sloka)     lines.push(`2) Sloka [${d.sloka.track_id}] ${d.sloka.track_name}`);
+    if (d?.sankirtan) lines.push(`3) Sankirtana [${d.sankirtan.track_id}] ${d.sankirtan.track_name}`);
+    if (d?.video)     lines.push(`4) Harikatha - ${d.video.title}`);
+    const msg = lines.join('\n');
+
+    const origHtml = copyBtn.innerHTML;
+    try {
+      await navigator.clipboard.writeText(msg);
+      copyBtn.textContent = '✓ Copied!';
+      copyBtn.classList.add('text-green-700', 'border-green-400');
+    } catch {
+      prompt('Copy this message:', msg);
+    }
+    setTimeout(() => {
+      copyBtn.innerHTML = origHtml;
+      copyBtn.classList.remove('text-green-700', 'border-green-400');
+    }, 2000);
+  });
+
+  /* ── Load highlights ────────────────────────────────────────── */
+  const loadingEl = document.getElementById('dh-loading')!;
+  const gridEl    = document.getElementById('dh-grid')!;
+  const errorEl   = document.getElementById('dh-error')!;
+
+  async function load() {
+    try {
+      const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+      const res = await fetch(`${apiBase}/api/daily-highlights.php`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const cards: string[] = [];
+      if (data.bhajan)    cards.push(bhajanCard(data.bhajan));
+      if (data.sloka)     cards.push(slokaCard(data.sloka));
+      if (data.sankirtan) cards.push(sankirtanCard(data.sankirtan));
+      if (data.video)     cards.push(videoCard(data.video));
+
+      if (!cards.length) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display   = '';
+        return;
+      }
+
+      gridEl.innerHTML = cards.join('');
+      loadingEl.style.display = 'none';
+      gridEl.style.display    = '';
+
+      // Store data for modal and copy button
+      _slokaData    = data.sloka ?? null;
+      _highlightData = data;
+
+      // Wire click handlers
+      gridEl.querySelectorAll<HTMLElement>('.dh-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const type = card.dataset.type!;
+
+          if (type === 'bhajan' && data.bhajan) {
+            const b = data.bhajan;
+            (window as any).__audioPlayer?.play({
+              track_id:         b.track_id,
+              track_name:       b.track_name,
+              display_name:     b.display_name,
+              audio_file_path:  b.audio_file_path,
+              lyrics_file_path: b.lyrics_file_path ?? null,
+              download_allowed: 1,
+              type:             'B',
+            });
+          }
+
+          if (type === 'sloka') {
+            const playBtn = (e.target as Element).closest('[data-action="sloka-play"]');
+            if (playBtn && data.sloka?.audio_file_path) {
+              const s = data.sloka;
+              (window as any).__audioPlayer?.play({
+                track_id:         s.track_id,
+                track_name:       s.track_name,
+                display_name:     s.display_name,
+                audio_file_path:  s.audio_file_path,
+                lyrics_file_path: s.lyrics_file_path ?? null,
+                download_allowed: 1,
+                type:             'S',
+              });
+            } else {
+              openSlokaModal();
+            }
+          }
+
+          if (type === 'sankirtan' && data.sankirtan) {
+            const n = data.sankirtan;
+            (window as any).__audioPlayer?.play({
+              track_id:         n.track_id,
+              track_name:       n.track_name,
+              display_name:     n.display_name,
+              audio_file_path:  n.audio_file_path,
+              lyrics_file_path: n.lyrics_file_path ?? null,
+              download_allowed: 1,
+              type:             'N',
+            });
+          }
+
+          if (type === 'video') {
+            const id    = card.dataset.id!;
+            const title = card.dataset.title!;
+            (window as any).__fvOpenModal?.(id, title);
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error('[DailyHighlights]', err);
+      loadingEl.style.display = 'none';
+      errorEl.style.display   = '';
+    }
+  }
+
+  load();
+})();
+</script>

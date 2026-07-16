@@ -102,6 +102,9 @@ const recaptchaSiteKey = (import.meta as any).env?.VITE_RECAPTCHA_SITE_KEY ?? ''
                            rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
               Find My Profile
             </button>
+            <p class="mt-2 text-center text-xs text-brand-slate/70">
+              Not registered yet? <a href="/register" class="text-brand-lotus font-semibold hover:underline">Register here</a>
+            </p>
             <!-- Not found -->
             <div id="ag-not-found"
                  class="hidden mt-3 flex items-start gap-3 bg-brand-parchment border border-brand-tan
@@ -216,27 +219,27 @@ function ensureRecaptcha() {
 }
 
 // ── Tab switching ─────────────────────────────────────────────
+function activateTab(target: string) {
+  document.querySelectorAll('.tab-btn').forEach((b) => {
+    const active = (b as HTMLElement).dataset.tab === target;
+    b.classList.toggle('border-brand-navy',   active);
+    b.classList.toggle('text-brand-navy',     active);
+    b.classList.toggle('border-transparent',  !active);
+    b.classList.toggle('text-brand-slate',    !active);
+    b.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('.tab-panel').forEach((panel) => {
+    panel.classList.toggle('hidden', panel.id !== `tab-${target}`);
+  });
+  if (target === 'ask-guruji') {
+    ensureRecaptcha();
+    loadQA();
+  }
+}
+
 document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
-    const target = (btn as HTMLElement).dataset.tab!;
-
-    document.querySelectorAll('.tab-btn').forEach((b) => {
-      const active = (b as HTMLElement).dataset.tab === target;
-      b.classList.toggle('border-brand-navy', active);
-      b.classList.toggle('text-brand-navy',   active);
-      b.classList.toggle('border-transparent', !active);
-      b.classList.toggle('text-brand-slate',   !active);
-      b.setAttribute('aria-selected', String(active));
-    });
-
-    document.querySelectorAll('.tab-panel').forEach((panel) => {
-      panel.classList.toggle('hidden', panel.id !== `tab-${target}`);
-    });
-
-    if (target === 'ask-guruji') {
-      ensureRecaptcha();
-      loadQA();
-    }
+    activateTab((btn as HTMLElement).dataset.tab!);
   });
 });
 
@@ -457,10 +460,22 @@ agBtnSubmit.addEventListener('click', () => {
     });
   }
 
-  if (SITE_KEY && (window as any).grecaptcha) {
-    (window as any).grecaptcha.ready(() => {
-      (window as any).grecaptcha.execute(SITE_KEY, { action: 'ask_guruji' }).then(doSubmit);
-    });
+  if (SITE_KEY) {
+    // Wait up to 8 s for grecaptcha to finish loading (handles slow connections)
+    function waitForGrecaptcha(attempts: number) {
+      if ((window as any).grecaptcha) {
+        (window as any).grecaptcha.ready(() => {
+          (window as any).grecaptcha.execute(SITE_KEY, { action: 'ask_guruji' }).then(doSubmit);
+        });
+      } else if (attempts > 0) {
+        setTimeout(() => waitForGrecaptcha(attempts - 1), 400);
+      } else {
+        showError('Could not load spam protection. Please reload the page and try again.');
+        agBtnSubmit.disabled = false;
+        agBtnSubmit.textContent = 'Submit Question';
+      }
+    }
+    waitForGrecaptcha(20);
   } else {
     doSubmit('');
   }
@@ -531,6 +546,9 @@ function loadQA() {
 function esc(s: string) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Auto-activate tab from URL hash (e.g. /contact#ask-guruji) ──
+if (window.location.hash === '#ask-guruji') activateTab('ask-guruji');
 </script>
 
 <style>

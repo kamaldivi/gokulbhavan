@@ -1,10 +1,16 @@
 ---
 import Base from "@layouts/Base.astro";
 import PageHero from "@components/PageHero.astro";
+
+const ZOOM_URL    = (import.meta.env.VITE_ZOOM_URL    as string) ?? '';
+const YOUTUBE_URL = (import.meta.env.VITE_YOUTUBE_URL as string) ?? '';
+const API_BASE    = (import.meta.env.VITE_API_BASE_URL as string) ?? '';
 ---
 
 <Base title="Programs" activePath="/programs"
      description="Programs at Gokul Bhavan - Harikathās, spiritual classes, special events, and devotional gatherings offered virtually and in person.">
+
+  <div id="site-config" data-zoom-url={ZOOM_URL} data-youtube-url={YOUTUBE_URL} data-api-base={API_BASE} class="hidden" aria-hidden="true"></div>
 
   <PageHero
     title="Gokul Bhavan Programs"
@@ -146,6 +152,7 @@ type Program = {
   event_date: string | null;
   event_time: string | null;
   zoom_url: string | null;
+  zoom_passcode: string | null;
   youtube_live_url: string | null;
   video_playlist: string | null;
   platform: string | null;
@@ -154,6 +161,7 @@ type Program = {
   end_date: string | null;
   site_id: string | null;
   order_num: number;
+  cover_image_path: string | null;
 };
 
 const DAY_COLORS: Record<string, string> = {
@@ -171,7 +179,126 @@ const LANG_COLORS: Record<string, string> = {
 };
 const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+const _cfg        = document.getElementById('site-config') as HTMLElement | null;
+const ZOOM_URL    = _cfg?.dataset.zoomUrl    ?? '';
+const YOUTUBE_URL = _cfg?.dataset.youtubeUrl ?? '';
+const apiBase     = _cfg?.dataset.apiBase    ?? '';
+
+// ── Invite message helpers ─────────────────────────────────────
+function programTimeInTZ(
+  dayOfWeek: string | null, timeEst: string | null, tz: string
+): { time: string; day: string } | null {
+  if (!dayOfWeek || !timeEst) return null;
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const srcIdx = DAYS.indexOf(dayOfWeek);
+  if (srcIdx === -1) return null;
+  const m = timeEst.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const h = parseInt(m[1]), min = parseInt(m[2]);
+  const now = new Date();
+  const diff = (srcIdx - now.getDay() + 7) % 7;
+  const ref = new Date(now);
+  ref.setDate(now.getDate() + diff);
+  const probe = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate(), h, min));
+  const etHourRaw = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(probe)
+  );
+  const etHour = etHourRaw === 24 ? 0 : etHourRaw;
+  let offsetH = h - etHour;
+  if (offsetH > 12)  offsetH -= 24;
+  if (offsetH < -12) offsetH += 24;
+  const utcDate = new Date(probe.getTime() + offsetH * 3_600_000);
+  const time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true }).format(utcDate);
+  const day  = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(utcDate);
+  return { time, day };
+}
+
+function minsUntilClass(dayOfWeek: string | null, timeEst: string | null): number | null {
+  if (!dayOfWeek || !timeEst) return null;
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const srcIdx = DAYS.indexOf(dayOfWeek);
+  if (srcIdx === -1) return null;
+  const m = timeEst.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const h = parseInt(m[1]), min = parseInt(m[2]);
+  const now = new Date();
+  for (const extra of [0, 7]) {
+    const diff = ((srcIdx - now.getDay() + 7) % 7) + extra;
+    const ref = new Date(now);
+    ref.setDate(now.getDate() + diff);
+    const probe = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate(), h, min));
+    const etHourRaw = parseInt(
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(probe)
+    );
+    const etHour = etHourRaw === 24 ? 0 : etHourRaw;
+    let offsetH = h - etHour;
+    if (offsetH > 12)  offsetH -= 24;
+    if (offsetH < -12) offsetH += 24;
+    const classUTC = new Date(probe.getTime() + offsetH * 3_600_000);
+    const mins = Math.round((classUTC.getTime() - now.getTime()) / 60_000);
+    if (mins > 0) return mins;
+  }
+  return null;
+}
+
+function formatStartsIn(mins: number): string {
+  if (mins < 120) {
+    return `Class starts in ${mins} minutes.`;
+  }
+  if (mins < 1440) {
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return m === 0
+      ? `Class starts in ${h} hours.`
+      : `Class starts in ${h} hours ${m} minutes.`;
+  }
+  const days = Math.floor(mins / 1440);
+  const remH  = Math.floor((mins % 1440) / 60);
+  return remH === 0
+    ? `Class starts in ${days} day${days > 1 ? 's' : ''}.`
+    : `Class starts in ${days} day${days > 1 ? 's' : ''} ${remH} hours.`;
+}
+
+function extractZoomMeetingId(url: string): string | null {
+  const m = url.match(/\/j\/(\d+)/);
+  if (!m) return null;
+  const id = m[1];
+  // Format groups of 3: 229 436 9627
+  return id.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+}
+
+function buildInviteMessage(p: Program): string {
+  const lines: string[] = [];
+
+  // Program title in bold (WhatsApp markdown)
+  lines.push(`*${p.title}*`);
+
+  // "Starts in X"
+  const mins = minsUntilClass(p.day_of_week, p.time_est);
+  if (mins !== null) lines.push(formatStartsIn(mins));
+
+  // Time zones
+  const zones: { label: string; tz: string }[] = [
+    { label: 'USA-Dallas:', tz: 'America/Chicago'       },
+    { label: 'USA-ET:',     tz: 'America/New_York'      },
+    { label: 'Trinidad:',   tz: 'America/Port_of_Spain' },
+    { label: 'Nigeria:',    tz: 'Africa/Lagos'           },
+    { label: 'India:',      tz: 'Asia/Kolkata'           },
+  ];
+  for (const z of zones) {
+    const t = programTimeInTZ(p.day_of_week, p.time_est, z.tz);
+    if (t) {
+      lines.push(`${z.label.padEnd(12)}${t.day.slice(0,3)} ${t.time}`);
+    }
+  }
+
+  lines.push('');
+  lines.push('*Click any of the links to Join*');
+  lines.push(`https://gokulbhavan.org/share/program.php?id=${p.id}`);
+  if (ZOOM_URL)    { lines.push(''); lines.push(ZOOM_URL); }
+  if (YOUTUBE_URL) { lines.push(''); lines.push(YOUTUBE_URL); }
+
+  return lines.join('\n');
+}
 
 // ── Helpers ────────────────────────────────────────────────────
 function esc(s: string | null | undefined) {
@@ -262,20 +389,21 @@ function localProgramTime(dayOfWeek: string | null, timeEst: string | null): {
   return { day3: dayFull.slice(0, 3).toUpperCase(), dayFull, time, tzAbbr, dayChanged: dayFull !== dayOfWeek };
 }
 
-function shareButton(id: number): string {
-  return `<button class="share-btn inline-flex items-center gap-1.5 text-brand-slate border border-brand-tan hover:border-brand-navy hover:text-brand-navy text-xs font-semibold px-3 py-2 rounded-full transition-colors whitespace-nowrap shrink-0"
-                   data-id="${id}" title="Copy join link">
-    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-      <path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"/>
+function copyInviteButton(p: Program): string {
+  if (!ZOOM_URL && !YOUTUBE_URL) return '';
+  return `<button class="copy-invite-btn inline-flex items-center gap-1.5 text-brand-slate border border-brand-tan hover:border-brand-lotus hover:text-brand-lotus text-xs font-semibold px-3 py-2 rounded-full transition-colors whitespace-nowrap shrink-0"
+                   data-prog-id="${p.id}" title="Copy invite message">
+    <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
     </svg>
-    Share
+    Copy Info
   </button>`;
 }
 
 // Right column: optional share button + watch/coming-soon button.
-function rowRight(p: Program, showShare = false): string {
-  const share = showShare ? shareButton(p.id) : '';
-  return `<div class="flex-none flex items-center gap-2">${share}${watchButton(p.video_playlist, p.title)}</div>`;
+function rowRight(p: Program, showCopyInvite = false): string {
+  const invite = showCopyInvite ? copyInviteButton(p) : '';
+  return `<div class="flex-none flex items-center gap-2">${invite}${watchButton(p.video_playlist, p.title)}</div>`;
 }
 
 // All rows: CSS grid with 3 fixed columns (badge | content | button).
@@ -292,9 +420,19 @@ function activeRow(p: Program): string {
          <span class="ml-0.5">${esc(lt.tzAbbr)}</span>
        </p>`
     : '';
+  const thumb = p.cover_image_path
+    ? `<img src="/${esc(p.cover_image_path)}" alt=""
+            class="w-12 h-12 rounded-lg object-cover shrink-0 border border-brand-tan" />`
+    : '';
+  const leftCol = thumb
+    ? `<div class="flex items-center gap-2 shrink-0">${badge}${thumb}</div>`
+    : badge;
+  const gridCols = thumb
+    ? 'style="grid-template-columns: auto minmax(0,1fr) auto"'
+    : ROW_GRID;
   return `
-    <div class="grid items-center gap-4 bg-white rounded-xl border border-brand-tan px-4 py-3 hover:border-brand-navy/30 hover:shadow-sm transition" ${ROW_GRID}>
-      ${badge}
+    <div class="grid items-center gap-4 bg-white rounded-xl border border-brand-tan px-4 py-3 hover:border-brand-navy/30 hover:shadow-sm transition" ${gridCols}>
+      ${leftCol}
       <div class="min-w-0">
         <p class="font-semibold text-brand-navy text-base leading-snug truncate">${esc(p.title)}</p>
         <p class="text-sm text-brand-slate/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
@@ -377,6 +515,7 @@ const vidLoading  = document.getElementById('vid-panel-loading')!;
 const vidGrid     = document.getElementById('vid-panel-grid')!;
 const vidEmpty    = document.getElementById('vid-panel-empty')!;
 
+let raw: Program[] = [];
 let openPlaylist: string | null = null;
 
 function closeVidPanel() {
@@ -448,16 +587,27 @@ function wireWatchBtns(container: HTMLElement) {
   });
 }
 
-function wireShareBtns(container: HTMLElement) {
-  container.querySelectorAll<HTMLButtonElement>('.share-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const url = `${window.location.origin}/join.php?id=${btn.dataset.id}`;
-      navigator.clipboard.writeText(url).then(() => {
+function wireCopyInviteBtns(container: HTMLElement) {
+  container.querySelectorAll<HTMLButtonElement>('.copy-invite-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.progId ?? '0');
+      const p  = raw.find((x: Program) => x.id === id);
+      if (!p) return;
+      const msg = buildInviteMessage(p);
+      try {
+        await navigator.clipboard.writeText(msg);
         const orig = btn.innerHTML;
-        btn.innerHTML = `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!`;
-        btn.classList.add('text-green-700', 'border-green-300');
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('text-green-700', 'border-green-300'); }, 2000);
-      });
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('border-green-400', 'text-green-700');
+        btn.classList.remove('hover:border-brand-lotus', 'hover:text-brand-lotus');
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.classList.remove('border-green-400', 'text-green-700');
+          btn.classList.add('hover:border-brand-lotus', 'hover:text-brand-lotus');
+        }, 2000);
+      } catch {
+        prompt('Copy this invite message:', msg);
+      }
     });
   });
 }
@@ -470,7 +620,7 @@ async function load() {
   try {
     const res = await fetch(`${apiBase}/api/schedule.php?all=1`);
     if (!res.ok) throw new Error();
-    const raw: Program[] = await res.json();
+    raw = await res.json();
 
     loading.classList.add('hidden');
 
@@ -499,7 +649,7 @@ async function load() {
         list.appendChild(div.firstElementChild as HTMLElement);
       });
       wireWatchBtns(list);
-      wireShareBtns(list);
+      wireCopyInviteBtns(list);
       sec.classList.remove('hidden');
     }
 
@@ -509,31 +659,41 @@ async function load() {
       const sec  = document.getElementById('sec-active')!;
       const list = document.getElementById('list-active')!;
 
-      // Collect unique join URLs for section header
-      const zoomUrls = [...new Set(activeAll.map(p => p.zoom_url).filter(Boolean))];
-      const ytUrls   = [...new Set(activeAll.map(p => p.youtube_live_url).filter(Boolean))];
+      // Collect unique join URLs for section header.
+      // Normalize before dedup: lowercase, strip protocol+www, strip trailing slash.
+      function dedupeUrls(vals: (string | null)[]): string[] {
+        const seen = new Map<string, string>();
+        for (const v of vals) {
+          const raw = v?.trim();
+          if (!raw || !/^https?:\/\//i.test(raw)) continue;   // skip blank or malformed
+          const key = raw.toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, '');
+          if (!seen.has(key)) seen.set(key, raw);
+        }
+        return [...seen.values()];
+      }
+      const zoomUrls = ZOOM_URL    ? [ZOOM_URL]    : [];
+      const ytUrls   = YOUTUBE_URL ? [YOUTUBE_URL] : [];
       const joinBtns = document.getElementById('join-btns')!;
 
-      zoomUrls.forEach(url => {
-        joinBtns.innerHTML += `
-          <a href="${esc(url!)}" target="_blank" rel="noopener noreferrer"
+      const joinHtml = [
+        ...zoomUrls.map(url => `
+          <a href="${esc(url)}" target="_blank" rel="noopener noreferrer"
              class="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-slate text-white text-sm font-bold uppercase tracking-wide px-4 py-2.5 rounded-full transition-colors">
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.508-4.5l-3.743 2.688V7.5H6.257C5.563 7.5 5 8.063 5 8.757v6.985h8.249c.694 0 1.257-.563 1.257-1.257V12l3.743 2.7A.375.375 0 0 0 19 14.4V7.8a.375.375 0 0 0-.508-.3z"/>
             </svg>
             Join on Zoom
-          </a>`;
-      });
-      ytUrls.forEach(url => {
-        joinBtns.innerHTML += `
-          <a href="${esc(url!)}" target="_blank" rel="noopener noreferrer"
+          </a>`),
+        ...ytUrls.map(url => `
+          <a href="${esc(url)}" target="_blank" rel="noopener noreferrer"
              class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold uppercase tracking-wide px-4 py-2.5 rounded-full transition-colors">
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/>
             </svg>
             Watch on YouTube
-          </a>`;
-      });
+          </a>`),
+      ].join('');
+      joinBtns.innerHTML = joinHtml;
 
       activeAll.forEach(p => {
         const div = document.createElement('div');
@@ -541,7 +701,7 @@ async function load() {
         list.appendChild(div.firstElementChild as HTMLElement);
       });
       wireWatchBtns(list);
-      wireShareBtns(list);
+      wireCopyInviteBtns(list);
       sec.classList.remove('hidden');
     }
 
@@ -555,6 +715,7 @@ async function load() {
         list.appendChild(div.firstElementChild as HTMLElement);
       });
       wireWatchBtns(list);
+      wireCopyInviteBtns(list);
       sec.classList.remove('hidden');
     }
 

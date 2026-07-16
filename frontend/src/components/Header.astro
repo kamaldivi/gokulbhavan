@@ -4,6 +4,7 @@
  * Supports two-level tree nav: items with children render as dropdowns (desktop)
  * and accordions (mobile).
  */
+import { ZOOM_URL, YOUTUBE_URL } from '@lib/site-links';
 
 interface ChildNavItem {
   label: string;
@@ -28,36 +29,41 @@ const DEFAULT_NAV: NavItem[] = [
   {
     label: "Bhajans", href: "/bhajans",
     children: [
-      { label: "Sankirtans", href: "/sankirtans" },
-      { label: "Albums",     href: "/albums" },
+      { label: "Bhajans",  href: "/bhajans" },
+      { label: "Sankirtans",   href: "/sankirtans" },
+      { label: "Albums",       href: "/albums" },
+    ],
+  },
+  {
+    label: "Slokas", href: "/slokas",
+    children: [
+      { label: "Slokas",       href: "/slokas" },
+      { label: "Slokamritam",  href: "/slokas-new" },
     ],
   },
   { label: "Videos", href: "/videos" },
   {
     label: "Calendar", href: "/vcalendar",
     children: [
+      { label: "Vaishnava Calendar",      href: "/vcalendar" },
       { label: "Ekadasi Guidelines", href: "/vcalendar/ekadasi-guidelines" },
       { label: "Ekadasi Recipes",    href: "/vcalendar/ekadasi-recipes" },
     ],
   },
   { label: "Blogs", href: "/blogs" },
-  {
-    label: "Śāstras", href: "/slokas",
-    children: [
-      { label: "Slokas", href: "/slokas" },
-      { label: "Books",  href: "https://purebhaktibase.com/?tab=gurudev", external: true },
-    ],
-  },
+  { label: "Books",  href: "https://purebhaktibase.com/?tab=gurudev", external: true },
   {
     label: "About Us", href: "/about",
     children: [
-      { label: "Our Bhakti Path", href: "/krishna-bhakti" },
+      { label: "About Gokul Bhavan", href: "/about" },
+      { label: "Our Bhakti Path",    href: "/krishna-bhakti" },
     ],
   },
   {
     label: "Contact", href: "/contact",
     children: [
-      { label: "Ask Guruji", href: "/ask-guruji.php" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "Ask Guruji", href: "/contact#ask-guruji" },
     ],
   },
 ];
@@ -94,16 +100,16 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
             Gokul Bhavan<span class="hidden sm:inline"> Gaudiya Matha</span>
           </div>
           <div class="hidden sm:block font-sans text-xs text-brand-slate mt-1">
-            An Independent 501(c)(3) Nonprofit Organization
+            Awakening the souls with pure divine love
           </div>
         </div>
       </div>
-
+      
       <!-- Right: Icon utility strip (desktop only) -->
-      <div class="hidden sm:flex items-end gap-0.5">
+      <div class="hidden sm:flex items-center gap-0.5">
 
         <!-- YouTube — Follow -->
-        <a href="https://www.youtube.com/@bkdasa" target="_blank" rel="noopener noreferrer"
+        <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer"
            title="Follow on YouTube" aria-label="Follow on YouTube"
            class="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-brand-tan/40 transition-colors group">
           <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-slate group-hover:bg-brand-navy transition-colors">
@@ -113,7 +119,7 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
         </a>
 
         <!-- Zoom — Connect -->
-        <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09" target="_blank" rel="noopener noreferrer"
+        <a href={ZOOM_URL} target="_blank" rel="noopener noreferrer"
            title="Join Weekly Online Program" aria-label="Join Weekly Program on Zoom"
            class="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-brand-tan/40 transition-colors group">
           <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-slate group-hover:bg-brand-navy transition-colors">
@@ -122,36 +128,46 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
           <span class="text-[10px] font-semibold text-brand-slate group-hover:text-brand-navy transition-colors leading-none">Connect</span>
         </a>
 
-        <!-- Register — CTA (lotus pink, visually distinct) -->
+        <!-- Register -->
         <a href="/register"
            title="Register" aria-label="Register"
            class="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-brand-tan/40 transition-colors group">
-          <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-lotus group-hover:bg-pink-700 transition-colors">
+          <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-slate group-hover:bg-brand-navy transition-colors">
             <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
           </span>
-          <span class="text-[10px] font-semibold text-brand-lotus group-hover:text-pink-700 transition-colors leading-none">Register</span>
+          <span class="text-[10px] font-semibold text-brand-slate group-hover:text-brand-navy transition-colors leading-none">Register</span>
         </a>
 
-        <!-- Admin — muted, for convenience -->
+        <!-- Admin -->
         <a href="/admin"
            title="Admin" aria-label="Admin panel"
            class="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-brand-tan/40 transition-colors group">
-          <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-slate/40 group-hover:bg-brand-slate transition-colors">
+          <span class="w-9 h-9 rounded-full flex items-center justify-center bg-brand-slate group-hover:bg-brand-navy transition-colors">
             <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
           </span>
-          <span class="text-[10px] font-semibold text-brand-slate/50 group-hover:text-brand-slate transition-colors leading-none">Admin</span>
+          <span class="text-[10px] font-semibold text-brand-slate group-hover:text-brand-navy transition-colors leading-none">Admin</span>
         </a>
 
-        <!-- Language toggle -->
-        <div class="flex flex-col items-center gap-1 px-2.5 py-1.5">
-          <div class="flex items-center gap-1.5 h-9">
-            <span class="text-sm font-bold text-brand-navy border-b-2 border-brand-navy pb-px leading-none">EN</span>
-            <span class="text-brand-tan leading-none">·</span>
-            <a href="/tamil"
-               class="text-sm font-semibold text-brand-slate hover:text-brand-navy transition-colors leading-none">தமிழ்</a>
-          </div>
-          <span class="text-[10px] font-semibold text-brand-slate/40 leading-none">Language</span>
-        </div>
+        <!-- Language toggle — pill, vertically centered -->
+        {activePath.startsWith('/tamil') ? (
+          <a href="/"
+             title="Switch to English" aria-label="Switch to English"
+             class="self-center mx-1 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-slate/10 hover:bg-brand-slate/20 transition-colors border border-brand-slate/15 text-sm font-semibold leading-none whitespace-nowrap">
+            <span>🌐</span>
+            <span class="text-brand-slate/50">EN</span>
+            <span class="text-brand-slate/30">|</span>
+            <span class="text-brand-navy font-bold">தமிழ்</span>
+          </a>
+        ) : (
+          <a href="/tamil"
+             title="Switch to Tamil" aria-label="Switch to Tamil"
+             class="self-center mx-1 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-slate/10 hover:bg-brand-slate/20 transition-colors border border-brand-slate/15 text-sm font-semibold leading-none whitespace-nowrap">
+            <span>🌐</span>
+            <span class="text-brand-navy font-bold">EN</span>
+            <span class="text-brand-slate/30">|</span>
+            <span class="text-brand-slate/50">தமிழ்</span>
+          </a>
+        )}
 
       </div>
 
@@ -171,7 +187,7 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
               <a href={item.href}
                  class={`flex items-center gap-1 px-3 rounded transition-colors ${isActive(item, item.children) ? "bg-brand-navy text-white" : "text-brand-linen hover:bg-brand-navy hover:text-white"}`}>
                 {item.label}
-                <svg class="w-3 h-3 fill-current opacity-60 mt-px shrink-0" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 fill-current opacity-70 mt-px shrink-0" viewBox="0 0 24 24">
                   <path d="M7 10l5 5 5-5z"/>
                 </svg>
               </a>
@@ -244,9 +260,9 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
                    class={`flex-1 block py-3 ${isActive(item, item.children) ? "text-white font-bold" : "text-brand-linen hover:text-white transition-colors"}`}>
                   {item.label}
                 </a>
-                <button class="mobile-accordion-toggle p-3 -mr-3 text-brand-linen hover:text-white transition-colors"
+                <button class="mobile-accordion-toggle p-3.5 -mr-3.5 text-brand-linen hover:text-white transition-colors"
                         aria-label={`Expand ${item.label}`}>
-                  <svg class="w-4 h-4 fill-current transition-transform duration-200" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 fill-current transition-transform duration-200" viewBox="0 0 24 24">
                     <path d="M7 10l5 5 5-5z"/>
                   </svg>
                 </button>
@@ -287,15 +303,6 @@ function isActive(item: NavItem | ChildNavItem, children?: ChildNavItem[]): bool
                   class="w-full text-left block py-3 text-brand-linen hover:text-white transition-colors">
             My Playlists
           </button>
-        </li>
-
-        <!-- Register CTA -->
-        <li class="pt-3 pb-1">
-          <a href="/register"
-             class="w-full inline-flex items-center justify-center gap-2 bg-brand-lotus hover:bg-pink-700 text-white text-sm font-bold uppercase tracking-wide px-4 py-3 rounded-full transition-colors">
-            <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            Register
-          </a>
         </li>
 
         <!-- Language toggle -->

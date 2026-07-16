@@ -6,6 +6,7 @@
  */
 import Base from "@layouts/Base.astro";
 import PageHero from "@components/PageHero.astro";
+import AboutNav from "@components/AboutNav.astro";
 
 const MISSION_ITEMS = [
   "Sharing the teachings of Śrī Caitanya Mahāprabhu, Śrīla Gurudeva, and the Gauḍīya guru-paramparā with sincerity and compassion",
@@ -26,6 +27,7 @@ const MISSION_ITEMS = [
     title="About Us"
     description="We are an independent registered 501(c) non-profit religious organization, formerly Gokul Bhajan & Vedic Studies, dedicated to cultivating rāgānugā-bhakti and loving service to Śrīmatī Rādhārāṇī and Lord Śrī Kṛṣṇa."
   />
+  <AboutNav activePath="/about" />
 
   <!-- ── Content ───────────────────────────────────────────────── -->
   <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">

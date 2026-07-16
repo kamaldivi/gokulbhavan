@@ -1,0 +1,7 @@
+Options -Indexes
+
+# Block direct HTTP access to shared PHP includes (files starting with _)
+<FilesMatch "^_">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

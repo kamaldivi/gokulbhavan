@@ -12,8 +12,9 @@ $FIELDS = [
     'title', 'description', 'teacher', 'language',
     'day_of_week', 'time_est',
     'event_date', 'event_time',
-    'zoom_url', 'youtube_live_url', 'video_playlist', 'platform', 'duration_min',
+    'video_playlist', 'platform', 'duration_min',
     'site_id', 'start_date', 'end_date', 'order_num',
+    'cover_image_path',
 ];
 
 $INT_FIELDS = ['duration_min', 'order_num'];
@@ -113,8 +114,14 @@ try {
             echo json_encode(['message' => 'Missing id']);
             exit;
         }
+        $row = $pdo->prepare("SELECT cover_image_path FROM program WHERE id = :id");
+        $row->execute([':id' => $id]);
+        $prog = $row->fetch();
         $pdo->prepare("DELETE FROM program WHERE id = :id")->execute([':id' => $id]);
-        echo json_encode(['message' => 'Deleted']);
+        echo json_encode([
+            'message'            => 'Deleted',
+            'cover_image_path'   => $prog ? $prog['cover_image_path'] : null,
+        ]);
 
     } else {
         http_response_code(405);

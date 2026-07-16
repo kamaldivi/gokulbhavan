@@ -2,19 +2,18 @@
 /**
  * YouTube Playlist Sync — gokulbhavan.org/api/youtubesync.php
  *
- * Reads playlists from video_playlist, calls the YouTube Data API v3
- * for each, and upserts results into video + video_playlist_map.
+ * Two-phase rebuild strategy:
+ *   Phase 1 — Clear all existing video and playlist-map data from the database.
+ *   Phase 2 — Re-fetch every playlist from YouTube and insert fresh data.
  *
- * One row per unique video in `video` (deduplicated by video_id).
- * Playlist membership is recorded in video_playlist_map (many-to-many).
- * track_id is resolved from audio_track via the [ID] tag in the title.
+ * Deleted playlists (YouTube returns 404) are removed from video_playlist.
+ * Private, deleted, and content-filtered videos are skipped.
+ * A brief downtime window (no videos visible) occurs during the sync.
  *
  * Access:
  *   https://gokulbhavan.org/api/youtubesync.php?token=YOUR_SECRET_TOKEN
  *
  * Token is stored in config.php as SYNC_TOKEN.
- * Safe to run multiple times — INSERT ... ON DUPLICATE KEY UPDATE and
- * INSERT IGNORE ensure no data is lost if interrupted mid-way.
  */
 
 // ── Output buffering: flush progress to browser in real-time ─
@@ -81,15 +80,17 @@ function resolveTrackId(PDO $db, string $extractedId): ?string {
         $row = $stmt->fetch();
         return $row ? $row['track_id'] : null;
     } catch (PDOException $e) {
-        // audio_track table not yet created — track linkage deferred to audio migration phase
         return null;
     }
 }
 
 /**
- * Fetch true published_date for a batch of new video IDs via videos.list.
+ * Fetch true published_date for a batch of video IDs via videos.list.
  * Returns a map of video_id => published_date string (Y-m-d).
- * Videos not returned by the API (deleted, private) are omitted.
+ * Videos not returned by the API are omitted from the map.
+ *
+ * Uses ignore_errors so PHP returns the response body on 4xx/5xx
+ * rather than false, allowing API errors to be detected cleanly.
  *
  * @param  string[] $videoIds  Up to 50 IDs
  * @return array<string,string>
@@ -97,16 +98,17 @@ function resolveTrackId(PDO $db, string $extractedId): ?string {
 function fetchPublishedDates(string $apiKey, array $videoIds): array {
     if (empty($videoIds)) return [];
 
-    $url  = 'https://www.googleapis.com/youtube/v3/videos'
-          . '?part=snippet'
-          . '&id=' . urlencode(implode(',', $videoIds))
-          . '&key=' . urlencode($apiKey);
+    $url = 'https://www.googleapis.com/youtube/v3/videos'
+         . '?part=snippet'
+         . '&id=' . urlencode(implode(',', $videoIds))
+         . '&key=' . urlencode($apiKey);
 
-    $json = @file_get_contents($url);
+    $ctx  = stream_context_create(['http' => ['ignore_errors' => true]]);
+    $json = @file_get_contents($url, false, $ctx);
     if ($json === false) return [];
 
     $data = json_decode($json);
-    if (!isset($data->items)) return [];
+    if (isset($data->error) || !isset($data->items)) return [];
 
     $map = [];
     foreach ($data->items as $item) {
@@ -116,28 +118,18 @@ function fetchPublishedDates(string $apiKey, array $videoIds): array {
 }
 
 /**
- * Upsert a batch of videos and record their playlist memberships.
- *
- * video is deduplicated by video_id — one row per unique YouTube video.
- * For new videos: published_date comes from videos.list (true upload date),
- *   updated_date from playlistItems publishedAt (playlist-added date).
- * For existing videos: published_date is never overwritten; only
- *   video_title, thumbnail_url, and updated_date are refreshed.
- * track_id uses COALESCE so a resolved link is never cleared by a later
- *   sync pass where the title tag is absent.
+ * Insert a batch of videos and record their playlist memberships.
+ * INSERT IGNORE on video deduplicates videos that appear in multiple playlists —
+ * the first playlist's data wins, subsequent inserts for the same video_id are skipped.
+ * video_playlist_map always gets one row per (video_id, playlist_id) pair.
  *
  * @param array<string,array> $videos  Keyed by video_id, each entry:
- *   [title, thumb, updated_date, extracted_id, is_new, published_date]
+ *   [title, thumb, updated_date, extracted_id, published_date]
  */
-function upsertVideoBatch(PDO $db, string $playlistId, array $videos): void {
+function insertVideoBatch(PDO $db, string $playlistId, array $videos): void {
     $videoStmt = $db->prepare("
-        INSERT INTO video (video_id, video_title, thumbnail_url, published_date, updated_date, track_id)
+        INSERT IGNORE INTO video (video_id, video_title, thumbnail_url, published_date, updated_date, track_id)
         VALUES (:video_id, :title, :thumb, :published_date, :updated_date, :track_id)
-        ON DUPLICATE KEY UPDATE
-            video_title    = VALUES(video_title),
-            thumbnail_url  = VALUES(thumbnail_url),
-            updated_date   = VALUES(updated_date),
-            track_id       = COALESCE(VALUES(track_id), track_id)
     ");
 
     $mapStmt = $db->prepare("
@@ -149,12 +141,12 @@ function upsertVideoBatch(PDO $db, string $playlistId, array $videos): void {
         $trackId = resolveTrackId($db, $v['extracted_id']);
 
         $videoStmt->execute([
-            ':video_id'      => $videoId,
-            ':title'         => $v['title'],
-            ':thumb'         => $v['thumb'],
-            ':published_date'=> $v['published_date'],
-            ':updated_date'  => $v['updated_date'],
-            ':track_id'      => $trackId,
+            ':video_id'       => $videoId,
+            ':title'          => $v['title'],
+            ':thumb'          => $v['thumb'],
+            ':published_date' => $v['published_date'],
+            ':updated_date'   => $v['updated_date'],
+            ':track_id'       => $trackId,
         ]);
 
         $mapStmt->execute([':video_id' => $videoId, ':playlist_id' => $playlistId]);
@@ -181,14 +173,14 @@ flush();
 try {
     $db = get_db();
 
-    // Get YouTube API key from global
+    // Get YouTube API key from global table
     $row = $db->query("SELECT youtube_api_key FROM global LIMIT 1")->fetch();
     if (!$row || empty($row['youtube_api_key'])) {
-        die('<p class="err">YouTube API key not found in global.</p></body></html>');
+        die('<p class="err">YouTube API key not found in global table.</p></body></html>');
     }
     $apiKey = $row['youtube_api_key'];
 
-    // Fetch all playlists from the new schema
+    // Load all playlists from DB before clearing video data
     $playlists = $db->query("
         SELECT vp.playlist_id, vp.playlist_name, vc.category_name
         FROM video_playlist vp
@@ -196,14 +188,24 @@ try {
         ORDER BY vc.category_name, vp.playlist_name
     ")->fetchAll();
 
-    echo '<p>Found <b>' . count($playlists) . '</b> playlists to sync.</p>';
+    echo '<p>Found <b>' . count($playlists) . '</b> playlists.</p>';
     flush();
 
-    $totalAdded      = 0;
-    $totalUpdated    = 0;
-    $totalSkippedPrivate   = 0;
-    $totalSkippedFiltered  = 0;
-    $totalMapRemoved = 0;
+    // ── Phase 1: Clear all existing video data ────────────────
+    echo '<p class="head">Phase 1 — Clearing existing video data</p>';
+    $db->exec("DELETE FROM video_playlist_map");
+    $db->exec("DELETE FROM video");
+    echo '<p>video and video_playlist_map tables cleared. Rebuilding from YouTube…</p>';
+    flush();
+
+    // ── Phase 2: Rebuild from YouTube ─────────────────────────
+    echo '<p class="head">Phase 2 — Fetching from YouTube</p>';
+    flush();
+
+    $totalAdded           = 0;
+    $totalSkippedPrivate  = 0;
+    $totalSkippedFiltered = 0;
+    $totalPlaylistRemoved = 0;
 
     foreach ($playlists as $pl) {
         $playlistId   = $pl['playlist_id'];
@@ -214,11 +216,9 @@ try {
              . htmlspecialchars($playlistName) . ' (' . htmlspecialchars($playlistId) . ')</p>';
         flush();
 
-        $pageToken        = '';
-        $playlistDone     = 0;
-        $syncedVideoIds   = [];   // all video_ids seen from YouTube this run (for reconciliation)
-        $skippedVideoIds  = [];   // video_ids skipped (private/deleted/filtered) for this playlist
-        $syncSuccess      = true; // set false on any API/network error — skips reconciliation
+        $pageToken       = '';
+        $playlistDone    = 0;
+        $playlistSkipped = 0;
 
         do {
             $url = 'https://www.googleapis.com/youtube/v3/playlistItems'
@@ -228,37 +228,33 @@ try {
                  . '&key='        . urlencode($apiKey)
                  . ($pageToken ? '&pageToken=' . urlencode($pageToken) : '');
 
-            $json = @file_get_contents($url);
+            // ignore_errors returns the response body even on 4xx,
+            // so deleted playlists (404) are detected and removed from DB.
+            $ctx  = stream_context_create(['http' => ['ignore_errors' => true]]);
+            $json = @file_get_contents($url, false, $ctx);
             if ($json === false) {
-                echo '<p class="err">&nbsp;&nbsp;Network error fetching playlist — skipping reconciliation.</p>';
-                $syncSuccess = false;
+                echo '<p class="err">&nbsp;&nbsp;Network error — skipping playlist.</p>';
                 break;
             }
 
             $data = json_decode($json);
             if (isset($data->error)) {
                 $reason = $data->error->errors[0]->reason ?? '';
-
-                // ── Playlist deleted on YouTube ────────────────
                 if ($data->error->code === 404 || $reason === 'playlistNotFound') {
                     echo '<p class="warn">&nbsp;&nbsp;Playlist not found on YouTube — removing from database.</p>';
-                    $db->prepare("DELETE FROM video_playlist_map WHERE playlist_id = ?")
-                       ->execute([$playlistId]);
                     $db->prepare("DELETE FROM video_playlist WHERE playlist_id = ?")
                        ->execute([$playlistId]);
-                    echo '<p class="warn">&nbsp;&nbsp;Removed playlist and its video mappings.</p>';
-                    $syncSuccess = false; // no reconciliation needed — already cleaned up
+                    $totalPlaylistRemoved++;
                 } else {
                     echo '<p class="err">&nbsp;&nbsp;YouTube API error (' . (int)$data->error->code . '): '
-                         . htmlspecialchars($data->error->message) . ' — skipping reconciliation.</p>';
-                    $syncSuccess = false;
+                         . htmlspecialchars($data->error->message) . '</p>';
                 }
                 break;
             }
 
             // ── Collect videos from this page ─────────────────
-            $pageBatch   = [];   // video_id => data (no published_date yet)
-            $newVideoIds = [];   // video_ids not yet in DB — need videos.list call
+            $pageBatch   = [];
+            $allVideoIds = [];
 
             foreach ($data->items as $item) {
                 $videoId  = $item->snippet->resourceId->videoId ?? '';
@@ -266,27 +262,16 @@ try {
 
                 $rawTitle = $item->snippet->title ?? '';
 
-                // Skip upserting private/deleted/unlisted videos.
-                // Private/Unlisted: also track as seen so a temporarily-hidden video
-                //   isn't pruned from the playlist map during reconciliation.
-                // Deleted: do NOT track — let reconciliation remove it from the map,
-                //   and the orphan cleanup will then delete it from the video table.
                 if (in_array($rawTitle, ['Deleted video', 'Private video', 'Unlisted video'])) {
-                    if ($rawTitle !== 'Deleted video') {
-                        $syncedVideoIds[] = $videoId; // keep private/unlisted in map
-                    }
-                    $skippedVideoIds[] = $videoId . ' (' . $rawTitle . ')';
                     $totalSkippedPrivate++;
+                    $playlistSkipped++;
                     continue;
                 }
                 if (str_contains($rawTitle, 'Sun Pictures')) {
-                    $skippedVideoIds[] = $videoId . ' (filtered)';
                     $totalSkippedFiltered++;
+                    $playlistSkipped++;
                     continue;
                 }
-
-                // Track normal videos as seen for reconciliation
-                $syncedVideoIds[] = $videoId;
 
                 $extractedId = extractId($rawTitle);
                 $title       = cleanTitle($rawTitle, $extractedId);
@@ -294,115 +279,54 @@ try {
                                ?? ($item->snippet->thumbnails->default->url ?? '');
                 $updatedDate = substr($item->snippet->publishedAt ?? '', 0, 10);
 
-                // Check if this video already exists in DB
-                $exists = $db->prepare("SELECT 1 FROM video WHERE video_id = ? LIMIT 1");
-                $exists->execute([$videoId]);
-                $isNew = !$exists->fetch();
-
                 $pageBatch[$videoId] = [
                     'title'          => $title,
                     'thumb'          => $thumb,
                     'updated_date'   => $updatedDate,
                     'extracted_id'   => $extractedId,
-                    'is_new'         => $isNew,
-                    'published_date' => $updatedDate, // fallback; overwritten for new videos below
+                    'published_date' => $updatedDate, // fallback; overwritten below
                 ];
-
-                if ($isNew) {
-                    $newVideoIds[] = $videoId;
-                }
+                $allVideoIds[] = $videoId;
             }
 
-            // ── Fetch true published_date for new videos ───────
-            // One videos.list call per page (up to 50 IDs) — only for new rows.
-            if (!empty($newVideoIds)) {
-                $publishedMap = fetchPublishedDates($apiKey, $newVideoIds);
-                foreach ($newVideoIds as $vid) {
+            // ── Fetch true published_date for all videos on this page ──
+            // Called for every video since the table is rebuilt fresh each sync.
+            if (!empty($allVideoIds)) {
+                $publishedMap = fetchPublishedDates($apiKey, $allVideoIds);
+                foreach ($allVideoIds as $vid) {
                     if (isset($publishedMap[$vid])) {
                         $pageBatch[$vid]['published_date'] = $publishedMap[$vid];
                     }
                 }
             }
 
-            // ── Upsert batch and report ────────────────────────
-            upsertVideoBatch($db, $playlistId, $pageBatch);
+            // ── Insert batch ───────────────────────────────────
+            insertVideoBatch($db, $playlistId, $pageBatch);
 
-            foreach ($pageBatch as $videoId => $v) {
-                if ($v['is_new']) {
-                    echo '<p class="ok">&nbsp;&nbsp;+added: ' . htmlspecialchars($v['title']) . '</p>';
-                    $totalAdded++;
-                } else {
-                    echo '<p class="skip">&nbsp;&nbsp;updated: ' . htmlspecialchars($v['title']) . '</p>';
-                    $totalUpdated++;
-                }
-                $playlistDone++;
-                flush();
+            foreach ($pageBatch as $v) {
+                echo '<p class="ok">&nbsp;&nbsp;+' . htmlspecialchars($v['title']) . '</p>';
             }
+            $playlistDone += count($pageBatch);
+            $totalAdded   += count($pageBatch);
+            flush();
 
             $pageToken = $data->nextPageToken ?? '';
 
         } while ($pageToken !== '');
 
-        $skippedNote = !empty($skippedVideoIds)
-            ? ' &nbsp;|&nbsp; skipped: ' . implode(', ', array_map('htmlspecialchars', $skippedVideoIds))
+        $skippedNote = $playlistSkipped > 0
+            ? ' &nbsp;|&nbsp; ' . $playlistSkipped . ' skipped (private/deleted/filtered)'
             : '';
-        echo '<p>&nbsp;&nbsp;<b>' . $playlistDone . ' videos processed for this playlist.</b>'
+        echo '<p>&nbsp;&nbsp;<b>' . $playlistDone . ' videos added for this playlist.</b>'
              . $skippedNote . '</p>';
-
-        // ── Reconcile: remove videos YouTube no longer has in this playlist ──
-        // Only runs when all pages fetched successfully (syncSuccess = true).
-        if ($syncSuccess && !empty($syncedVideoIds)) {
-            $placeholders = implode(',', array_fill(0, count($syncedVideoIds), '?'));
-            $delStmt = $db->prepare("
-                DELETE FROM video_playlist_map
-                WHERE playlist_id = ?
-                  AND video_id NOT IN ($placeholders)
-            ");
-            $delStmt->execute(array_merge([$playlistId], $syncedVideoIds));
-            $removed = $delStmt->rowCount();
-            if ($removed > 0) {
-                echo '<p class="warn">&nbsp;&nbsp;-reconciled: ' . $removed
-                     . ' video(s) removed from playlist map (no longer on YouTube).</p>';
-                $totalMapRemoved += $removed;
-            }
-        } elseif ($syncSuccess && empty($syncedVideoIds)) {
-            // YouTube returned zero videos with no error.
-            // Check totalResults: 0 means the playlist genuinely has no videos
-            // (or doesn't exist on YouTube) — safe to remove from DB.
-            // If totalResults is missing entirely, skip to be safe.
-            if (isset($data->pageInfo->totalResults) && $data->pageInfo->totalResults === 0) {
-                echo '<p class="warn">&nbsp;&nbsp;Playlist exists but has no videos on YouTube — removing from database.</p>';
-                $db->prepare("DELETE FROM video_playlist_map WHERE playlist_id = ?")
-                   ->execute([$playlistId]);
-                $db->prepare("DELETE FROM video_playlist WHERE playlist_id = ?")
-                   ->execute([$playlistId]);
-                echo '<p class="warn">&nbsp;&nbsp;Removed playlist and its video mappings.</p>';
-            } else {
-                echo '<p class="warn">&nbsp;&nbsp;YouTube returned 0 videos (unexpected) — skipping. Manual check recommended.</p>';
-            }
-        }
-
         flush();
     }
 
-    // ── Orphan cleanup: remove videos no longer in any playlist ─────────────
-    $orphanStmt  = $db->query("
-        DELETE FROM video
-        WHERE video_id NOT IN (SELECT video_id FROM video_playlist_map)
-    ");
-    $orphanCount = $orphanStmt->rowCount();
-    if ($orphanCount > 0) {
-        echo '<p class="warn">Removed ' . $orphanCount
-             . ' orphaned video(s) no longer in any playlist.</p>';
-    }
-
     echo '<p class="sum">Sync complete: '
-         . $totalAdded           . ' added, '
-         . $totalUpdated         . ' updated, '
+         . $totalAdded           . ' video(s) added, '
          . $totalSkippedPrivate  . ' skipped (private/deleted), '
          . $totalSkippedFiltered . ' skipped (filtered), '
-         . $totalMapRemoved      . ' map row(s) reconciled, '
-         . $orphanCount          . ' orphan(s) removed.</p>';
+         . $totalPlaylistRemoved . ' playlist(s) removed from database.</p>';
     echo '<p>Finished: ' . date('Y-m-d H:i:s') . '</p>';
 
 } catch (PDOException $e) {

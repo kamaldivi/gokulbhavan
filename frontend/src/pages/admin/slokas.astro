@@ -1,0 +1,1061 @@
+---
+import AdminShell from "@layouts/AdminShell.astro";
+---
+
+<AdminShell title="Slokas" activePath="/admin/slokas">
+
+<div class="flex flex-col" style="height:calc(100vh - 9rem)">
+
+  <!-- ── Tab Nav ────────────────────────────────────────────────────────────── -->
+  <div class="shrink-0 flex border-b border-brand-tan bg-white px-1">
+    <button class="tab-btn tab-btn-active" data-tab="slokas">Slokas</button>
+    <button class="tab-btn" data-tab="categories">Categories</button>
+    <button class="tab-btn" data-tab="scriptures">Scriptures</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Tab: Slokas
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-slokas" class="tab-panel flex flex-col flex-1 min-h-0">
+
+    <!-- Filter bar — single horizontal row, mutually exclusive -->
+    <div class="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-brand-tan bg-brand-parchment/40">
+      <input id="sl-search" type="text" placeholder="🔍  Search slokas…"
+             class="admin-input flex-1 min-w-0 !py-1.5 !text-xs"
+             autocomplete="off" autocorrect="off" spellcheck="false" />
+      <select id="sl-cat-filter" class="admin-input w-44 shrink-0 !py-1.5 !text-xs">
+        <option value="">— Category —</option>
+      </select>
+      <select id="sl-scr-filter" class="admin-input w-52 shrink-0 !py-1.5 !text-xs">
+        <option value="">— Scripture —</option>
+      </select>
+      <button id="sl-new-sloka-btn" class="btn-new shrink-0">+ New Sloka</button>
+    </div>
+
+    <!-- List + Editor split -->
+    <div class="flex flex-1 min-h-0">
+
+      <!-- Left: List panel -->
+      <div class="w-5/12 shrink-0 border-r border-brand-tan flex flex-col min-h-0">
+        <div id="sl-list-hint"    class="flex-1 flex items-center justify-center text-xs text-brand-slate italic px-6 text-center">Type a search term or pick a category / scripture above.</div>
+        <div id="sl-list-loading" class="hidden flex-1 flex items-center justify-center text-xs text-brand-slate animate-pulse">Loading…</div>
+        <div id="sl-list-empty"   class="hidden flex-1 flex items-center justify-center text-xs text-brand-slate italic">No slokas found.</div>
+        <div id="sl-list-wrap"    class="hidden flex-1 flex flex-col min-h-0">
+          <div id="sl-list-count" class="shrink-0 px-3 py-1 text-[10px] text-brand-slate border-b border-brand-tan/40 bg-brand-parchment/30"></div>
+          <div class="flex-1 overflow-y-auto">
+            <table class="w-full text-xs border-collapse">
+              <tbody id="sl-list-tbody" class="divide-y divide-brand-tan/40"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Editor panel -->
+      <div class="flex-1 flex flex-col min-h-0">
+        <div id="sl-editor-empty" class="flex-1 flex items-center justify-center text-brand-slate/40 text-sm italic">
+          Select a sloka or click + New Sloka.
+        </div>
+
+        <div id="sl-editor-card" class="hidden flex-1 flex flex-col min-h-0">
+
+          <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-brand-tan bg-brand-parchment/50">
+            <div>
+              <p id="sl-ed-id-label" class="text-[10px] font-bold uppercase tracking-widest text-brand-lotus"></p>
+              <h3 id="sl-ed-heading" class="font-display font-bold text-brand-navy text-sm leading-tight mt-0.5"></h3>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button id="sl-editor-delete-btn" class="btn-delete hidden">Delete</button>
+              <button id="sl-editor-cancel-btn" class="btn-cancel !py-1 !text-xs">✕ Close</button>
+            </div>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="sl-label">Category <span class="text-red-500">*</span></label>
+                <select id="sl-ed-category" class="admin-input w-full !text-xs !py-1.5"></select>
+              </div>
+              <div>
+                <label class="sl-label">Slokamrtam Ref</label>
+                <input id="sl-ed-ref" type="text" placeholder="e.g. 1.2" class="admin-input w-full !text-xs !py-1.5" />
+              </div>
+            </div>
+
+            <div>
+              <label class="sl-label">Title <span class="text-brand-slate/50">(contextual — from book)</span></label>
+              <input id="sl-ed-title" type="text" class="admin-input w-full !text-xs !py-1.5" />
+            </div>
+
+            <div>
+              <label class="sl-label">Search Title <span class="text-brand-slate/50">(auto-derived plain ASCII — leave blank to regenerate)</span></label>
+              <input id="sl-ed-search-title" type="text" placeholder="Auto-generated from first line" class="admin-input w-full !text-xs !py-1.5" />
+            </div>
+
+            <div>
+              <label class="sl-label">Sloka Text <span class="text-red-500">*</span></label>
+              <textarea id="sl-ed-text" rows="5" placeholder="Transliterated Sanskrit…"
+                        class="admin-input w-full font-mono !text-xs leading-relaxed resize-y"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="sl-label">Root Scripture</label>
+                <select id="sl-ed-scripture-id" class="admin-input w-full !text-xs !py-1.5">
+                  <option value="">— None —</option>
+                </select>
+              </div>
+              <div>
+                <label class="sl-label">Scripture Ref <span class="text-brand-slate/50">(raw citation)</span></label>
+                <input id="sl-ed-scr-ref" type="text" placeholder="e.g. BRS 1.1.11" class="admin-input w-full !text-xs !py-1.5" />
+              </div>
+            </div>
+
+            <div>
+              <label class="sl-label">Audio Recording</label>
+              <!-- Current file display -->
+              <div id="sl-audio-current" class="hidden mb-2 flex items-center gap-2 px-3 py-2 rounded-md bg-brand-parchment/60 border border-brand-tan text-xs">
+                <span class="text-green-600 text-sm">♫</span>
+                <span id="sl-audio-current-name" class="flex-1 font-mono text-brand-navy truncate"></span>
+                <button id="sl-audio-remove-btn" type="button"
+                        class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
+                  Remove
+                </button>
+              </div>
+              <!-- Pending upload display -->
+              <div id="sl-audio-pending" class="hidden mb-2 flex items-center gap-2 px-3 py-2 rounded-md bg-green-50 border border-green-200 text-xs">
+                <span class="text-green-600 text-sm">↑</span>
+                <span id="sl-audio-pending-name" class="flex-1 font-mono text-green-800 truncate"></span>
+                <button id="sl-audio-pending-clear" type="button"
+                        class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
+                  ✕
+                </button>
+              </div>
+              <!-- File picker -->
+              <div id="sl-audio-pick-row" class="flex items-center gap-2">
+                <input id="sl-audio-file" type="file" accept=".mp3,audio/mpeg" class="hidden" />
+                <button id="sl-audio-pick-btn" type="button" class="btn-edit !text-xs !py-1.5 !px-3">
+                  Choose MP3
+                </button>
+                <span class="text-[11px] text-brand-slate">Max 50 MB · Renamed to <em>id - search title</em></span>
+              </div>
+            </div>
+
+            <div>
+              <label class="sl-label">Word-by-Word Meaning</label>
+              <textarea id="sl-ed-wbw" rows="4" placeholder="word — meaning; word — meaning…"
+                        class="admin-input w-full !text-xs leading-relaxed resize-y"></textarea>
+            </div>
+
+            <div>
+              <label class="sl-label">Translation</label>
+              <textarea id="sl-ed-translation" rows="4" placeholder="English translation…"
+                        class="admin-input w-full !text-xs leading-relaxed resize-y"></textarea>
+            </div>
+
+            <div>
+              <label class="sl-label">Commentary <span class="text-brand-slate/50">(Gurudev / acharya commentary)</span></label>
+              <textarea id="sl-ed-commentary" rows="5" placeholder="Commentary by Gurudev or other acharyas…"
+                        class="admin-input w-full !text-xs leading-relaxed resize-y"></textarea>
+            </div>
+
+          </div>
+
+          <div class="shrink-0 px-5 py-3 border-t border-brand-tan bg-brand-parchment/50 flex items-center gap-3">
+            <button id="sl-editor-save-btn" class="btn-save !text-xs !px-5 !py-2">Save Changes</button>
+            <p id="sl-editor-status" class="text-xs text-brand-slate"></p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end tab-slokas -->
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Tab: Categories
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-categories" class="tab-panel hidden flex-col flex-1 min-h-0">
+
+    <div class="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-brand-tan bg-brand-parchment/40">
+      <span class="text-sm font-semibold text-brand-navy">Sloka Categories</span>
+      <button id="cat-new-btn" class="btn-new">+ New Category</button>
+    </div>
+
+    <div id="cat-new-form" class="hidden shrink-0 px-4 py-3 border-b border-brand-tan bg-brand-parchment/60">
+      <div class="flex items-end gap-3 flex-wrap">
+        <div>
+          <label class="sl-label">Code</label>
+          <input id="cat-new-code" type="text" placeholder="e.g. GURU" maxlength="20"
+                 class="admin-input w-28 uppercase !text-xs !py-1.5" />
+        </div>
+        <div class="flex-1 min-w-[200px]">
+          <label class="sl-label">Name</label>
+          <input id="cat-new-name" type="text" placeholder="e.g. Guru-tattva"
+                 class="admin-input w-full !text-xs !py-1.5" />
+        </div>
+        <div>
+          <label class="sl-label">Image Path</label>
+          <input id="cat-new-img" type="text" placeholder="media/categories/…"
+                 class="admin-input w-44 !text-xs !py-1.5" />
+        </div>
+        <div>
+          <label class="sl-label">Sort</label>
+          <input id="cat-new-sort" type="number" value="0" min="0"
+                 class="admin-input w-16 !text-xs !py-1.5" />
+        </div>
+        <div class="flex gap-2 items-end pb-0.5">
+          <button id="cat-new-save-btn" class="btn-save !text-xs !px-4 !py-1.5">Save</button>
+          <button id="cat-new-cancel-btn" class="btn-cancel !text-xs !py-1.5">Cancel</button>
+        </div>
+      </div>
+      <p id="cat-new-error" class="hidden mt-1.5 text-xs text-red-600"></p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <div id="cat-list-loading" class="px-4 py-10 text-xs text-center text-brand-slate animate-pulse">Loading…</div>
+      <table id="cat-table" class="hidden w-full text-xs border-collapse">
+        <thead class="sticky top-0 z-10">
+          <tr class="bg-brand-parchment/80 border-b border-brand-tan text-[10px] uppercase tracking-widest text-brand-slate">
+            <th class="px-4 py-2 text-left font-semibold w-10">ID</th>
+            <th class="px-4 py-2 text-left font-semibold w-28">Code</th>
+            <th class="px-4 py-2 text-left font-semibold">Name</th>
+            <th class="px-4 py-2 text-left font-semibold w-40">Image Path</th>
+            <th class="px-4 py-2 text-center font-semibold w-14">Sort</th>
+            <th class="px-4 py-2 text-center font-semibold w-16">Slokas</th>
+            <th class="px-4 py-2 w-32"></th>
+          </tr>
+        </thead>
+        <tbody id="cat-tbody" class="divide-y divide-brand-tan/40"></tbody>
+      </table>
+    </div>
+
+  </div><!-- end tab-categories -->
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Tab: Scriptures
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div id="tab-scriptures" class="tab-panel hidden flex-col flex-1 min-h-0">
+
+    <div class="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-brand-tan bg-brand-parchment/40">
+      <input id="scr-search" type="text" placeholder="Filter scriptures…"
+             class="admin-input flex-1 max-w-xs !text-xs !py-1.5" />
+      <button id="scr-new-btn" class="btn-new ml-auto">+ New Scripture</button>
+    </div>
+
+    <div id="scr-new-form" class="hidden shrink-0 px-4 py-3 border-b border-brand-tan bg-brand-parchment/60">
+      <div class="flex items-end gap-3 flex-wrap">
+        <div>
+          <label class="sl-label">Code / Abbrev.</label>
+          <input id="scr-new-short" type="text" placeholder="e.g. BG" maxlength="20"
+                 class="admin-input w-24 !text-xs !py-1.5" />
+        </div>
+        <div class="flex-1 min-w-[220px]">
+          <label class="sl-label">Full Name</label>
+          <input id="scr-new-name" type="text" placeholder="e.g. Bhagavad Gita"
+                 class="admin-input w-full !text-xs !py-1.5" />
+        </div>
+        <div>
+          <label class="sl-label">Image Path</label>
+          <input id="scr-new-img" type="text" placeholder="media/scriptures/…"
+                 class="admin-input w-44 !text-xs !py-1.5" />
+        </div>
+        <div>
+          <label class="sl-label">Sort</label>
+          <input id="scr-new-sort" type="number" value="0" min="0"
+                 class="admin-input w-16 !text-xs !py-1.5" />
+        </div>
+        <div class="flex gap-2 items-end pb-0.5">
+          <button id="scr-new-save-btn" class="btn-save !text-xs !px-4 !py-1.5">Save</button>
+          <button id="scr-new-cancel-btn" class="btn-cancel !text-xs !py-1.5">Cancel</button>
+        </div>
+      </div>
+      <p id="scr-new-error" class="hidden mt-1.5 text-xs text-red-600"></p>
+    </div>
+
+    <div id="scr-count" class="shrink-0 px-4 py-1 text-[10px] text-brand-slate border-b border-brand-tan/40 bg-brand-parchment/20"></div>
+    <div class="flex-1 overflow-y-auto">
+      <div id="scr-list-loading" class="px-4 py-10 text-xs text-center text-brand-slate animate-pulse">Loading…</div>
+      <table id="scr-table" class="hidden w-full text-xs border-collapse">
+        <thead class="sticky top-0 z-10">
+          <tr class="bg-brand-parchment/80 border-b border-brand-tan text-[10px] uppercase tracking-widest text-brand-slate">
+            <th class="px-4 py-2 text-left font-semibold w-10">ID</th>
+            <th class="px-4 py-2 text-left font-semibold w-24">Code</th>
+            <th class="px-4 py-2 text-left font-semibold">Name</th>
+            <th class="px-4 py-2 text-left font-semibold w-40">Image Path</th>
+            <th class="px-4 py-2 text-center font-semibold w-14">Sort</th>
+            <th class="px-4 py-2 text-center font-semibold w-16">Slokas</th>
+            <th class="px-4 py-2 w-32"></th>
+          </tr>
+        </thead>
+        <tbody id="scr-tbody" class="divide-y divide-brand-tan/40"></tbody>
+      </table>
+    </div>
+
+  </div><!-- end tab-scriptures -->
+
+</div>
+
+</AdminShell>
+
+<style>
+  .sl-label { @apply block text-[10px] font-bold uppercase tracking-widest text-brand-slate mb-1; }
+  .tab-btn        { @apply px-5 py-2.5 text-xs font-semibold text-brand-slate/70 hover:text-brand-navy border-b-2 border-transparent transition-colors; }
+  .tab-btn-active { @apply text-brand-navy border-brand-navy; }
+</style>
+
+<script>
+(function () {
+  /* ── Types ──────────────────────────────────────────────────────────────── */
+  type Cat = {
+    id: number; category_code: string; category_name: string;
+    image_path: string|null; sort_order: number; sloka_count: number;
+  };
+  type Scripture = {
+    id: number; name: string; short_title: string|null;
+    image_path: string|null; sort_order: number; sloka_count: number;
+  };
+  type Sloka = {
+    id: number; category_code: string; category_name: string;
+    slokamrtam_ref: string|null; title: string|null; search_title: string|null;
+    sloka_text: string; scripture_id: number|null; scripture_ref: string|null;
+    scripture_name: string|null; scripture_short: string|null;
+    word_by_word: string|null; translation: string|null; commentary: string|null;
+    audio_file_path: string|null; updated_at: string;
+  };
+
+  /* ── State ──────────────────────────────────────────────────────────────── */
+  let categories:    Cat[]       = [];
+  let scrAll:        Scripture[] = [];
+  let slokas:        Sloka[]     = [];
+  let activeSloka:   Sloka|null  = null;
+  let isNew          = false;
+  let searchTimer:   ReturnType<typeof setTimeout> | null = null;
+  let pendingAudio:  File | null  = null;   // file chosen but not yet uploaded
+  let removeAudio    = false;               // user clicked Remove on existing audio
+
+  /* ── Helpers ─────────────────────────────────────────────────────────────── */
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+
+  async function apiFetch(url: string, opts?: RequestInit) {
+    const res = await fetch(apiBase + url, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      ...opts,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message ?? 'Request failed');
+    }
+    return res.json();
+  }
+
+  function escHtml(s: string | null | undefined): string {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function $<T extends HTMLElement = HTMLElement>(id: string) {
+    return document.getElementById(id) as T;
+  }
+
+  async function uploadSlokaAudio(slokaId: number, searchTitle: string, file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('sloka_id', String(slokaId));
+    fd.append('search_title', searchTitle);
+    const res = await fetch(apiBase + '/api/admin/sloka-audio.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: fd,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message ?? 'Audio upload failed');
+    }
+    const data = await res.json();
+    return data.path as string;
+  }
+
+  async function archiveSlokaAudio(path: string): Promise<void> {
+    await fetch(apiBase + '/api/admin/sloka-audio.php', {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+    });
+    // Ignore errors — file may already be gone
+  }
+
+  /* ── Audio upload UI ────────────────────────────────────────────────────── */
+  $('sl-audio-pick-btn').addEventListener('click', () => $<HTMLInputElement>('sl-audio-file').click());
+
+  $<HTMLInputElement>('sl-audio-file').addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0] ?? null;
+    if (!file) return;
+    pendingAudio = file;
+    $('sl-audio-pending-name').textContent = file.name;
+    $('sl-audio-pending').classList.remove('hidden');
+    // Reset the file input so the same file can be re-selected later if needed
+    ($<HTMLInputElement>('sl-audio-file')).value = '';
+  });
+
+  $('sl-audio-pending-clear').addEventListener('click', () => {
+    pendingAudio = null;
+    $('sl-audio-pending').classList.add('hidden');
+  });
+
+  $('sl-audio-remove-btn').addEventListener('click', () => {
+    removeAudio = true;
+    pendingAudio = null;
+    $('sl-audio-current').classList.add('hidden');
+    $('sl-audio-pending').classList.add('hidden');
+  });
+
+  function setAudioUI(path: string | null) {
+    pendingAudio  = null;
+    removeAudio   = false;
+    $('sl-audio-pending').classList.add('hidden');
+    ($<HTMLInputElement>('sl-audio-file')).value = '';
+    if (path) {
+      $('sl-audio-current-name').textContent = path.split('/').pop() ?? path;
+      $('sl-audio-current').classList.remove('hidden');
+    } else {
+      $('sl-audio-current').classList.add('hidden');
+    }
+  }
+
+  /* ── Tabs ────────────────────────────────────────────────────────────────── */
+  document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab!));
+  });
+  function switchTab(tab: string) {
+    document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach(b =>
+      b.classList.toggle('tab-btn-active', b.dataset.tab === tab)
+    );
+    document.querySelectorAll<HTMLElement>('.tab-panel').forEach(p => {
+      const active = p.id === `tab-${tab}`;
+      p.classList.toggle('hidden', !active);
+      p.classList.toggle('flex',   active);
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CATEGORIES TAB
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  async function loadCategories() {
+    $('cat-list-loading').classList.remove('hidden');
+    $('cat-table').classList.add('hidden');
+    try {
+      categories = await apiFetch('/api/admin/sloka-categories.php');
+      populateCatDropdowns();
+      renderCategoryTable();
+    } finally {
+      $('cat-list-loading').classList.add('hidden');
+    }
+  }
+
+  function populateCatDropdowns() {
+    const catFilter = $<HTMLSelectElement>('sl-cat-filter');
+    const prevF = catFilter.value;
+    catFilter.innerHTML = '<option value="">— Category —</option>' +
+      categories.map(c =>
+        `<option value="${escHtml(c.category_code)}">${escHtml(c.category_name)}</option>`
+      ).join('');
+    catFilter.value = prevF;
+
+    const edCat = $<HTMLSelectElement>('sl-ed-category');
+    const prevE = edCat.value;
+    edCat.innerHTML = categories.map(c =>
+      `<option value="${escHtml(c.category_code)}">${escHtml(c.category_name)}</option>`
+    ).join('');
+    edCat.value = prevE;
+  }
+
+  function renderCategoryTable() {
+    const tbody = $('cat-tbody');
+    tbody.innerHTML = '';
+    categories.forEach(cat => tbody.appendChild(makeCatRow(cat)));
+    $('cat-table').classList.remove('hidden');
+  }
+
+  function makeCatRow(cat: Cat): HTMLTableRowElement {
+    const tr = document.createElement('tr');
+    tr.dataset.id = String(cat.id);
+    tr.className = 'hover:bg-brand-parchment/30 transition-colors';
+    tr.innerHTML = `
+      <td class="px-4 py-2.5 font-mono text-brand-navy text-[11px]">${cat.id}</td>
+      <td class="px-4 py-2.5 font-mono text-brand-navy font-medium">${escHtml(cat.category_code)}</td>
+      <td class="px-4 py-2.5 text-brand-navy">${escHtml(cat.category_name)}</td>
+      <td class="px-4 py-2.5 text-brand-slate text-[11px] truncate max-w-[160px]" title="${escHtml(cat.image_path ?? '')}">${escHtml(cat.image_path ?? '—')}</td>
+      <td class="px-4 py-2.5 text-center text-brand-navy">${cat.sort_order}</td>
+      <td class="px-4 py-2.5 text-center text-brand-navy">${cat.sloka_count}</td>
+      <td class="px-4 py-2.5 text-right">
+        <div class="flex gap-2 justify-end">
+          <button class="cat-edit-btn btn-edit">Edit</button>
+          <button class="cat-del-btn btn-delete">Delete</button>
+        </div>
+      </td>
+    `;
+    tr.querySelector('.cat-edit-btn')!.addEventListener('click', () => inlineCatEdit(tr, cat));
+    tr.querySelector('.cat-del-btn')!.addEventListener('click', () => deleteCat(cat));
+    return tr;
+  }
+
+  function inlineCatEdit(tr: HTMLTableRowElement, cat: Cat) {
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-mono text-brand-navy/50 text-[11px]">${cat.id}</td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1 uppercase font-mono"
+               id="cate-code-${cat.id}" value="${escHtml(cat.category_code)}" maxlength="20" />
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1"
+               id="cate-name-${cat.id}" value="${escHtml(cat.category_name)}" />
+        <p class="cat-ed-err hidden text-xs text-red-600 mt-1"></p>
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1"
+               id="cate-img-${cat.id}" value="${escHtml(cat.image_path ?? '')}" placeholder="media/…" />
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-16 !text-xs !py-1" type="number" min="0"
+               id="cate-sort-${cat.id}" value="${cat.sort_order}" />
+      </td>
+      <td class="px-4 py-2 text-center text-brand-navy">${cat.sloka_count}</td>
+      <td class="px-2 py-2 text-right">
+        <div class="flex gap-2 justify-end">
+          <button class="cate-save btn-save !text-xs !px-3 !py-1">Save</button>
+          <button class="cate-cancel btn-cancel !text-xs !py-1">Cancel</button>
+        </div>
+      </td>
+    `;
+    const codeIn = $<HTMLInputElement>(`cate-code-${cat.id}`);
+    const nameIn = $<HTMLInputElement>(`cate-name-${cat.id}`);
+    const imgIn  = $<HTMLInputElement>(`cate-img-${cat.id}`);
+    const sortIn = $<HTMLInputElement>(`cate-sort-${cat.id}`);
+    const errEl  = tr.querySelector<HTMLElement>('.cat-ed-err')!;
+    nameIn.focus();
+
+    tr.querySelector('.cate-save')!.addEventListener('click', async () => {
+      const newCode = codeIn.value.trim().toUpperCase();
+      const newName = nameIn.value.trim();
+      errEl.classList.add('hidden');
+      if (!newCode || !newName) {
+        errEl.textContent = 'Code and name are required';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      try {
+        await apiFetch('/api/admin/sloka-categories.php', {
+          method: 'PUT',
+          body: JSON.stringify({
+            id:            cat.id,
+            category_code: newCode,
+            category_name: newName,
+            image_path:    imgIn.value.trim() || null,
+            sort_order:    parseInt(sortIn.value, 10) || 0,
+          }),
+        });
+        await loadCategories();
+      } catch (e: any) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+    tr.querySelector('.cate-cancel')!.addEventListener('click', () => tr.replaceWith(makeCatRow(cat)));
+  }
+
+  async function deleteCat(cat: Cat) {
+    if (cat.sloka_count > 0) {
+      alert(`Cannot delete "${cat.category_name}" — it has ${cat.sloka_count} sloka(s). Reassign them first.`);
+      return;
+    }
+    if (!confirm(`Delete category "${cat.category_name}" (${cat.category_code})?`)) return;
+    try {
+      await apiFetch('/api/admin/sloka-categories.php', {
+        method: 'DELETE', body: JSON.stringify({ id: cat.id }),
+      });
+      await loadCategories();
+    } catch (e: any) { alert(e.message); }
+  }
+
+  $('cat-new-btn').addEventListener('click', () => {
+    $('cat-new-form').classList.remove('hidden');
+    ($<HTMLInputElement>('cat-new-code')).value = '';
+    ($<HTMLInputElement>('cat-new-name')).value = '';
+    ($<HTMLInputElement>('cat-new-img')).value  = '';
+    ($<HTMLInputElement>('cat-new-sort')).value = '0';
+    $('cat-new-error').classList.add('hidden');
+    ($<HTMLInputElement>('cat-new-code')).focus();
+  });
+  $('cat-new-cancel-btn').addEventListener('click', () => $('cat-new-form').classList.add('hidden'));
+  $('cat-new-save-btn').addEventListener('click', async () => {
+    const code  = ($<HTMLInputElement>('cat-new-code')).value.trim().toUpperCase();
+    const name  = ($<HTMLInputElement>('cat-new-name')).value.trim();
+    const img   = ($<HTMLInputElement>('cat-new-img')).value.trim() || null;
+    const sort  = parseInt(($<HTMLInputElement>('cat-new-sort')).value, 10) || 0;
+    const errEl = $('cat-new-error');
+    errEl.classList.add('hidden');
+    if (!code || !name) { errEl.textContent = 'Code and name are required'; errEl.classList.remove('hidden'); return; }
+    try {
+      await apiFetch('/api/admin/sloka-categories.php', {
+        method: 'POST',
+        body: JSON.stringify({ category_code: code, category_name: name, image_path: img, sort_order: sort }),
+      });
+      $('cat-new-form').classList.add('hidden');
+      await loadCategories();
+    } catch (e: any) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SCRIPTURES TAB
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  async function loadScriptures() {
+    $('scr-list-loading').classList.remove('hidden');
+    $('scr-table').classList.add('hidden');
+    try {
+      scrAll = await apiFetch('/api/admin/scriptures.php');
+      populateScrDropdowns();
+      renderScriptureTable();
+    } finally {
+      $('scr-list-loading').classList.add('hidden');
+    }
+  }
+
+  function populateScrDropdowns() {
+    const scrFilter = $<HTMLSelectElement>('sl-scr-filter');
+    const prevF = scrFilter.value;
+    scrFilter.innerHTML = '<option value="">— Scripture —</option>' +
+      scrAll.map(s =>
+        `<option value="${s.id}">${escHtml(s.name)}${s.short_title ? ' (' + escHtml(s.short_title) + ')' : ''}</option>`
+      ).join('');
+    scrFilter.value = prevF;
+
+    const edScr = $<HTMLSelectElement>('sl-ed-scripture-id');
+    const prevE = edScr.value;
+    edScr.innerHTML = '<option value="">— None —</option>' +
+      scrAll.map(s =>
+        `<option value="${s.id}">${escHtml(s.name)}${s.short_title ? ' (' + escHtml(s.short_title) + ')' : ''}</option>`
+      ).join('');
+    edScr.value = prevE;
+  }
+
+  function renderScriptureTable(filter = '') {
+    const filtered = filter
+      ? scrAll.filter(s =>
+          s.name.toLowerCase().includes(filter) ||
+          (s.short_title ?? '').toLowerCase().includes(filter)
+        )
+      : scrAll;
+
+    $('scr-count').textContent = filter
+      ? `${filtered.length} of ${scrAll.length} scriptures`
+      : `${scrAll.length} scriptures`;
+
+    const tbody = $('scr-tbody');
+    tbody.innerHTML = '';
+    filtered.forEach(s => tbody.appendChild(makeScrRow(s)));
+    $('scr-table').classList.remove('hidden');
+  }
+
+  function makeScrRow(s: Scripture): HTMLTableRowElement {
+    const tr = document.createElement('tr');
+    tr.dataset.id = String(s.id);
+    tr.className = 'hover:bg-brand-parchment/30 transition-colors';
+    tr.innerHTML = `
+      <td class="px-4 py-2.5 font-mono text-brand-navy text-[11px]">${s.id}</td>
+      <td class="px-4 py-2.5 font-mono text-brand-navy font-medium">${escHtml(s.short_title ?? '—')}</td>
+      <td class="px-4 py-2.5 text-brand-navy">${escHtml(s.name)}</td>
+      <td class="px-4 py-2.5 text-brand-slate text-[11px] truncate max-w-[160px]" title="${escHtml(s.image_path ?? '')}">${escHtml(s.image_path ?? '—')}</td>
+      <td class="px-4 py-2.5 text-center text-brand-navy">${s.sort_order}</td>
+      <td class="px-4 py-2.5 text-center text-brand-navy">${s.sloka_count}</td>
+      <td class="px-4 py-2.5 text-right">
+        <div class="flex gap-2 justify-end">
+          <button class="scr-edit-btn btn-edit">Edit</button>
+          <button class="scr-del-btn btn-delete">Delete</button>
+        </div>
+      </td>
+    `;
+    tr.querySelector('.scr-edit-btn')!.addEventListener('click', () => inlineScrEdit(tr, s));
+    tr.querySelector('.scr-del-btn')!.addEventListener('click', () => deleteScripture(s));
+    return tr;
+  }
+
+  function inlineScrEdit(tr: HTMLTableRowElement, s: Scripture) {
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-mono text-brand-navy/50 text-[11px]">${s.id}</td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1 font-mono"
+               id="scre-short-${s.id}" value="${escHtml(s.short_title ?? '')}" maxlength="20" placeholder="BG" />
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1"
+               id="scre-name-${s.id}" value="${escHtml(s.name)}" />
+        <p class="scr-ed-err hidden text-xs text-red-600 mt-1"></p>
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-full !text-xs !py-1"
+               id="scre-img-${s.id}" value="${escHtml(s.image_path ?? '')}" placeholder="media/…" />
+      </td>
+      <td class="px-2 py-2">
+        <input class="admin-input w-16 !text-xs !py-1" type="number" min="0"
+               id="scre-sort-${s.id}" value="${s.sort_order}" />
+      </td>
+      <td class="px-4 py-2 text-center text-brand-navy">${s.sloka_count}</td>
+      <td class="px-2 py-2 text-right">
+        <div class="flex gap-2 justify-end">
+          <button class="scre-save btn-save !text-xs !px-3 !py-1">Save</button>
+          <button class="scre-cancel btn-cancel !text-xs !py-1">Cancel</button>
+        </div>
+      </td>
+    `;
+    const nameIn  = $<HTMLInputElement>(`scre-name-${s.id}`);
+    const shortIn = $<HTMLInputElement>(`scre-short-${s.id}`);
+    const imgIn   = $<HTMLInputElement>(`scre-img-${s.id}`);
+    const sortIn  = $<HTMLInputElement>(`scre-sort-${s.id}`);
+    const errEl   = tr.querySelector<HTMLElement>('.scr-ed-err')!;
+    nameIn.focus();
+
+    tr.querySelector('.scre-save')!.addEventListener('click', async () => {
+      const newName  = nameIn.value.trim();
+      const newShort = shortIn.value.trim() || null;
+      errEl.classList.add('hidden');
+      if (!newName) { errEl.textContent = 'Name is required'; errEl.classList.remove('hidden'); return; }
+      try {
+        await apiFetch('/api/admin/scriptures.php', {
+          method: 'PUT',
+          body: JSON.stringify({
+            id:          s.id,
+            name:        newName,
+            short_title: newShort,
+            image_path:  imgIn.value.trim() || null,
+            sort_order:  parseInt(sortIn.value, 10) || 0,
+          }),
+        });
+        await loadScriptures();
+      } catch (e: any) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+    });
+    tr.querySelector('.scre-cancel')!.addEventListener('click', () => tr.replaceWith(makeScrRow(s)));
+  }
+
+  async function deleteScripture(s: Scripture) {
+    if (!confirm(`Delete "${s.name}"?\n\nSlokas linked to it will have their Root Scripture cleared.`)) return;
+    try {
+      await apiFetch('/api/admin/scriptures.php', {
+        method: 'DELETE', body: JSON.stringify({ id: s.id }),
+      });
+      await loadScriptures();
+    } catch (e: any) { alert(e.message); }
+  }
+
+  $('scr-new-btn').addEventListener('click', () => {
+    $('scr-new-form').classList.remove('hidden');
+    ($<HTMLInputElement>('scr-new-name')).value  = '';
+    ($<HTMLInputElement>('scr-new-short')).value = '';
+    ($<HTMLInputElement>('scr-new-img')).value   = '';
+    ($<HTMLInputElement>('scr-new-sort')).value  = '0';
+    $('scr-new-error').classList.add('hidden');
+    ($<HTMLInputElement>('scr-new-short')).focus();
+  });
+  $('scr-new-cancel-btn').addEventListener('click', () => $('scr-new-form').classList.add('hidden'));
+  $('scr-new-save-btn').addEventListener('click', async () => {
+    const name  = ($<HTMLInputElement>('scr-new-name')).value.trim();
+    const short = ($<HTMLInputElement>('scr-new-short')).value.trim() || null;
+    const img   = ($<HTMLInputElement>('scr-new-img')).value.trim() || null;
+    const sort  = parseInt(($<HTMLInputElement>('scr-new-sort')).value, 10) || 0;
+    const errEl = $('scr-new-error');
+    errEl.classList.add('hidden');
+    if (!name) { errEl.textContent = 'Name is required'; errEl.classList.remove('hidden'); return; }
+    try {
+      await apiFetch('/api/admin/scriptures.php', {
+        method: 'POST',
+        body: JSON.stringify({ name, short_title: short, image_path: img, sort_order: sort }),
+      });
+      $('scr-new-form').classList.add('hidden');
+      await loadScriptures();
+    } catch (e: any) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+  });
+
+  $('scr-search').addEventListener('input', () => {
+    renderScriptureTable(($<HTMLInputElement>('scr-search')).value.trim().toLowerCase());
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SLOKAS TAB — Mutually exclusive filters
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  $('sl-search').addEventListener('input', () => {
+    // Clear other filters when typing in search
+    ($<HTMLSelectElement>('sl-cat-filter')).value = '';
+    ($<HTMLSelectElement>('sl-scr-filter')).value = '';
+    if (searchTimer) clearTimeout(searchTimer);
+    const q = ($<HTMLInputElement>('sl-search')).value.trim();
+    searchTimer = setTimeout(() => {
+      if (q.length >= 2) loadSlokas(q, '', '');
+      else setListState('hint');
+    }, 350);
+  });
+
+  $('sl-cat-filter').addEventListener('change', () => {
+    ($<HTMLInputElement>('sl-search')).value       = '';
+    ($<HTMLSelectElement>('sl-scr-filter')).value  = '';
+    const cat = ($<HTMLSelectElement>('sl-cat-filter')).value;
+    if (cat) loadSlokas('', cat, '');
+    else setListState('hint');
+  });
+
+  $('sl-scr-filter').addEventListener('change', () => {
+    ($<HTMLInputElement>('sl-search')).value       = '';
+    ($<HTMLSelectElement>('sl-cat-filter')).value  = '';
+    const scr = ($<HTMLSelectElement>('sl-scr-filter')).value;
+    if (scr) loadSlokas('', '', scr);
+    else setListState('hint');
+  });
+
+  async function loadSlokas(search: string, cat: string, scr: string) {
+    setListState('loading');
+    try {
+      const qs = new URLSearchParams();
+      if (search) qs.set('search', search);
+      if (cat)    qs.set('category', cat);
+      if (scr)    qs.set('scripture_id', scr);
+      slokas = await apiFetch('/api/admin/slokas.php?' + qs.toString());
+      renderSlokaList();
+    } catch {
+      setListState('empty');
+    }
+  }
+
+  function setListState(state: 'hint'|'loading'|'empty'|'list') {
+    $('sl-list-hint').classList.toggle(   'hidden', state !== 'hint');
+    $('sl-list-loading').classList.toggle('hidden', state !== 'loading');
+    $('sl-list-empty').classList.toggle(  'hidden', state !== 'empty');
+    $('sl-list-wrap').classList.toggle(   'hidden', state !== 'list');
+  }
+
+  function renderSlokaList() {
+    if (slokas.length === 0) { setListState('empty'); return; }
+    setListState('list');
+    $('sl-list-count').textContent = `${slokas.length} sloka${slokas.length !== 1 ? 's' : ''}`;
+    const tbody = $('sl-list-tbody');
+    tbody.innerHTML = '';
+    slokas.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-brand-parchment/40 cursor-pointer transition-colors';
+      tr.dataset.id = String(s.id);
+      const label = s.search_title || s.title || s.sloka_text?.split('\n')[0] || '—';
+      tr.innerHTML = `
+        <td class="px-3 py-2.5">
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-xs font-mono text-brand-slate shrink-0">#${s.id}</span>
+            <span class="text-sm text-brand-navy font-semibold leading-snug">${escHtml(label.substring(0, 72))}</span>
+            ${s.audio_file_path ? '<span class="shrink-0 text-xs text-green-600 font-bold ml-1">♫</span>' : ''}
+          </div>
+          <div class="flex items-center gap-2 mt-0.5 pl-5">
+            <span class="text-xs text-brand-slate font-medium">${escHtml(s.category_name)}</span>
+            ${s.scripture_name
+              ? `<span class="text-xs text-brand-slate"> · ${escHtml(s.scripture_name)}</span>`
+              : ''}
+          </div>
+        </td>
+      `;
+      tr.addEventListener('click', () => openEditor(s));
+      tbody.appendChild(tr);
+    });
+    if (activeSloka) highlightRow(activeSloka.id);
+  }
+
+  function highlightRow(id: number) {
+    $('sl-list-tbody').querySelectorAll('tr').forEach(tr =>
+      tr.classList.toggle('bg-brand-parchment', (tr as HTMLTableRowElement).dataset.id === String(id))
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SLOKAS TAB — Editor
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  function openEditor(s: Sloka) {
+    isNew       = false;
+    activeSloka = s;
+    highlightRow(s.id);
+    $('sl-editor-empty').classList.add('hidden');
+    $('sl-editor-card').classList.remove('hidden');
+
+    $('sl-ed-id-label').textContent = `Sloka #${s.id}`;
+    $('sl-ed-heading').textContent  = s.title || s.search_title || '—';
+
+    ($<HTMLSelectElement>('sl-ed-category')).value     = s.category_code;
+    ($<HTMLInputElement>('sl-ed-ref')).value            = s.slokamrtam_ref    ?? '';
+    ($<HTMLInputElement>('sl-ed-title')).value          = s.title             ?? '';
+    ($<HTMLInputElement>('sl-ed-search-title')).value   = s.search_title      ?? '';
+    ($<HTMLTextAreaElement>('sl-ed-text')).value        = s.sloka_text        ?? '';
+    ($<HTMLSelectElement>('sl-ed-scripture-id')).value  = s.scripture_id != null ? String(s.scripture_id) : '';
+    ($<HTMLInputElement>('sl-ed-scr-ref')).value        = s.scripture_ref     ?? '';
+    setAudioUI(s.audio_file_path);
+    ($<HTMLTextAreaElement>('sl-ed-wbw')).value          = s.word_by_word  ?? '';
+    ($<HTMLTextAreaElement>('sl-ed-translation')).value = s.translation   ?? '';
+    ($<HTMLTextAreaElement>('sl-ed-commentary')).value  = s.commentary    ?? '';
+
+    $('sl-editor-status').textContent = '';
+    $('sl-editor-delete-btn').classList.remove('hidden');
+  }
+
+  function openNewSloka() {
+    isNew       = true;
+    activeSloka = null;
+    $('sl-editor-empty').classList.add('hidden');
+    $('sl-editor-card').classList.remove('hidden');
+    $('sl-ed-id-label').textContent = 'New Sloka';
+    $('sl-ed-heading').textContent  = '';
+
+    ($<HTMLSelectElement>('sl-ed-category')).value    = ($<HTMLSelectElement>('sl-cat-filter')).value || (categories[0]?.category_code ?? '');
+    ($<HTMLInputElement>('sl-ed-ref')).value           = '';
+    ($<HTMLInputElement>('sl-ed-title')).value         = '';
+    ($<HTMLInputElement>('sl-ed-search-title')).value  = '';
+    ($<HTMLTextAreaElement>('sl-ed-text')).value       = '';
+    ($<HTMLSelectElement>('sl-ed-scripture-id')).value = ($<HTMLSelectElement>('sl-scr-filter')).value || '';
+    ($<HTMLInputElement>('sl-ed-scr-ref')).value       = '';
+    setAudioUI(null);
+    ($<HTMLTextAreaElement>('sl-ed-wbw')).value         = '';
+    ($<HTMLTextAreaElement>('sl-ed-translation')).value = '';
+    ($<HTMLTextAreaElement>('sl-ed-commentary')).value  = '';
+
+    $('sl-editor-status').textContent = '';
+    $('sl-editor-delete-btn').classList.add('hidden');
+    $('sl-list-tbody').querySelectorAll('tr').forEach(tr => tr.classList.remove('bg-brand-parchment'));
+    ($<HTMLTextAreaElement>('sl-ed-text')).focus();
+  }
+
+  $('sl-new-sloka-btn').addEventListener('click', openNewSloka);
+
+  $('sl-editor-cancel-btn').addEventListener('click', () => {
+    $('sl-editor-card').classList.add('hidden');
+    $('sl-editor-empty').classList.remove('hidden');
+    activeSloka = null;
+    $('sl-list-tbody').querySelectorAll('tr').forEach(tr => tr.classList.remove('bg-brand-parchment'));
+  });
+
+  /* ── Save ────────────────────────────────────────────────────────────────── */
+  $('sl-editor-save-btn').addEventListener('click', async () => {
+    const scrIdVal = ($<HTMLSelectElement>('sl-ed-scripture-id')).value;
+    const payload: Record<string, any> = {
+      category_code:   ($<HTMLSelectElement>('sl-ed-category')).value,
+      slokamrtam_ref:  ($<HTMLInputElement>('sl-ed-ref')).value.trim()           || null,
+      title:           ($<HTMLInputElement>('sl-ed-title')).value.trim()         || null,
+      search_title:    ($<HTMLInputElement>('sl-ed-search-title')).value.trim()  || null,
+      sloka_text:      ($<HTMLTextAreaElement>('sl-ed-text')).value.trim(),
+      scripture_id:    scrIdVal ? parseInt(scrIdVal, 10) : null,
+      scripture_ref:   ($<HTMLInputElement>('sl-ed-scr-ref')).value.trim()       || null,
+      word_by_word:    ($<HTMLTextAreaElement>('sl-ed-wbw')).value.trim()         || null,
+      translation:     ($<HTMLTextAreaElement>('sl-ed-translation')).value.trim() || null,
+      commentary:      ($<HTMLTextAreaElement>('sl-ed-commentary')).value.trim()  || null,
+    };
+
+    if (!payload.sloka_text)    { setStatus('Sloka text is required.', true); return; }
+    if (!payload.category_code) { setStatus('Category is required.',   true); return; }
+
+    const saveBtn = $<HTMLButtonElement>('sl-editor-save-btn');
+    saveBtn.disabled = true;
+
+    try {
+      let finalAudioPath: string | null = activeSloka?.audio_file_path ?? null;
+
+      if (removeAudio) {
+        // Archive old file (best-effort) then clear path
+        if (finalAudioPath) await archiveSlokaAudio(finalAudioPath);
+        finalAudioPath = null;
+      }
+
+      if (isNew) {
+        // ── New sloka ─────────────────────────────────────────────────────────
+        // 1. Save without audio first to get the id
+        setStatus('Saving…');
+        payload.audio_file_path = null;
+        const res = await apiFetch('/api/admin/slokas.php', { method: 'POST', body: JSON.stringify(payload) });
+        const newId: number = res.id;
+
+        // 2. Upload audio if a file was selected
+        if (pendingAudio) {
+          setStatus('Uploading audio…');
+          const st = payload.search_title || payload.sloka_text.split('\n')[0] || '';
+          finalAudioPath = await uploadSlokaAudio(newId, st, pendingAudio);
+          // 3. Patch the sloka with the audio path
+          await apiFetch('/api/admin/slokas.php', {
+            method: 'PUT',
+            body: JSON.stringify({ ...payload, id: newId, audio_file_path: finalAudioPath }),
+          });
+        }
+
+        setStatus('Saved ✓');
+        const cat = ($<HTMLSelectElement>('sl-cat-filter')).value;
+        const scr = ($<HTMLSelectElement>('sl-scr-filter')).value;
+        const q   = ($<HTMLInputElement>('sl-search')).value.trim();
+        await loadSlokas(q, cat, scr);
+        const newItem = slokas.find(s => s.id === newId);
+        if (newItem) openEditor(newItem);
+
+      } else {
+        // ── Existing sloka ────────────────────────────────────────────────────
+        // Upload audio first (if chosen) so path goes into the save call
+        if (pendingAudio && activeSloka) {
+          setStatus('Uploading audio…');
+          const st = payload.search_title || activeSloka.search_title || payload.sloka_text.split('\n')[0] || '';
+          finalAudioPath = await uploadSlokaAudio(activeSloka.id, st, pendingAudio);
+        }
+
+        payload.audio_file_path = finalAudioPath;
+        payload.id = activeSloka!.id;
+        setStatus('Saving…');
+        await apiFetch('/api/admin/slokas.php', { method: 'PUT', body: JSON.stringify(payload) });
+        setStatus('Saved ✓');
+
+        if (activeSloka) {
+          Object.assign(activeSloka, payload);
+          setAudioUI(finalAudioPath);
+          $('sl-ed-heading').textContent = payload.title || payload.search_title || '—';
+          const idx = slokas.findIndex(s => s.id === activeSloka!.id);
+          if (idx >= 0) { Object.assign(slokas[idx], payload); renderSlokaList(); highlightRow(activeSloka.id); }
+        }
+      }
+
+      await loadCategories();
+    } catch (e: any) {
+      setStatus(e.message, true);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  /* ── Delete ──────────────────────────────────────────────────────────────── */
+  $('sl-editor-delete-btn').addEventListener('click', async () => {
+    if (!activeSloka) return;
+    if (!confirm(`Delete Sloka #${activeSloka.id}? This cannot be undone.`)) return;
+    try {
+      await apiFetch('/api/admin/slokas.php', {
+        method: 'DELETE', body: JSON.stringify({ id: activeSloka.id }),
+      });
+      $('sl-editor-card').classList.add('hidden');
+      $('sl-editor-empty').classList.remove('hidden');
+      slokas = slokas.filter(s => s.id !== activeSloka!.id);
+      activeSloka = null;
+      renderSlokaList();
+      await loadCategories();
+    } catch (e: any) { setStatus(e.message, true); }
+  });
+
+  function setStatus(msg: string, isError = false) {
+    const el = $('sl-editor-status');
+    el.textContent = msg;
+    el.classList.toggle('text-red-600',    isError);
+    el.classList.toggle('text-brand-slate', !isError);
+    if (!isError) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+  }
+
+  /* ── Init ────────────────────────────────────────────────────────────────── */
+  Promise.all([loadCategories(), loadScriptures(), loadSlokas('', '', '')]);
+
+})();
+</script>

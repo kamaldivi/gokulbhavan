@@ -6,17 +6,45 @@ import AdminShell from "@layouts/AdminShell.astro";
 
   <!-- Top bar -->
   <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
-    <div class="flex items-center gap-2 flex-wrap" id="posts-filter-tabs">
-      {['all','blog','event','published','draft','archived'].map(t => (
-        <button data-filter={t}
-                class={`post-tab text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors
-                        ${t === 'all'
-                          ? 'bg-brand-navy text-white border-brand-navy'
-                          : 'bg-white text-brand-slate border-brand-tan hover:border-brand-navy hover:text-brand-navy'}`}>
-          {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
-        </button>
-      ))}
+
+    <!-- Dropdowns -->
+    <div class="flex items-center gap-2 flex-wrap">
+
+      <!-- Type -->
+      <select id="filter-type"
+              class="text-xs font-semibold px-3 py-2 rounded-lg border border-brand-tan bg-white text-brand-slate
+                     hover:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-lotus cursor-pointer">
+        <option value="">All Types</option>
+        <option value="blog">Blog</option>
+        <option value="event">Event</option>
+      </select>
+
+      <!-- Category (populated from API) -->
+      <select id="filter-category"
+              class="text-xs font-semibold px-3 py-2 rounded-lg border border-brand-tan bg-white text-brand-slate
+                     hover:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-lotus cursor-pointer">
+        <option value="">All Categories</option>
+      </select>
+
+      <!-- Status -->
+      <select id="filter-status"
+              class="text-xs font-semibold px-3 py-2 rounded-lg border border-brand-tan bg-white text-brand-slate
+                     hover:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-lotus cursor-pointer">
+        <option value="">All Statuses</option>
+        <option value="published">Published</option>
+        <option value="draft">Draft</option>
+        <option value="archived">Archived</option>
+      </select>
+
+      <!-- Clear -->
+      <button id="filter-clear"
+              class="hidden text-xs font-semibold px-3 py-2 rounded-lg border border-brand-tan bg-white
+                     text-brand-slate hover:border-brand-lotus hover:text-brand-lotus transition-colors">
+        Clear filters
+      </button>
     </div>
+
+    <!-- Actions -->
     <div class="flex items-center gap-2 shrink-0">
       <a href="/admin/categories"
          class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide px-3 py-2 rounded-lg border border-brand-tan bg-white text-brand-slate hover:border-brand-navy hover:text-brand-navy transition-colors">
@@ -60,16 +88,29 @@ import AdminShell from "@layouts/AdminShell.astro";
     event_location: string | null;
     created_at: string;
     updated_at: string;
+    category_id: number | null;
+    category_name: string | null;
+  };
+
+  type Category = {
+    id: number;
+    name: string;
+    post_type: string;
   };
 
   const apiBase = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
   let posts: Post[] = [];
-  let activeFilter = 'all';
+  let allCategories: Category[] = [];
 
-  const loadingEl = document.getElementById('posts-loading')!;
-  const listEl    = document.getElementById('posts-list')!;
-  const emptyEl   = document.getElementById('posts-empty')!;
-  const bannerEl  = document.getElementById('posts-banner')!;
+  const loadingEl  = document.getElementById('posts-loading')!;
+  const listEl     = document.getElementById('posts-list')!;
+  const emptyEl    = document.getElementById('posts-empty')!;
+  const bannerEl   = document.getElementById('posts-banner')!;
+
+  const filterType     = document.getElementById('filter-type')     as HTMLSelectElement;
+  const filterCategory = document.getElementById('filter-category') as HTMLSelectElement;
+  const filterStatus   = document.getElementById('filter-status')   as HTMLSelectElement;
+  const filterClear    = document.getElementById('filter-clear')    as HTMLButtonElement;
 
   const TYPE_BADGES: Record<string, string> = {
     blog:  'bg-brand-navy/10 text-brand-navy',
@@ -82,7 +123,37 @@ import AdminShell from "@layouts/AdminShell.astro";
     archived:  { label: 'Archived',  cls: 'bg-brand-tan text-brand-slate/60' },
   };
 
-  // ── Load ──────────────────────────────────────────────────────
+  // ── Load categories, rebuild dropdown filtered by type ─────────
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/post-categories.php`, { credentials: 'same-origin' });
+      if (!res.ok) return;
+      allCategories = await res.json();
+      rebuildCategoryDropdown();
+    } catch { /* silently skip */ }
+  }
+
+  function rebuildCategoryDropdown() {
+    const typeVal = filterType.value;
+    const prevVal = filterCategory.value;
+
+    // Keep only the "All Categories" placeholder, then re-add matching options
+    filterCategory.innerHTML = '<option value="">All Categories</option>';
+    allCategories
+      .filter(c => !typeVal || c.post_type === typeVal)
+      .forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = String(c.id);
+        opt.textContent = c.name;
+        filterCategory.appendChild(opt);
+      });
+
+    // Restore previous selection if still valid, otherwise reset
+    filterCategory.value = prevVal;
+    if (filterCategory.value !== prevVal) filterCategory.value = '';
+  }
+
+  // ── Load posts ─────────────────────────────────────────────────
   async function load() {
     try {
       const res = await fetch(`${apiBase}/api/admin/posts.php`, { credentials: 'same-origin' });
@@ -96,13 +167,22 @@ import AdminShell from "@layouts/AdminShell.astro";
     render();
   }
 
-  // ── Render ────────────────────────────────────────────────────
+  // ── Render filtered list ───────────────────────────────────────
   function render() {
+    const typeVal     = filterType.value;
+    const categoryVal = filterCategory.value;
+    const statusVal   = filterStatus.value;
+
     const filtered = posts.filter(p => {
-      if (activeFilter === 'all') return true;
-      if (activeFilter === 'blog' || activeFilter === 'event') return p.post_type === activeFilter;
-      return p.status === activeFilter;
+      if (typeVal     && p.post_type              !== typeVal)           return false;
+      if (categoryVal && String(p.category_id)    !== categoryVal)       return false;
+      if (statusVal   && p.status                 !== statusVal)         return false;
+      return true;
     });
+
+    // Show/hide clear button
+    const anyActive = typeVal || categoryVal || statusVal;
+    filterClear.classList.toggle('hidden', !anyActive);
 
     listEl.innerHTML = '';
     if (filtered.length === 0) {
@@ -130,6 +210,7 @@ import AdminShell from "@layouts/AdminShell.astro";
             <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${typeCls}">
               ${esc(p.post_type)}
             </span>
+            ${p.category_name ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-gold/20 text-brand-navy/80">${esc(p.category_name)}</span>` : ''}
             <h3 class="font-semibold text-brand-navy text-sm">${esc(p.title)}</h3>
             <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${st.cls}">
               ${st.label}
@@ -149,22 +230,23 @@ import AdminShell from "@layouts/AdminShell.astro";
     });
   }
 
-  // ── Filter tabs ───────────────────────────────────────────────
-  document.querySelectorAll<HTMLButtonElement>('.post-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeFilter = btn.dataset.filter!;
-      document.querySelectorAll('.post-tab').forEach(b => {
-        const active = (b as HTMLElement).dataset.filter === activeFilter;
-        b.className = `post-tab text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors
-          ${active
-            ? 'bg-brand-navy text-white border-brand-navy'
-            : 'bg-white text-brand-slate border-brand-tan hover:border-brand-navy hover:text-brand-navy'}`;
-      });
-      render();
-    });
+  // ── Filter event listeners ─────────────────────────────────────
+  filterType.addEventListener('change', () => {
+    rebuildCategoryDropdown();
+    render();
+  });
+  filterCategory.addEventListener('change', render);
+  filterStatus.addEventListener('change', render);
+
+  filterClear.addEventListener('click', () => {
+    filterType.value     = '';
+    filterCategory.value = '';
+    filterStatus.value   = '';
+    rebuildCategoryDropdown();
+    render();
   });
 
-  // ── Delete ────────────────────────────────────────────────────
+  // ── Delete ─────────────────────────────────────────────────────
   async function deletePost(id: number, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     const res = await fetch(`${apiBase}/api/admin/posts.php?id=${id}`, {
@@ -179,7 +261,7 @@ import AdminShell from "@layouts/AdminShell.astro";
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────
   function showBanner(msg: string, color: 'green' | 'red') {
     bannerEl.className = `rounded-lg px-4 py-3 text-sm text-center font-semibold mb-4
       ${color === 'green' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
@@ -192,5 +274,6 @@ import AdminShell from "@layouts/AdminShell.astro";
     return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  loadCategories();
   load();
 </script>

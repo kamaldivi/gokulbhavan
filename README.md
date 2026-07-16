@@ -84,7 +84,23 @@ Schema: [`data/schema.sql`](data/schema.sql)
 | `audio_category` | Content categories — bhajan, sankirtan, sloka, album. Has `audio_family` (bhajan/sloka/sankirtan) and `sort_order`. |
 | `audio_track` | Primary tracks with `audio_file_path`, optional `base_track_path` and `lyrics_file_path` |
 | `audio_singer_version` | Singer variant recordings per track (`track_id`, `singer`, `audio_file_path`) |
+| `audio_author` | Optional author/composer metadata for audio tracks |
 | `lyrics` | Lyrics and meanings (en + ta); sankirtans use sentinel `MAHAMANTRA` row |
+
+### Sloka tables
+
+| Table | Description |
+| --- | --- |
+| `sloka_category` | Tattva/topic categories (PK: `id`, UNIQUE: `category_code`, `category_name`) |
+| `scripture` | Source texts — BG, SB, CC Adi/Madhya/Antya, Puranas, etc. (PK: `id`, UNIQUE: `name`; has `short_title`, `sort_order`) |
+| `sloka` | Individual ślokas. FK → `sloka_category` and `scripture`. Columns: `title`, `search_title` (normalised for search), `sloka_text`, `scripture_ref`, `slokamrtam_ref`, `word_by_word`, `translation`, `commentary`, `audio_file_path` |
+
+### Daily highlight tables
+
+| Table | Description |
+| --- | --- |
+| `daily_highlight` | PK: `content_type`. One row per type (sloka/bhajan) holding the current day's highlight |
+| `highlight_history` | UNIQUE(`content_type`, `shown_on`). History of past daily highlights |
 
 ### Video tables
 
@@ -132,6 +148,7 @@ Available at `/admin` (session-protected). Covers all content management functio
 | Announcements | `/admin/announcements` | Site-wide banners with date ranges |
 | Ask Guruji | `/admin/questions` | Review and respond to submitted questions |
 | Audios | `/admin/audio` | Full audio content management (see below) |
+| Slokas | `/admin/slokas` | Sloka library management — categories, scriptures, slokas, audio |
 | Programs | `/admin/programs` | Weekly program schedules |
 | Registrations | `/admin/registrations` | Devotee registration records |
 | Sanga Info | `/admin/sanga` | Local group locations and contacts |
@@ -163,9 +180,43 @@ All admin pages use a shared component library rather than per-page inline style
 | `admin-input` / `admin-label` | Form field styles |
 | `status-badge-{green/blue/amber/red/slate}` | Status pill badges |
 
+## Sloka Library (`/slokas`)
+
+Public-facing Sanskrit śloka library at `/slokas` (`frontend/src/pages/slokas-new.astro`).
+
+**Layout:** Resizable split-panel — sticky left list + right detail that expands the page height (no third scrollbar). Filter bar is sticky below the site header.
+
+**Search & filter:** Full-text title search or scripture-ref search; Scripture and Tattva (category) dropdowns. Results shown as `Title (scripture_ref)` with count "N ślokas found".
+
+**Detail panel:** Sloka title, Sanskrit text (lotus colour, centred), scripture ref, Meaning, Word-by-Word, Commentary. Copy Info and optional audio controls.
+
+**Audio:** Play button docks to the bottom bar (`{ docked: true }`) — the modal never opens on this page, so the sloka text remains readable while audio plays.
+
+**API endpoints:**
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /api/slokas.php` | List/search slokas. Params: `search`, `search_ref`, `category`, `scripture_id` |
+| `GET /api/sloka-categories.php` | Tattva category list |
+| `GET /api/scriptures.php` | Scripture list (includes `sloka_count`) |
+| `GET/POST/PUT/DELETE /api/admin/slokas.php` | Admin CRUD for slokas |
+| `GET/POST/PUT/DELETE /api/admin/sloka-categories.php` | Admin CRUD for sloka categories |
+| `POST/DELETE /api/admin/sloka-audio.php` | Sloka audio file upload/removal |
+| `GET/POST/PUT/DELETE /api/admin/scriptures.php` | Admin CRUD for scriptures |
+
 ## Key Design Notes
 
 - **Lyrics**: all stored in the `lyrics` table. Album tracks redirect to source bhajan lyrics via `audio_track.lyrics_source_track_id`. Sankirtans share a single sentinel row (`track_id = 'MAHAMANTRA'`).
 - **Albums**: 10 Gokula Ganam volumes (GG1–GG10). Track IDs follow `GG1-01` format.
+- **Audio player docked mode**: `window.__audioPlayer.setQueue(tracks, idx, { docked: true })` starts playback in the bottom mini bar without opening the modal. Used on the slokas page so the śloka text remains readable while audio plays. All other pages use the default modal behaviour.
+- **Navigation**: `frontend/src/lib/site-links.ts` is the single source of truth for all public nav links. Sub-nav components (`AboutNav.astro`, `BhajansNav.astro`) import from it.
 - **Media path migration**: run `GET /api/admin/migrate-audio-paths.php` (dry-run) then `?apply=1` to reorganise files from the legacy flat layout to the new `media/audio/{family}/{category}/` hierarchy and update all DB paths.
-- **YouTube sync**: videos are synced via `api/youtubesync.php` (token-protected). Playlists seeded from `data/seed_video_categories.sql`.
+- **YouTube sync**: `api/youtubesync.php` (token-protected). Runs a two-phase delete-and-rebuild on every execution:
+  - **Phase 1** — clears `video` and `video_playlist_map` entirely.
+  - **Phase 2** — iterates every playlist in `video_playlist`, fetches items from the YouTube Data API v3 (playlistItems.list, 50 per page), and inserts fresh rows. `published_date` (true upload date) is fetched via a secondary `videos.list` call per page.
+  - Playlists that return 404 from YouTube are automatically deleted from `video_playlist`.
+  - Videos with title "Deleted video", "Private video", or "Unlisted video" are skipped and not inserted.
+  - Videos appearing in multiple playlists are inserted once into `video` (INSERT IGNORE); `video_playlist_map` records each playlist membership separately.
+  - Uses `ignore_errors` stream context on all `file_get_contents` calls so HTTP 4xx responses return a parseable JSON body rather than `false`.
+  - Brief downtime (no videos visible) during the sync window is accepted and expected.
+  - Playlists are seeded via `data/seed_video_categories.sql`; new playlists must be added to `video_playlist` manually before they are picked up by the sync.

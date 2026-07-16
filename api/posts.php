@@ -130,7 +130,7 @@ try {
         "SELECT p.id, p.post_type, p.category_id, p.episode_number,
                 p.slug, p.title, p.`extract`, p.cover_image_path,
                 p.status, p.published_at, p.event_date, p.event_end_date, p.event_location,
-                p.created_at
+                p.created_at, LEFT(p.body, 400) AS body_snippet
          FROM post p $join
          WHERE $whereSql
          ORDER BY $orderBy

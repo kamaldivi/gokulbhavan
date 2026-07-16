@@ -1,0 +1,774 @@
+---
+/**
+ * /slokas-new — Sloka library (resizable split-panel layout)
+ * Desktop: list left (user-resizable) | detail right, each independently scrollable.
+ * Mobile:  list view → tap row → full-screen detail (← Back returns).
+ */
+import Base from "@layouts/Base.astro";
+import PageHero from "@components/PageHero.astro";
+---
+
+<Base
+  title="Slokamritam"
+  activePath="/slokas"
+  description="Sanskrit ślokas and Vaiṣṇava prayers — with transliteration, word-by-word meaning, and translation."
+>
+
+<PageHero
+  title="Slokamritam"
+  description="Search by first words or browse by tattva or scripture — then read, play, or download any śloka."
+/>
+
+<div class="max-w-7xl mx-auto border-x border-brand-tan/40 flex flex-col" id="sl-page">
+
+  <!-- ── Filter bar ─────────────────────────────────────────────────────────── -->
+  <div id="sl-filter-bar"
+       class="shrink-0 bg-brand-parchment/60 border-b border-brand-tan px-4 py-3 space-y-3">
+
+    <!-- Search mode toggle -->
+    <div class="flex items-center gap-2.5">
+      <span class="text-xs font-semibold text-brand-slate shrink-0">Search by</span>
+      <div class="flex gap-1.5 text-xs font-semibold">
+        <button id="sl-search-by-title"
+                class="px-3 py-1.5 rounded-lg bg-brand-navy text-white transition-colors">
+          Title
+        </button>
+        <button id="sl-search-by-ref"
+                class="px-3 py-1.5 rounded-lg border border-brand-tan bg-white text-brand-navy hover:bg-brand-parchment transition-colors">
+          Scripture Ref
+        </button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="relative">
+      <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-slate fill-current pointer-events-none"
+           viewBox="0 0 24 24">
+        <path d="M21 19l-4.35-4.35A7.5 7.5 0 1 0 15 16.65L19.35 21 21 19zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+      </svg>
+      <input id="sl-search" type="text" placeholder="Search by title…"
+             autocorrect="off" autocapitalize="off" spellcheck="false"
+             class="w-full pl-10 pr-9 py-2.5 rounded-lg border border-brand-tan bg-white
+                    text-sm text-brand-navy placeholder-brand-slate/50
+                    focus:outline-none focus:ring-2 focus:ring-brand-lotus transition" />
+      <button id="sl-search-clear"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-brand-slate
+                     hover:text-brand-navy text-lg leading-none">✕</button>
+    </div>
+
+    <!-- Scripture + Tattva (Category) dropdowns -->
+    <div class="grid grid-cols-2 gap-2">
+      <select id="sl-scr-filter"
+              class="w-full px-3 py-2.5 rounded-lg border border-brand-tan bg-white
+                     text-sm text-brand-navy focus:outline-none focus:ring-2
+                     focus:ring-brand-lotus transition">
+        <option value="">— Scripture —</option>
+      </select>
+      <select id="sl-cat-filter"
+              class="w-full px-3 py-2.5 rounded-lg border border-brand-tan bg-white
+                     text-sm text-brand-navy focus:outline-none focus:ring-2
+                     focus:ring-brand-lotus transition">
+        <option value="">— Tattva —</option>
+      </select>
+    </div>
+
+    <!-- Result count -->
+    <div class="flex items-center justify-between">
+      <span id="sl-count" class="text-xs font-semibold text-brand-slate"></span>
+    </div>
+
+  </div><!-- end filter bar -->
+
+  <!-- ── Split panel ────────────────────────────────────────────────────────── -->
+  <div id="sl-split" class="flex overflow-hidden" data-mobile-view="list">
+
+    <!-- ── Left: List panel (resizable) ────────────────────────────────────── -->
+    <div id="sl-list-panel"
+         class="flex flex-col min-h-0 overflow-hidden border-r border-brand-tan"
+         style="width: 38%; min-width: 220px; max-width: 70%;">
+
+      <!-- Loading -->
+      <div id="sl-loading" class="flex-1 flex flex-col gap-2 p-3 overflow-hidden">
+        {Array.from({length: 14}).map(() => (
+          <div class="h-11 rounded-lg bg-brand-tan/30 animate-pulse shrink-0"></div>
+        ))}
+      </div>
+
+      <!-- Empty -->
+      <div id="sl-empty"
+           class="hidden flex-1 flex items-center justify-center px-6 text-center">
+        <div>
+          <p class="font-semibold text-brand-navy mb-1">No ślokas found</p>
+          <p class="text-sm text-brand-slate">Try a different search or filter.</p>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div id="sl-list" class="hidden flex-1 overflow-y-auto divide-y divide-brand-tan/50"></div>
+
+    </div>
+
+    <!-- ── Drag handle ───────────────────────────────────────────────────────── -->
+    <div id="sl-drag-handle"
+         class="hidden md:flex w-1.5 shrink-0 cursor-col-resize
+                bg-brand-tan hover:bg-brand-lotus/40 active:bg-brand-lotus/60
+                transition-colors items-center justify-center group"
+         title="Drag to resize">
+      <div class="w-0.5 h-8 rounded-full bg-brand-slate/20 group-hover:bg-brand-lotus/60 transition-colors"></div>
+    </div>
+
+    <!-- ── Right: Detail panel ──────────────────────────────────────────────── -->
+    <div id="sl-detail-panel"
+         class="hidden md:flex flex-col flex-1 min-w-0 overflow-hidden">
+
+      <!-- Prompt (nothing selected) -->
+      <div id="sl-detail-empty"
+           class="flex-1 flex flex-col items-center justify-center text-brand-slate/50 italic px-8 text-center gap-2">
+        <svg class="w-10 h-10 fill-current opacity-30" viewBox="0 0 24 24">
+          <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 14H8v-2h8v2zm0-4H8v-2h8v2zm0-4H8V6h8v2z"/>
+        </svg>
+        <p class="text-sm">Select a śloka from the list to read it here</p>
+      </div>
+
+      <!-- Detail card -->
+      <div id="sl-detail-card" class="hidden flex-1 flex flex-col overflow-hidden">
+
+        <!-- Detail header bar -->
+        <div id="sl-detail-header" class="shrink-0 flex items-center gap-2 px-4 py-2.5
+                    border-b border-brand-tan bg-white">
+
+          <!-- ← Back (mobile only) -->
+          <button id="sl-back-btn"
+                  class="md:hidden shrink-0 inline-flex items-center gap-1 mr-1
+                         text-sm font-semibold text-brand-navy hover:text-brand-lotus transition-colors">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Back
+          </button>
+
+          <!-- Category (Tattva) label -->
+          <p id="sl-detail-meta"
+             class="flex-1 min-w-0 text-sm font-bold text-brand-navy truncate"></p>
+
+          <!-- Prev / Next -->
+          <div class="flex items-center shrink-0">
+            <button id="sl-prev-btn"
+                    class="w-8 h-8 flex items-center justify-center
+                           border border-brand-tan rounded-l-lg
+                           text-brand-navy hover:bg-brand-navy hover:text-white
+                           transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Previous śloka">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+            </button>
+            <button id="sl-next-btn"
+                    class="w-8 h-8 flex items-center justify-center
+                           border border-l-0 border-brand-tan rounded-r-lg
+                           text-brand-navy hover:bg-brand-navy hover:text-white
+                           transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Next śloka">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Copy Info (always shown) -->
+          <button id="sl-copy-btn"
+                  class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                         border border-brand-navy text-brand-navy text-sm font-semibold
+                         hover:bg-brand-navy hover:text-white transition-colors">
+            <svg id="sl-copy-icon" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+            <span id="sl-copy-label">Copy Info</span>
+          </button>
+
+          <!-- Play (audio only) -->
+          <button id="sl-play-btn"
+                  class="hidden shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                         bg-brand-lotus text-white text-sm font-semibold
+                         hover:bg-pink-700 transition-colors">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            Play
+          </button>
+
+          <!-- Download (audio only) -->
+          <a id="sl-download-btn"
+             class="hidden shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                    border border-brand-navy text-brand-navy text-sm font-semibold
+                    hover:bg-brand-navy hover:text-white transition-colors"
+             href="" download>
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/>
+            </svg>
+            Download
+          </a>
+
+        </div><!-- end detail header -->
+
+        <!-- Scrollable detail body -->
+        <div id="sl-detail-body" class="flex-1 overflow-y-auto bg-brand-parchment/20">
+          <div class="max-w-4xl mx-auto px-5 py-6 space-y-7">
+
+            <!-- Sloka Title (navy, display font, centered) -->
+            <div id="sl-title-wrap" class="hidden text-center">
+              <h2 id="sl-detail-title"
+                  class="font-display font-bold text-lg text-brand-navy leading-snug"></h2>
+            </div>
+
+            <!-- Sloka text card (lotus, centered, bold) -->
+            <div>
+              <div class="bg-brand-parchment border border-brand-tan rounded-2xl px-5 py-6 md:px-6 md:py-7">
+                <pre id="sl-detail-text"
+                     class="font-sans font-bold text-lg md:text-xl text-brand-lotus
+                            leading-relaxed text-center whitespace-pre-wrap"></pre>
+              </div>
+              <!-- Scripture reference right-aligned below card -->
+              <p id="sl-detail-ref"
+                 class="hidden text-right text-sm text-brand-slate font-mono mt-2 pr-1"></p>
+            </div>
+
+            <!-- MEANING (Translation) -->
+            <div id="sl-trans-wrap" class="hidden">
+              <p class="text-xs font-bold uppercase tracking-widest text-brand-navy mb-3">Meaning</p>
+              <p id="sl-detail-trans" class="text-base text-brand-navy leading-relaxed"></p>
+            </div>
+
+            <!-- WORD-BY-WORD -->
+            <div id="sl-wbw-wrap" class="hidden">
+              <p class="text-xs font-bold uppercase tracking-widest text-brand-navy mb-3">Word-by-Word</p>
+              <p id="sl-detail-wbw" class="text-base text-brand-navy leading-relaxed"></p>
+            </div>
+
+            <!-- COMMENTARY -->
+            <div id="sl-commentary-wrap" class="hidden">
+              <p class="text-xs font-bold uppercase tracking-widest text-brand-navy mb-3">Commentary</p>
+              <p id="sl-detail-commentary" class="text-base text-brand-navy leading-relaxed"></p>
+            </div>
+
+          </div>
+        </div><!-- end scrollable body -->
+
+      </div><!-- end detail card -->
+    </div><!-- end detail panel -->
+
+  </div><!-- end split -->
+</div><!-- end sl-page -->
+
+</Base>
+
+<style>
+  /* Mobile: toggle panels */
+  @media (max-width: 767px) {
+    #sl-list-panel  { width: 100% !important; display: flex; min-width: 0 !important; }
+    #sl-drag-handle { display: none !important; }
+
+    #sl-split[data-mobile-view="list"]   #sl-detail-panel { display: none; }
+    #sl-split[data-mobile-view="detail"] #sl-list-panel   { display: none !important; }
+    #sl-split[data-mobile-view="detail"] #sl-detail-panel { display: flex; }
+  }
+
+  /* Desktop flowing mode: detail panel expands, page scrolls instead of a 3rd scrollbar */
+  #sl-split.sl-flow {
+    height: auto !important;
+    overflow-x: hidden;
+    overflow-y: visible !important;
+    align-items: flex-start;
+  }
+  /* Detail panel: allow content to overflow naturally */
+  #sl-split.sl-flow #sl-detail-panel { overflow: visible !important; }
+  /* Detail card: natural height, no internal clip */
+  #sl-split.sl-flow #sl-detail-card  { flex: none !important; overflow: visible !important; }
+  /* Detail body: no internal scroll — the page scroll handles it */
+  #sl-split.sl-flow #sl-detail-body  { flex: none !important; overflow-y: visible !important; }
+  /* Empty state: use CSS var height so it fills the viewport before anything is selected */
+  #sl-split.sl-flow #sl-detail-empty { flex: none !important; min-height: var(--sl-panel-h, 300px); }
+</style>
+
+<script>
+(function () {
+
+  /* ── Types ──────────────────────────────────────────────────────────────── */
+  type Cat       = { category_code: string; category_name: string };
+  type Scripture = { id: number; name: string; short_title: string | null; sloka_count: number };
+  type Sloka     = {
+    id: number; category_code: string; category_name: string;
+    slokamrtam_ref: string|null; title: string|null; search_title: string|null;
+    sloka_text: string; scripture_id: number|null; scripture_ref: string|null;
+    scripture_name: string|null; scripture_short: string|null;
+    word_by_word: string|null; translation: string|null;
+    commentary: string|null; audio_file_path: string|null;
+  };
+
+  /* ── State ──────────────────────────────────────────────────────────────── */
+  let slokas:    Sloka[] = [];
+  let activeIdx: number | null = null;
+  let searchTimer: ReturnType<typeof setTimeout> | null = null;
+  let searchMode: 'title' | 'ref' = 'title';
+
+  /* ── DOM ─────────────────────────────────────────────────────────────────── */
+  const splitEl      = document.getElementById('sl-split')!;
+  const filterBar    = document.getElementById('sl-filter-bar')!;
+  const listPanelEl  = document.getElementById('sl-list-panel')    as HTMLElement;
+  const dragHandle   = document.getElementById('sl-drag-handle')   as HTMLElement;
+  const listEl       = document.getElementById('sl-list')!;
+  const loadingEl    = document.getElementById('sl-loading')!;
+  const emptyEl      = document.getElementById('sl-empty')!;
+  const countEl      = document.getElementById('sl-count')!;
+  const searchBox    = document.getElementById('sl-search')        as HTMLInputElement;
+  const searchClear  = document.getElementById('sl-search-clear')  as HTMLButtonElement;
+  const catFilter    = document.getElementById('sl-cat-filter')    as HTMLSelectElement;
+  const scrFilter    = document.getElementById('sl-scr-filter')    as HTMLSelectElement;
+
+  const searchByTitleBtn = document.getElementById('sl-search-by-title') as HTMLButtonElement;
+  const searchByRefBtn   = document.getElementById('sl-search-by-ref')   as HTMLButtonElement;
+
+  const detailEmpty      = document.getElementById('sl-detail-empty')!;
+  const detailCard       = document.getElementById('sl-detail-card')!;
+  const detailMeta       = document.getElementById('sl-detail-meta')!;
+  const titleWrap        = document.getElementById('sl-title-wrap')!;
+  const detailTitle      = document.getElementById('sl-detail-title')!;
+  const detailText       = document.getElementById('sl-detail-text')!;
+  const detailRef        = document.getElementById('sl-detail-ref')!;
+  const transWrap        = document.getElementById('sl-trans-wrap')!;
+  const detailTrans      = document.getElementById('sl-detail-trans')!;
+  const wbwWrap          = document.getElementById('sl-wbw-wrap')!;
+  const detailWbw        = document.getElementById('sl-detail-wbw')!;
+  const commentaryWrap   = document.getElementById('sl-commentary-wrap')!;
+  const detailCommentary = document.getElementById('sl-detail-commentary')!;
+  const prevBtn          = document.getElementById('sl-prev-btn')     as HTMLButtonElement;
+  const nextBtn          = document.getElementById('sl-next-btn')     as HTMLButtonElement;
+  const copyBtn          = document.getElementById('sl-copy-btn')     as HTMLButtonElement;
+  const copyIcon         = document.getElementById('sl-copy-icon')!;
+  const copyLabel        = document.getElementById('sl-copy-label')!;
+  const playBtn          = document.getElementById('sl-play-btn')     as HTMLButtonElement;
+  const downloadBtn      = document.getElementById('sl-download-btn') as HTMLAnchorElement;
+  const backBtn          = document.getElementById('sl-back-btn')     as HTMLButtonElement;
+
+  /* ── Panel layout ────────────────────────────────────────────────────────── */
+  // Desktop: filter bar + list panel are sticky; detail panel expands naturally
+  //          so only 2 scrollbars exist (page + list).
+  // Mobile:  classic fixed-height split — both panels scroll internally.
+  function fitPanels() {
+    const isMobile = window.innerWidth < 768;
+    const header   = document.querySelector<HTMLElement>('header');
+    const headerH  = header?.offsetHeight ?? 0;
+    const filterH  = filterBar.offsetHeight;
+
+    if (isMobile) {
+      // ── Mobile: restore fixed-height container ──
+      splitEl.classList.remove('sl-flow');
+      splitEl.style.height = Math.max(window.innerHeight - headerH - filterH, 300) + 'px';
+      // Reset any desktop sticky overrides
+      filterBar.style.position    = '';
+      filterBar.style.top         = '';
+      filterBar.style.zIndex      = '';
+      listPanelEl.style.position  = '';
+      listPanelEl.style.top       = '';
+      listPanelEl.style.height    = '';
+      listPanelEl.style.overflowY = '';
+      dragHandle.style.position   = '';
+      dragHandle.style.top        = '';
+      dragHandle.style.height     = '';
+    } else {
+      // ── Desktop: sticky panels, page scroll for detail ──
+      splitEl.classList.add('sl-flow');
+      splitEl.style.height = '';
+
+      const panelTop = headerH + filterH;
+      const panelH   = Math.max(window.innerHeight - panelTop, 300);
+
+      // Expose panel height as CSS var (used by the empty-state min-height)
+      splitEl.style.setProperty('--sl-panel-h', panelH + 'px');
+
+      // Sticky filter bar (sits just below the site header)
+      filterBar.style.position = 'sticky';
+      filterBar.style.top      = headerH + 'px';
+      filterBar.style.zIndex   = '20';
+
+      // Sticky list panel with its own independent scroll
+      listPanelEl.style.position  = 'sticky';
+      listPanelEl.style.top       = panelTop + 'px';
+      listPanelEl.style.height    = panelH + 'px';
+      listPanelEl.style.overflowY = 'auto';
+
+      // Drag handle mirrors list panel height
+      dragHandle.style.position = 'sticky';
+      dragHandle.style.top      = panelTop + 'px';
+      dragHandle.style.height   = panelH + 'px';
+    }
+  }
+  fitPanels();
+  window.addEventListener('resize', fitPanels);
+
+  /* ── Resizable drag handle ───────────────────────────────────────────────── */
+  let dragging = false;
+  let dragStartX = 0;
+  let dragStartW = 0;
+
+  dragHandle.addEventListener('mousedown', (e) => {
+    dragging   = true;
+    dragStartX = e.clientX;
+    dragStartW = listPanelEl.offsetWidth;
+    document.body.style.cursor        = 'col-resize';
+    document.body.style.userSelect    = 'none';
+    // Prevent text selection and pointer events on panels during drag
+    splitEl.style.pointerEvents = 'none';
+    dragHandle.style.pointerEvents = 'auto';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const delta    = e.clientX - dragStartX;
+    const newWidth = Math.min(
+      Math.max(dragStartW + delta, 220),
+      splitEl.offsetWidth * 0.70
+    );
+    listPanelEl.style.width = newWidth + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+    splitEl.style.pointerEvents    = '';
+  });
+
+  /* ── Helpers ─────────────────────────────────────────────────────────────── */
+  function escHtml(s: string | null | undefined): string {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function setSearchMode(mode: 'title' | 'ref') {
+    searchMode = mode;
+    const activeClass   = ['bg-brand-navy', 'text-white'];
+    const inactiveClass = ['border', 'border-brand-tan', 'bg-white', 'text-brand-navy', 'hover:bg-brand-parchment'];
+    if (mode === 'title') {
+      searchByTitleBtn.classList.add(...activeClass);
+      searchByTitleBtn.classList.remove(...inactiveClass);
+      searchByRefBtn.classList.add(...inactiveClass);
+      searchByRefBtn.classList.remove(...activeClass);
+      searchBox.placeholder = 'Search by title…';
+    } else {
+      searchByRefBtn.classList.add(...activeClass);
+      searchByRefBtn.classList.remove(...inactiveClass);
+      searchByTitleBtn.classList.add(...inactiveClass);
+      searchByTitleBtn.classList.remove(...activeClass);
+      searchBox.placeholder = 'Search by scripture ref (e.g. BG 2, SB 1.3)…';
+    }
+    // Re-run search with new mode if there's an active query
+    const q = searchBox.value.trim();
+    if (q.length >= 2) fetchSlokas(searchParams(q));
+  }
+
+  function searchParams(q: string): URLSearchParams {
+    return searchMode === 'ref'
+      ? new URLSearchParams({ search_ref: q })
+      : new URLSearchParams({ search: q });
+  }
+
+  searchByTitleBtn.addEventListener('click', () => setSearchMode('title'));
+  searchByRefBtn.addEventListener('click',   () => setSearchMode('ref'));
+
+  /* ── Load dropdowns ──────────────────────────────────────────────────────── */
+  async function loadMeta() {
+    const [catRes, scrRes] = await Promise.all([
+      fetch('/api/sloka-categories.php'),
+      fetch('/api/scriptures.php'),
+    ]);
+    if (catRes.ok) {
+      const cats: Cat[] = await catRes.json();
+      catFilter.innerHTML = '<option value="">— Tattva —</option>' +
+        cats.map(c => `<option value="${escHtml(c.category_code)}">${escHtml(c.category_name)}</option>`).join('');
+    }
+    if (scrRes.ok) {
+      const scrs: Scripture[] = await scrRes.json();
+      const other  = scrs.filter(s => s.short_title === 'OTH');
+      const rest   = scrs.filter(s => s.short_title !== 'OTH');
+      // Top 3 by sloka_count (API already returns sloka_count)
+      const top3   = [...rest].sort((a, b) => b.sloka_count - a.sloka_count).slice(0, 3);
+      const top3ids = new Set(top3.map(s => s.id));
+      const alpha  = rest.filter(s => !top3ids.has(s.id))
+                         .sort((a, b) => a.name.localeCompare(b.name));
+      const opt = (s: Scripture) => `<option value="${s.id}">${escHtml(s.name)}</option>`;
+      scrFilter.innerHTML =
+        '<option value="">— Scripture —</option>' +
+        (top3.length  ? `<optgroup label="Most Slokas">${top3.map(opt).join('')}</optgroup>` : '') +
+        (alpha.length ? `<optgroup label="All Scriptures">${alpha.map(opt).join('')}</optgroup>` : '') +
+        (other.length ? `<optgroup label="Other">${other.map(opt).join('')}</optgroup>` : '');
+    }
+  }
+
+  /* ── Fetch slokas ────────────────────────────────────────────────────────── */
+  async function fetchSlokas(params: URLSearchParams) {
+    setListState('loading');
+    activeIdx = null;
+    showDetailEmpty();
+    try {
+      const res = await fetch('/api/slokas.php?' + params.toString());
+      if (!res.ok) throw new Error();
+      slokas = await res.json();
+      slokas.sort((a, b) => {
+        const ta = (a.search_title || a.title || a.sloka_text?.split('\n')[0] || '').toLowerCase();
+        const tb = (b.search_title || b.title || b.sloka_text?.split('\n')[0] || '').toLowerCase();
+        return ta.localeCompare(tb, undefined, { sensitivity: 'base' });
+      });
+      renderList();
+    } catch {
+      setListState('empty');
+    }
+  }
+
+  /* ── Mutually exclusive filters ──────────────────────────────────────────── */
+  searchBox.addEventListener('input', () => {
+    catFilter.value = ''; scrFilter.value = '';
+    searchClear.classList.toggle('hidden', !searchBox.value);
+    if (searchTimer) clearTimeout(searchTimer);
+    const q = searchBox.value.trim();
+    searchTimer = setTimeout(() => {
+      if (q.length >= 2)  fetchSlokas(searchParams(q));
+      else if (q === '')  fetchSlokas(new URLSearchParams());
+    }, 300);
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchBox.value = ''; searchClear.classList.add('hidden');
+    fetchSlokas(new URLSearchParams());
+    searchBox.focus();
+  });
+
+  catFilter.addEventListener('change', () => {
+    searchBox.value = ''; searchClear.classList.add('hidden'); scrFilter.value = '';
+    catFilter.value
+      ? fetchSlokas(new URLSearchParams({ category: catFilter.value }))
+      : fetchSlokas(new URLSearchParams());
+  });
+
+  scrFilter.addEventListener('change', () => {
+    searchBox.value = ''; searchClear.classList.add('hidden'); catFilter.value = '';
+    scrFilter.value
+      ? fetchSlokas(new URLSearchParams({ scripture_id: scrFilter.value }))
+      : fetchSlokas(new URLSearchParams());
+  });
+
+  /* ── Render list ─────────────────────────────────────────────────────────── */
+  function renderList() {
+    listEl.innerHTML = '';
+    const n = slokas.length;
+    countEl.textContent = n > 0 ? `${n} śloka${n !== 1 ? 's' : ''} found` : '';
+
+    if (n === 0) { setListState('empty'); return; }
+    setListState('list');
+
+    slokas.forEach((s, idx) => {
+      const label = s.search_title || s.title || s.sloka_text?.split('\n')[0] || '—';
+      const row   = document.createElement('div');
+      row.dataset.idx = String(idx);
+      row.className   = 'sl-row px-3 py-2.5 cursor-pointer hover:bg-brand-parchment transition-colors';
+      row.innerHTML   = `
+        <div class="flex items-start gap-2">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-brand-navy leading-snug">
+              ${escHtml(label)}
+              ${s.scripture_ref
+                ? `<span class="font-normal text-brand-slate"> (${escHtml(s.scripture_ref)})</span>`
+                : ''}
+            </p>
+            ${s.audio_file_path
+              ? `<span class="text-xs text-green-700 font-semibold">♫ Audio available</span>`
+              : ''}
+          </div>
+          <svg class="w-4 h-4 fill-current text-brand-slate/40 shrink-0 mt-0.5" viewBox="0 0 24 24">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </div>
+      `;
+      row.addEventListener('click', () => openDetail(idx));
+      listEl.appendChild(row);
+    });
+  }
+
+  /* ── Open detail ─────────────────────────────────────────────────────────── */
+  function openDetail(idx: number) {
+    activeIdx = idx;
+    const s = slokas[idx];
+
+    // Highlight selected row
+    // border-left-color is set via inline style (not Tailwind class) so it cannot
+    // be overridden by the parent's divide-brand-tan/50 compound selector.
+    listEl.querySelectorAll<HTMLElement>('.sl-row').forEach((r, i) => {
+      r.classList.toggle('bg-brand-parchment', i === idx);
+      r.classList.toggle('border-l-[3px]',     i === idx);
+      r.style.borderLeftColor = i === idx ? '#C94277' : '';
+    });
+    listEl.querySelectorAll<HTMLElement>('.sl-row')[idx]?.scrollIntoView({ block: 'nearest' });
+
+    // Detail header: "Scripture Name — Category" or just one of them
+    if (s.scripture_name && s.category_name) {
+      detailMeta.textContent = `${s.scripture_name} — ${s.category_name}`;
+    } else {
+      detailMeta.textContent = s.scripture_name || s.category_name || '';
+    }
+
+    // Sloka title
+    if (s.title) {
+      detailTitle.textContent = s.title;
+      titleWrap.classList.remove('hidden');
+    } else {
+      titleWrap.classList.add('hidden');
+    }
+
+    // Sloka text (lotus)
+    detailText.textContent = s.sloka_text ?? '';
+
+    // Scripture reference (ref only, e.g. SB 1.36.1)
+    const ref = s.scripture_ref ? `· ${s.scripture_ref}` : null;
+    if (ref) {
+      detailRef.textContent = ref;
+      detailRef.classList.remove('hidden');
+    } else {
+      detailRef.classList.add('hidden');
+    }
+
+    // Meaning / Translation
+    if (s.translation) {
+      detailTrans.textContent = s.translation;
+      transWrap.classList.remove('hidden');
+    } else {
+      transWrap.classList.add('hidden');
+    }
+
+    // Word-by-Word
+    if (s.word_by_word) {
+      detailWbw.textContent = s.word_by_word;
+      wbwWrap.classList.remove('hidden');
+    } else {
+      wbwWrap.classList.add('hidden');
+    }
+
+    // Commentary
+    if (s.commentary) {
+      detailCommentary.textContent = s.commentary;
+      commentaryWrap.classList.remove('hidden');
+    } else {
+      commentaryWrap.classList.add('hidden');
+    }
+
+    // Audio controls (Play + Download)
+    if (s.audio_file_path) {
+      playBtn.classList.remove('hidden');
+      downloadBtn.classList.remove('hidden');
+      downloadBtn.href = '/' + s.audio_file_path;
+      const filename = s.audio_file_path.split('/').pop() ?? 'sloka.mp3';
+      downloadBtn.setAttribute('download', filename);
+    } else {
+      playBtn.classList.add('hidden');
+      downloadBtn.classList.add('hidden');
+    }
+
+    // Wire copy button to current sloka
+    copyBtn.dataset.slokaId = String(s.id);
+    copyBtn.dataset.slokaText = [
+      s.sloka_text ?? '',
+      s.scripture_ref ? `— ${s.scripture_ref}` : '',
+      s.translation   ? `\nMeaning:\n${s.translation}` : '',
+      '',
+      `${location.origin}/share/sloka.php?id=${s.id}`,
+    ].join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+    // Prev / Next
+    prevBtn.disabled = idx === 0;
+    nextBtn.disabled = idx === slokas.length - 1;
+
+    // Show card
+    detailEmpty.classList.add('hidden');
+    detailCard.classList.remove('hidden');
+
+    // Mobile: switch to detail
+    splitEl.dataset.mobileView = 'detail';
+  }
+
+  /* ── Prev / Next ─────────────────────────────────────────────────────────── */
+  prevBtn.addEventListener('click', () => {
+    if (activeIdx !== null && activeIdx > 0) openDetail(activeIdx - 1);
+  });
+  nextBtn.addEventListener('click', () => {
+    if (activeIdx !== null && activeIdx < slokas.length - 1) openDetail(activeIdx + 1);
+  });
+
+  /* ── Play (global audio player) ──────────────────────────────────────────── */
+  playBtn.addEventListener('click', () => {
+    if (activeIdx === null) return;
+    const s = slokas[activeIdx];
+    if (!s.audio_file_path) return;
+    const player = (window as any).__audioPlayer;
+    if (!player) return;
+    player.setQueue([{
+      track_id:         `SL-${s.id}`,
+      track_name:       s.search_title || s.title || `Śloka #${s.id}`,
+      display_name:     s.category_name,
+      audio_file_path:  s.audio_file_path,
+      lyrics_file_path: null,
+      download_allowed: 1,
+      type:             'S' as const,
+    }], 0, { docked: true });
+  });
+
+  /* ── Copy Info ───────────────────────────────────────────────────────────── */
+  const checkPath = 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z';
+  const copyPath  = 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z';
+
+  copyBtn.addEventListener('click', async () => {
+    const text = copyBtn.dataset.slokaText ?? '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    // Copied feedback
+    copyIcon.innerHTML = `<path d="${checkPath}"/>`;
+    copyIcon.classList.add('text-green-600');
+    copyLabel.textContent = 'Copied!';
+    setTimeout(() => {
+      copyIcon.innerHTML = `<path d="${copyPath}"/>`;
+      copyIcon.classList.remove('text-green-600');
+      copyLabel.textContent = 'Copy Info';
+    }, 2000);
+  });
+
+  /* ── Mobile back ─────────────────────────────────────────────────────────── */
+  backBtn.addEventListener('click', () => {
+    splitEl.dataset.mobileView = 'list';
+  });
+
+  /* ── List state helpers ──────────────────────────────────────────────────── */
+  function setListState(state: 'loading' | 'empty' | 'list') {
+    loadingEl.classList.toggle('hidden', state !== 'loading');
+    emptyEl.classList.toggle('hidden',   state !== 'empty');
+    listEl.classList.toggle('hidden',    state !== 'list');
+  }
+
+  function showDetailEmpty() {
+    detailCard.classList.add('hidden');
+    detailEmpty.classList.remove('hidden');
+  }
+
+  /* ── Init ────────────────────────────────────────────────────────────────── */
+  Promise.all([loadMeta(), fetchSlokas(new URLSearchParams())]);
+
+})();
+</script>

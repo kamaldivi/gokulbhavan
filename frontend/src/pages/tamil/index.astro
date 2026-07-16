@@ -7,6 +7,9 @@
 import Base from "@layouts/Base.astro";
 import FeaturedVideos from "@components/FeaturedVideos.astro";
 import EventWidget from "@components/EventWidget.astro";
+
+const ZOOM_URL    = (import.meta.env.VITE_ZOOM_URL    as string) ?? '';
+const YOUTUBE_URL = (import.meta.env.VITE_YOUTUBE_URL as string) ?? '';
 ---
 
 <Base
@@ -67,7 +70,7 @@ import EventWidget from "@components/EventWidget.astro";
            class="inline-flex items-center justify-center border-2 border-white text-white hover:bg-white hover:text-brand-navy font-semibold px-7 py-3 rounded-full transition-colors">
           நிகழ்ச்சிகள் காண · Explore Programs
         </a>
-        <a href="https://us02web.zoom.us/j/2294369627?pwd=VHJPQ1dBTC9wVnV2dUd5UDVMYTJwQT09"
+        <a href={ZOOM_URL}
            target="_blank" rel="noopener noreferrer"
            class="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-slate text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
           <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
@@ -75,7 +78,7 @@ import EventWidget from "@components/EventWidget.astro";
           </svg>
           Join on Zoom
         </a>
-        <a href="https://www.youtube.com/@bkdasa"
+        <a href={YOUTUBE_URL}
            target="_blank" rel="noopener noreferrer"
            class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-7 py-3 rounded-full transition-colors shadow">
           <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">

@@ -7,6 +7,7 @@
 import Base from "@layouts/Base.astro";
 import FeaturedVideos from "@components/FeaturedVideos.astro";
 import EventWidget from "@components/EventWidget.astro";
+import DailyHighlights from "@components/DailyHighlights.astro";
 ---
 
 <Base title="Home" activePath="/">
@@ -36,6 +37,9 @@ import EventWidget from "@components/EventWidget.astro";
       </div>
     </div>
   </section>
+
+  <!-- ── Daily Selections ─────────────────────────────────────── -->
+  <DailyHighlights />
 
   <!-- ── Highlights ────────────────────────────────────────────── -->
   <section class="max-w-6xl mx-auto px-4 sm:px-6 py-14" aria-label="Site highlights">
@@ -106,11 +110,11 @@ import EventWidget from "@components/EventWidget.astro";
           <div class="mb-3">
             <div class="flex justify-between text-sm font-semibold text-brand-slate mb-1.5">
               <span>Progress</span>
-              <span class="text-brand-lotus">88 of 108 completed</span>
+              <span class="text-brand-lotus"><span id="kids-count">…</span> of 108 completed</span>
             </div>
             <div class="h-3 bg-brand-tan rounded-full overflow-hidden">
-              <div class="h-full rounded-full bg-gradient-to-r from-brand-lotus to-pink-400 transition-all"
-                   style="width: 81.5%"></div>
+              <div id="kids-bar" class="h-full rounded-full bg-gradient-to-r from-brand-lotus to-pink-400 transition-all"
+                   style="width: 0%"></div>
             </div>
             <div class="flex justify-between text-xs text-brand-slate/60 mt-1">
               <span>0</span>
@@ -120,7 +124,7 @@ import EventWidget from "@components/EventWidget.astro";
 
           <p class="text-brand-slate text-base leading-relaxed flex-1">
             Gokul Bhavan children are composing 108 unique tunes for Nāma-Saṅkīrtana.
-            88 tunes are complete - listen to all recordings on the Saṅkīrtans page.
+            <span id="kids-count-text">…</span> tunes are complete - listen to all recordings on the Saṅkīrtans page.
           </p>
           <div class="mt-5 flex items-center gap-2 text-brand-navy text-base font-semibold group-hover:gap-3 transition-all">
             Listen to Saṅkīrtans
@@ -198,6 +202,29 @@ import EventWidget from "@components/EventWidget.astro";
   }
 
   load();
+})();
+
+// ── Gokul Kids progress ───────────────────────────────────────────────────────
+(function () {
+  const TOTAL    = 108;
+  const apiBase  = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
+  const countEl  = document.getElementById('kids-count')!;
+  const countEl2 = document.getElementById('kids-count-text')!;
+  const barEl    = document.getElementById('kids-bar')!;
+
+  fetch(`${apiBase}/api/stats.php`)
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const n = data.gokul_kids_completed ?? 0;
+      const pct = Math.min(100, Math.round((n / TOTAL) * 1000) / 10);
+      countEl.textContent  = String(n);
+      countEl2.textContent = String(n);
+      barEl.style.width    = pct + '%';
+    })
+    .catch(() => {
+      // silently keep the "…" placeholder on failure
+    });
 })();
 </script>
 

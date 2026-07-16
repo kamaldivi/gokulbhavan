@@ -110,6 +110,10 @@ import AdminShell from "@layouts/AdminShell.astro";
           <button id="au-tab-lyrics"
                   class="au-panel-tab px-4 py-2 text-xs font-semibold border border-b-0 rounded-t-lg
                          bg-brand-parchment border-brand-tan/60 text-brand-slate hover:text-brand-navy transition-colors">Lyrics</button>
+          <span id="au-lyrics-tab-hint"
+                class="hidden self-end pb-2 ml-1 text-[10px] italic text-brand-slate/50">
+            — save track first
+          </span>
         </div>
       </div>
 
@@ -130,12 +134,20 @@ import AdminShell from "@layouts/AdminShell.astro";
         </div>
 
         <div>
-          <label class="au-label">Author <span class="font-normal text-brand-slate">(optional)</span></label>
-          <input id="au-trk-author" type="text" placeholder="e.g. Narottama Dasa Thakura" class="au-input w-full" />
+          <div class="flex items-center justify-between mb-1">
+            <label class="au-label mb-0">Author <span class="font-normal text-brand-slate">(optional)</span></label>
+            <button id="au-manage-authors-btn" type="button"
+                    class="text-xs text-brand-lotus hover:text-brand-navy font-semibold transition-colors">
+              Manage Authors
+            </button>
+          </div>
+          <select id="au-trk-author" class="au-input w-full">
+            <option value="">— none —</option>
+          </select>
         </div>
 
         <div>
-          <label class="au-label">Main MP3</label>
+          <label class="au-label">Main MP3 <span class="font-normal text-brand-slate">(optional — can upload later)</span></label>
           <div id="au-trk-audio-current" class="hidden mb-1 text-xs text-brand-slate font-mono truncate"></div>
           <input id="au-trk-audio-file" type="file" accept=".mp3,audio/mpeg" class="au-file-input w-full" />
           <p class="text-xs text-brand-slate mt-1">Max 50MB. Replaces existing if present.</p>
@@ -166,7 +178,8 @@ import AdminShell from "@layouts/AdminShell.astro";
           <div id="au-singers-list" class="space-y-2"></div>
         </div>
 
-        <p id="au-track-form-error" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2"></p>
+        <p id="au-track-form-error"   class="hidden rounded-lg bg-red-50  border border-red-200  text-red-700  text-xs px-3 py-2"></p>
+        <p id="au-track-form-success" class="hidden rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 whitespace-pre-line"></p>
 
         <div class="flex gap-2 pt-1">
           <button id="au-track-save-btn" class="btn-save flex-1">Save Track</button>
@@ -249,6 +262,41 @@ import AdminShell from "@layouts/AdminShell.astro";
   </div><!-- /col 3 -->
 </div><!-- /3-col layout -->
 
+<!-- ── Manage Authors modal ─────────────────────────────────────────────────── -->
+<div id="au-authors-overlay"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col overflow-hidden"
+       style="max-height: 80vh">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-brand-tan bg-brand-parchment shrink-0">
+      <h2 class="font-display font-bold text-brand-navy text-base">Manage Authors</h2>
+      <button id="au-authors-close"
+              class="text-brand-slate hover:text-brand-navy text-sm px-2 py-1 rounded transition-colors">✕ Close</button>
+    </div>
+
+    <!-- Add new author form -->
+    <div class="px-5 py-3 border-b border-brand-tan shrink-0 space-y-2">
+      <p class="text-[10px] font-bold uppercase tracking-widest text-brand-slate">Add New Author</p>
+      <div class="flex gap-2">
+        <input id="au-new-author-input" type="text" placeholder="Author name"
+               class="au-input flex-1 text-sm" maxlength="200" />
+        <button id="au-new-author-save"
+                class="px-4 py-2 rounded-lg bg-brand-navy text-white text-xs font-semibold hover:opacity-90 transition-opacity shrink-0">
+          Add
+        </button>
+      </div>
+      <p id="au-authors-form-error" class="hidden text-xs text-red-600"></p>
+    </div>
+
+    <!-- Authors list -->
+    <div class="flex-1 overflow-y-auto">
+      <div id="au-authors-loading" class="px-5 py-6 text-xs text-brand-slate text-center animate-pulse">Loading…</div>
+      <ul id="au-authors-list" class="hidden divide-y divide-brand-tan/40 py-1"></ul>
+    </div>
+  </div>
+</div>
+
 </AdminShell>
 
 <!-- ── Styles ─────────────────────────────────────────────────────────────── -->
@@ -267,6 +315,12 @@ import AdminShell from "@layouts/AdminShell.astro";
   .au-label {
     @apply block text-xs font-semibold text-brand-slate mb-1;
   }
+  select.au-input {
+    @apply pr-8 appearance-none bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236B7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-size: 1.25rem;
+  }
   .au-type-btn.active {
     @apply bg-brand-navy text-white;
   }
@@ -275,6 +329,9 @@ import AdminShell from "@layouts/AdminShell.astro";
   }
   .au-track-row.active {
     @apply bg-brand-navy/10;
+  }
+  #au-tab-lyrics:disabled {
+    @apply opacity-40 cursor-not-allowed pointer-events-none;
   }
   .au-resize-handle {
     border-left: 1px solid rgba(0,0,0,0.08);
@@ -300,6 +357,9 @@ let trackCache: Record<string, any[]> = {};
 let existingAudioPath = '';
 let existingBasePath  = '';
 let activeTab: 'audio' | 'lyrics' = 'audio';
+
+type AuthorRow = { id: number; author_name: string; track_count: number };
+let authors: AuthorRow[] = [];
 
 // Current track info (shared between audio + lyrics tabs)
 let currentTrackId:   string = '';
@@ -342,15 +402,25 @@ const editorTrackName  = document.getElementById('au-editor-track-name')!;
 const editorCancelBtn  = document.getElementById('au-editor-cancel-btn')!;
 
 const tabAudioBtn      = document.getElementById('au-tab-audio')!;
-const tabLyricsBtn     = document.getElementById('au-tab-lyrics')!;
+const tabLyricsBtn     = document.getElementById('au-tab-lyrics') as HTMLButtonElement;
+const lyricsTabHint    = document.getElementById('au-lyrics-tab-hint')!;
 const panelAudio       = document.getElementById('au-panel-audio')!;
 const panelLyrics      = document.getElementById('au-panel-lyrics')!;
 
 const trackFormTitle   = document.getElementById('au-track-form-title')!;
 const trackFormError   = document.getElementById('au-track-form-error')!;
+const trackFormSuccess = document.getElementById('au-track-form-success')!;
 const trkIdInput       = document.getElementById('au-trk-id') as HTMLInputElement;
 const trkNameInput     = document.getElementById('au-trk-name') as HTMLInputElement;
-const trkAuthorInput   = document.getElementById('au-trk-author') as HTMLInputElement;
+const trkAuthorSelect  = document.getElementById('au-trk-author') as HTMLSelectElement;
+const manageAuthorsBtn = document.getElementById('au-manage-authors-btn')!;
+const authorsOverlay   = document.getElementById('au-authors-overlay')!;
+const authorsClose     = document.getElementById('au-authors-close')!;
+const authorsLoading   = document.getElementById('au-authors-loading')!;
+const authorsList      = document.getElementById('au-authors-list')!;
+const newAuthorInput   = document.getElementById('au-new-author-input') as HTMLInputElement;
+const newAuthorSave    = document.getElementById('au-new-author-save')!;
+const authorsFormError = document.getElementById('au-authors-form-error')!;
 const trkAudioFile     = document.getElementById('au-trk-audio-file') as HTMLInputElement;
 const trkBaseFile      = document.getElementById('au-trk-base-file') as HTMLInputElement;
 const trkAudioCurrent    = document.getElementById('au-trk-audio-current')!;
@@ -380,6 +450,14 @@ function showError(el: HTMLElement, msg: string) {
   el.classList.remove('hidden');
 }
 
+let _successTimer: ReturnType<typeof setTimeout> | null = null;
+function showSuccess(el: HTMLElement, msg: string) {
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  if (_successTimer) clearTimeout(_successTimer);
+  _successTimer = setTimeout(() => { el.textContent = ''; el.classList.add('hidden'); }, 10000);
+}
+
 function clearError(el: HTMLElement) {
   el.textContent = '';
   el.classList.add('hidden');
@@ -394,6 +472,12 @@ async function apiFetch(url: string, opts: RequestInit = {}) {
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.message ?? `HTTP ${r.status}`);
   return data;
+}
+
+// ── Lyrics tab availability ───────────────────────────────────────────────────
+function setLyricsTabEnabled(enabled: boolean) {
+  tabLyricsBtn.disabled = !enabled;
+  lyricsTabHint.classList.toggle('hidden', enabled);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -678,13 +762,14 @@ async function openNewTrack() {
   trkIdInput.value    = '';
   trkIdInput.readOnly = false;
   trkIdInput.classList.remove('bg-brand-parchment/60');
-  trkNameInput.value   = '';
-  trkAuthorInput.value = '';
+  trkNameInput.value      = '';
+  trkAuthorSelect.value   = '';
   trkAudioFile.value  = '';
   trkBaseFile.value   = '';
   trkAudioCurrent.classList.add('hidden');
   trkBaseCurrent.classList.add('hidden');
   renderSingerRows();
+  setLyricsTabEnabled(false);
   openEditor('(new)', '');
   editorTrackId.textContent   = 'New Track';
   editorTrackName.textContent = '';
@@ -718,8 +803,8 @@ function openEditTrack(trackId: string) {
   trkIdInput.value     = trackId;
   trkIdInput.readOnly  = true;
   trkIdInput.classList.add('bg-brand-parchment/60');
-  trkNameInput.value   = t.track_name;
-  trkAuthorInput.value = t.author ?? '';
+  trkNameInput.value      = t.track_name;
+  trkAuthorSelect.value   = t.author_id != null ? String(t.author_id) : '';
   trkAudioFile.value   = '';
   trkBaseFile.value   = '';
   trkAudioCurrent.textContent = existingAudioPath;
@@ -731,6 +816,7 @@ function openEditTrack(trackId: string) {
     trkBaseCurrent.classList.add('hidden');
   }
   renderSingerRows();
+  setLyricsTabEnabled(true);
   openEditor(trackId, t.track_name);
   // stay on current tab
 }
@@ -839,35 +925,15 @@ async function saveTrack() {
   const isNew     = !editingTrackId;
   const audioFile = trkAudioFile.files?.[0];
   const baseFile  = trkBaseFile.files?.[0];
-  if (isNew && !audioFile) { showError(trackFormError, 'Main MP3 is required for a new track'); return; }
 
   trackSaveBtn.textContent = 'Saving…';
   trackSaveBtn.setAttribute('disabled', 'true');
   clearError(trackFormError);
+  clearError(trackFormSuccess);
 
   try {
-    // ── Track ID prefix check (all files must start with the track ID) ──────────
-    const idPrefix = trackId.toLowerCase() + '-';
-    function startsWithId(file: File): boolean {
-      return file.name.toLowerCase().startsWith(idPrefix);
-    }
-    if (audioFile && !startsWithId(audioFile)) {
-      showError(trackFormError, `Main MP3 filename must start with "${trackId}-" (got: ${audioFile.name})`);
-      trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
-    }
-    if (baseFile && !startsWithId(baseFile)) {
-      showError(trackFormError, `Base Track filename must start with "${trackId}-" (got: ${baseFile.name})`);
-      trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
-    }
-    for (const row of singerRows) {
-      if (row.fileObj && !startsWithId(row.fileObj)) {
-        showError(trackFormError, `Singer version filename must start with "${trackId}-" (got: ${row.fileObj.name})`);
-        trackSaveBtn.textContent = 'Save Track'; trackSaveBtn.removeAttribute('disabled'); return;
-      }
-    }
-
-    let audioPath = existingAudioPath;
-    let basePath  = existingBasePath || null;
+    let audioPath: string | null = existingAudioPath || null;
+    let basePath:  string | null = existingBasePath  || null;
     if (audioFile) audioPath = await uploadMp3(audioFile, 'main', trackId, trackName);
     if (baseFile)  basePath  = await uploadMp3(baseFile,  'base', trackId, trackName);
 
@@ -897,8 +963,8 @@ async function saveTrack() {
       if (singerPath) finalSingers.push({ singer: singerName, audio_file_path: singerPath });
     }
 
-    const author = trkAuthorInput.value.trim() || null;
-    const payload: any = { track_id: trackId, track_name: trackName, author, category_code: currentCat,
+    const authorIdVal = trkAuthorSelect.value ? parseInt(trkAuthorSelect.value) : null;
+    const payload: any = { track_id: trackId, track_name: trackName, author_id: authorIdVal, category_code: currentCat,
                             audio_file_path: audioPath, base_track_path: basePath, singers: finalSingers };
     if (isNew) {
       await apiFetch(`${apiBase}/api/admin/audio-tracks.php`, {
@@ -925,6 +991,23 @@ async function saveTrack() {
     await loadTracks(currentCat!, tracksHeading.textContent!);
     // Re-open edit for the saved track
     openEditTrack(trackId);
+
+    // Success message — mention uploaded files so user knows what was saved
+    if (!archiveErrors.length) {
+      const uploadedPairs: { original: string; saved: string }[] = [];
+      if (audioFile && audioPath) uploadedPairs.push({ original: audioFile.name, saved: audioPath.split('/').pop()! });
+      if (baseFile  && basePath)  uploadedPairs.push({ original: baseFile.name,  saved: basePath.split('/').pop()! });
+      for (const row of finalSingers) {
+        const origRow = singerRows.find(r => r.singer.trim() === row.singer && r.fileObj);
+        if (origRow?.fileObj) uploadedPairs.push({ original: origRow.fileObj.name, saved: row.audio_file_path.split('/').pop()! });
+      }
+      if (uploadedPairs.length) {
+        const lines = uploadedPairs.map(p => `${p.original} saved as: ${p.saved}`).join('\n');
+        showSuccess(trackFormSuccess, `Audio saved.\n${lines}`);
+      } else {
+        showSuccess(trackFormSuccess, isNew ? 'Track created.' : 'Track updated.');
+      }
+    }
 
   } catch (e: any) {
     showError(trackFormError, e.message);
@@ -1127,7 +1210,190 @@ lyrDeleteLangBtn.addEventListener('click', async () => {
   });
 })();
 
+// ── Authors ───────────────────────────────────────────────────────────────────
+async function loadAuthors() {
+  try {
+    const data = await apiFetch(`${apiBase}/api/admin/audio-authors.php`);
+    authors = data;
+    renderAuthorDropdown();
+  } catch { /* non-fatal — leave dropdown with just "none" */ }
+}
+
+function renderAuthorDropdown(selectedId?: number | null) {
+  const current = selectedId !== undefined ? selectedId : (trkAuthorSelect.value ? parseInt(trkAuthorSelect.value) : null);
+  trkAuthorSelect.innerHTML = '<option value="">— none —</option>';
+  authors.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value       = String(a.id);
+    opt.textContent = a.author_name;
+    if (current === a.id) opt.selected = true;
+    trkAuthorSelect.appendChild(opt);
+  });
+}
+
+// ── Manage Authors modal ──────────────────────────────────────────────────────
+manageAuthorsBtn.addEventListener('click', openAuthorsModal);
+authorsClose.addEventListener('click',    closeAuthorsModal);
+authorsOverlay.addEventListener('click', (e) => {
+  if (e.target === authorsOverlay) closeAuthorsModal();
+});
+
+function openAuthorsModal() {
+  authorsOverlay.classList.remove('hidden');
+  newAuthorInput.value = '';
+  clearError(authorsFormError);
+  renderAuthorModalList();
+}
+
+function closeAuthorsModal() {
+  authorsOverlay.classList.add('hidden');
+}
+
+function renderAuthorModalList() {
+  authorsLoading.classList.add('hidden');
+  authorsList.innerHTML = '';
+  if (authors.length === 0) {
+    authorsList.innerHTML = '<li class="px-5 py-4 text-xs text-brand-slate text-center italic">No authors yet. Add one above.</li>';
+    authorsList.classList.remove('hidden');
+    return;
+  }
+  authors.forEach(a => {
+    const li = document.createElement('li');
+    li.className = 'flex items-center gap-2 px-5 py-2.5 hover:bg-brand-parchment/50 transition-colors';
+    li.dataset.id = String(a.id);
+    li.innerHTML = `
+      <div class="flex-1 min-w-0">
+        <span class="au-author-label text-sm text-brand-navy truncate block">${escHtml(a.author_name)}</span>
+      </div>
+      <span class="text-[10px] text-brand-slate shrink-0 tabular-nums">${a.track_count} track${a.track_count !== 1 ? 's' : ''}</span>
+      <button class="au-author-edit shrink-0 text-brand-slate/60 hover:text-brand-navy transition-colors"
+              data-id="${a.id}" data-name="${escAttr(a.author_name)}" title="Rename">
+        <svg class="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0
+                   01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z"/>
+        </svg>
+      </button>
+      <button class="au-author-del shrink-0 text-brand-slate/60 hover:text-red-600 transition-colors"
+              data-id="${a.id}" data-count="${a.track_count}" title="Delete">
+        <svg class="w-3.5 h-3.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022
+                   -.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0
+                   01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0
+                   00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0
+                   0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964
+                   51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667
+                   48.667 0 00-7.5 0"/>
+        </svg>
+      </button>
+    `;
+    authorsList.appendChild(li);
+  });
+  authorsList.classList.remove('hidden');
+
+  // Edit button — replace label with inline input
+  authorsList.querySelectorAll<HTMLButtonElement>('.au-author-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id   = parseInt(btn.dataset.id!);
+      const name = btn.dataset.name!;
+      const li   = btn.closest('li')!;
+      const labelEl = li.querySelector<HTMLElement>('.au-author-label')!;
+      if (li.querySelector('.au-author-edit-input')) return; // already editing
+
+      const input = document.createElement('input');
+      input.type      = 'text';
+      input.value     = name;
+      input.maxLength = 200;
+      input.className = 'au-input text-sm flex-1 au-author-edit-input';
+      labelEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      async function commitEdit() {
+        const newName = input.value.trim();
+        if (!newName || newName === name) { reloadAuthors(); return; }
+        try {
+          await apiFetch(`${apiBase}/api/admin/audio-authors.php`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, author_name: newName }),
+          });
+          await reloadAuthors();
+        } catch (e: any) { alert(e.message); reloadAuthors(); }
+      }
+      input.addEventListener('blur',  commitEdit);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter')  { input.blur(); }
+        if (e.key === 'Escape') { input.value = name; input.blur(); }
+      });
+    });
+  });
+
+  // Delete button
+  authorsList.querySelectorAll<HTMLButtonElement>('.au-author-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id    = parseInt(btn.dataset.id!);
+      const count = parseInt(btn.dataset.count!);
+      if (count > 0) {
+        alert(`Cannot delete: this author is assigned to ${count} track${count !== 1 ? 's' : ''}. Reassign the tracks first.`);
+        return;
+      }
+      const authorName = btn.closest('li')!.querySelector('.au-author-label, .au-author-edit-input')?.textContent ?? '';
+      if (!confirm(`Delete author "${authorName}"?`)) return;
+      try {
+        await apiFetch(`${apiBase}/api/admin/audio-authors.php`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+        await reloadAuthors();
+      } catch (e: any) { alert(e.message); }
+    });
+  });
+}
+
+async function reloadAuthors() {
+  const currentSelId = trkAuthorSelect.value ? parseInt(trkAuthorSelect.value) : null;
+  await loadAuthors();
+  renderAuthorDropdown(currentSelId);
+  renderAuthorModalList();
+}
+
+newAuthorSave.addEventListener('click', addAuthor);
+newAuthorInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addAuthor(); });
+
+async function addAuthor() {
+  const name = newAuthorInput.value.trim();
+  if (!name) { showError(authorsFormError, 'Author name is required'); return; }
+  clearError(authorsFormError);
+  newAuthorSave.setAttribute('disabled', 'true');
+  try {
+    const created: AuthorRow = await apiFetch(`${apiBase}/api/admin/audio-authors.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author_name: name }),
+    });
+    newAuthorInput.value = '';
+    await reloadAuthors();
+    // Auto-select newly created author in the track form
+    trkAuthorSelect.value = String(created.id);
+  } catch (e: any) {
+    showError(authorsFormError, e.message);
+  } finally {
+    newAuthorSave.removeAttribute('disabled');
+  }
+}
+
+function escHtml(s: string): string {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s: string): string {
+  return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 setTypeActive('B');
 loadCategories();
+loadAuthors();
 </script>
