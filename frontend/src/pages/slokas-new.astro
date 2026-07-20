@@ -80,7 +80,7 @@ import PageHero from "@components/PageHero.astro";
   </div><!-- end filter bar -->
 
   <!-- ── Split panel ────────────────────────────────────────────────────────── -->
-  <div id="sl-split" class="flex overflow-hidden" data-mobile-view="list">
+  <div id="sl-split" class="flex items-start overflow-hidden" data-mobile-view="list">
 
     <!-- ── Left: List panel (resizable) ────────────────────────────────────── -->
     <div id="sl-list-panel"
@@ -608,7 +608,20 @@ import PageHero from "@components/PageHero.astro";
       r.classList.toggle('border-l-[3px]',     i === idx);
       r.style.borderLeftColor = i === idx ? '#C94277' : '';
     });
-    listEl.querySelectorAll<HTMLElement>('.sl-row')[idx]?.scrollIntoView({ block: 'nearest' });
+    // Scroll the selected row into view within #sl-list only.
+    // We do NOT use scrollIntoView() here because browsers don't account for sticky
+    // containers — it triggers page scroll which pushes the detail content up and
+    // creates a blank gap at the top of the list panel.
+    const targetRow = listEl.querySelectorAll<HTMLElement>('.sl-row')[idx];
+    if (targetRow) {
+      const rowTop = targetRow.offsetTop;
+      const rowBot = rowTop + targetRow.offsetHeight;
+      if (rowTop < listEl.scrollTop) {
+        listEl.scrollTop = rowTop;
+      } else if (rowBot > listEl.scrollTop + listEl.clientHeight) {
+        listEl.scrollTop = rowBot - listEl.clientHeight;
+      }
+    }
 
     // Detail header: "Scripture Name — Category" or just one of them
     if (s.scripture_name && s.category_name) {

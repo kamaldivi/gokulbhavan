@@ -37,35 +37,43 @@ try {
         $current[$row['content_type']] = $row;
     }
 
-    // ── Check if any type is missing or stale ────────────────────────────────
-    $types        = ['bhajan', 'sloka', 'sankirtan', 'video'];
-    $needsRefresh = false;
-    foreach ($types as $t) {
+    // ── Find stale / missing selections (per-type) ───────────────────────────
+    $allTypes = ['bhajan', 'sloka', 'sankirtan', 'video'];
+    $stale    = [];
+
+    foreach ($allTypes as $t) {
         if (!isset($current[$t]) || $current[$t]['selected_date'] !== $today) {
-            $needsRefresh = true;
-            break;
+            $stale[] = $t;
         }
     }
 
-    if ($needsRefresh) {
-        // ── Fetch 7-day exclusion history per type ────────────────────────────
-        $history = array_fill_keys($types, []);
-        $hStmt   = $pdo->query("
+    // Extra guard for video: the YouTube sync does a full delete+rebuild of the
+    // video table, so a selected video_id can disappear mid-day even though its
+    // selected_date is still today. Treat it as stale so we re-pick immediately.
+    if (!in_array('video', $stale) && isset($current['video'])) {
+        $chk = $pdo->prepare("SELECT 1 FROM video WHERE video_id = ? LIMIT 1");
+        $chk->execute([$current['video']['ref_id']]);
+        if (!$chk->fetch()) {
+            $stale[] = 'video';
+            unset($current['video']); // drop stale ref so response-build skips it below
+        }
+    }
+
+    if (!empty($stale)) {
+        // ── Fetch 7-day history only for the types being refreshed ────────────
+        $history = array_fill_keys($stale, []);
+        $typePh  = implode(',', array_fill(0, count($stale), '?'));
+        $hStmt   = $pdo->prepare("
             SELECT content_type, ref_id FROM highlight_history
-            WHERE shown_on >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            WHERE content_type IN ($typePh)
+              AND shown_on >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
         ");
+        $hStmt->execute($stale);
         while ($h = $hStmt->fetch(PDO::FETCH_ASSOC)) {
             $history[$h['content_type']][] = $h['ref_id'];
         }
 
-        $newSelections = [
-            'bhajan'    => pickAudioTrack($pdo, 'bhajan',    $history['bhajan']),
-            'sloka'     => pickAudioTrack($pdo, 'sloka',     $history['sloka']),
-            'sankirtan' => pickSankirtan($history['sankirtan']),
-            'video'     => pickVideo($pdo, $history['video']),
-        ];
-
-        // ── Persist new selections ────────────────────────────────────────────
+        // ── Persist new selections (only stale types) ─────────────────────────
         $upsert = $pdo->prepare("
             INSERT INTO daily_highlight (content_type, ref_id, selected_date)
             VALUES (?, ?, ?)
@@ -76,17 +84,17 @@ try {
             VALUES (?, ?, ?)
         ");
 
-        foreach ($newSelections as $type => $refId) {
-            if ($refId === null) continue;
+        foreach ($stale as $type) {
+            $refId = match ($type) {
+                'bhajan'    => pickAudioTrack($pdo, 'bhajan',    $history['bhajan']),
+                'sloka'     => pickAudioTrack($pdo, 'sloka',     $history['sloka']),
+                'sankirtan' => pickSankirtan($history['sankirtan']),
+                'video'     => pickVideo($pdo, $history['video']),
+            };
+            if ($refId === null) continue; // pool exhausted or table empty — skip
             $upsert->execute([$type, $refId, $today]);
             $histInsert->execute([$type, $refId, $today]);
-        }
-
-        // Reload current from DB
-        $stmt    = $pdo->query("SELECT content_type, ref_id FROM daily_highlight");
-        $current = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $current[$row['content_type']] = $row;
+            $current[$type] = ['content_type' => $type, 'ref_id' => $refId]; // update in-memory
         }
     }
 

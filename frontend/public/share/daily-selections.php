@@ -72,7 +72,10 @@ try {
         }
     }
 
-    // Video
+    // Video — note: the YouTube sync does a full table wipe+rebuild, so the
+    // selected video_id can disappear mid-day. We set a '_missing' flag so
+    // the template can render a graceful fallback card rather than silently
+    // omitting the Harikatha section entirely.
     if (isset($refs['video'])) {
         $vStmt = $db->prepare("
             SELECT video_id, video_title AS title, thumbnail_url
@@ -80,7 +83,7 @@ try {
         ");
         $vStmt->execute([$refs['video']]);
         $row = $vStmt->fetch(PDO::FETCH_ASSOC);
-        if ($row) $sel['video'] = $row;
+        $sel['video'] = $row ?: ['_missing' => true];
     }
 
 } catch (Throwable $e) {
@@ -426,15 +429,26 @@ share_logo();
       </div>
       <div class="sel-meta-wrap">
         <div class="sel-type-label lbl-video">Harikatha · Video</div>
+        <?php if (empty($v['_missing'])): ?>
         <div class="sel-title"><?= e($v['title']) ?></div>
+        <?php else: ?>
+        <div class="sel-title" style="color:#2A506A;font-style:italic">Video temporarily unavailable</div>
+        <div class="sel-sub">The selected video may have been updated on YouTube</div>
+        <?php endif; ?>
       </div>
     </div>
+    <?php if (empty($v['_missing'])): ?>
     <button class="yt-toggle-btn" onclick="toggleVideo(this,'yt-<?= e($v['video_id']) ?>')"
             data-vid="<?= e($v['video_id']) ?>">
       <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       Watch Video
     </button>
     <div class="yt-embed-wrap" id="yt-<?= e($v['video_id']) ?>"></div>
+    <?php else: ?>
+    <div style="padding:0 18px 16px;font-size:13px;color:#2A506A">
+      <a href="/videos" style="color:#1d4ed8;font-weight:600">Browse all Harikatha videos →</a>
+    </div>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
 
